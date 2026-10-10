@@ -1,0 +1,48 @@
+{
+  "_come_si_usa": "Copia questo file in configurazione.json e mettici la tua roba. Senza configurazione.json il pannello parte lo stesso, con questi valori di esempio.",
+
+  "cartella_agente": "~/jarvis",
+  "vault": "",
+  "indice_progetti": "~/.ai-memory/global/projects-index.md",
+  "progetto_agenti": "",
+  "porta": 7777,
+  "vps": "",
+  "endpoint_sip": "linea",
+  "android": false,
+
+  "_scadenze": "Pagina Scadenze: il registro delle decisioni (JSON, facoltativo: vuoto = spento) e il file delle scadenze personali (lo crea il pannello).",
+  "registro_scadenze": "",
+  "scadenze_personali": "~/jarvis/Scadenze personali.md",
+
+  "_siti": "Quello che vuoi tenere d'occhio: nome e indirizzo. Il pannello li interroga e mostra il codice di risposta.",
+  "siti": {
+    "Il mio sito": "https://esempio.it",
+    "n8n": "https://n8n.esempio.it/healthz"
+  },
+
+  "_collegamenti": "Pulsanti che aprono un indirizzo nel browser.",
+  "collegamenti": {
+    "sito": "https://esempio.it"
+  },
+
+  "_verifiche": "Script tuoi, lanciati dal pannello e mostrati nei Lavori. Vanno bene solo comandi che leggono.",
+  "verifiche": [
+    {
+      "id": "esempio",
+      "nome": "Un controllo tuo",
+      "descrizione": "quello che vuoi far girare dal pannello",
+      "cartella": "~/jarvis",
+      "cmd": ["bash", "prove/esegui.sh"]
+    }
+  ],
+
+  "_comandi": "Domande pronte da fare a Jarvis, in sola lettura.",
+  "comandi": [
+    {
+      "id": "esempio",
+      "nome": "Come siamo messi",
+      "descrizione": "Jarvis riassume lo stato dei tuoi progetti",
+      "richiesta": "Guarda i progetti aperti e dimmi in dieci righe cosa è in corso e cosa resta da fare."
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- La sentinella ogni 15 minuti (l'utente, 2026-09-26 17:07). Con il Command Center acceso lo
+	     script esce subito: la fa il pannello. A pannello spento: pulizia, quadro, e Jarvis se serve. -->
+	<key>Label</key>
+	<string>com.jarvis.sentinella15</string>
+	<key>LowPriorityIO</key>
+	<true/>
+	<key>ProcessType</key>
+	<string>Background</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/opt/homebrew/bin/python3</string>
+		<string>@@JARVIS@@/strumenti/sentinella.py</string>
+		<string>--giro</string>
+		<string>--zitto</string>
+	</array>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>@@HOME@@/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+	</dict>
+	<key>RunAtLoad</key>
+	<false/>
+	<key>StandardErrorPath</key>
+	<string>@@HOME@@/.locale-onedrive/log/sentinella-launchd.log</string>
+	<key>StandardOutPath</key>
+	<string>@@HOME@@/.locale-onedrive/log/sentinella-launchd.log</string>
+	<key>StartInterval</key>
+	<integer>900</integer>
+	<key>WorkingDirectory</key>
+	<string>@@HOME@@</string>
+</dict>
+</plist>

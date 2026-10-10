@@ -1,0 +1,7 @@
+# L'orb di Jarvis sul Mac (strumenti/jarvis_widget.py): disegno con Pillow e numpy, finestra nativa con PyObjC.
+# venv: ~/.locale-onedrive/jarvis-widget-venv  (lo crea installa.sh)
+pillow>=12
+numpy>=2
+pyobjc-core>=12
+pyobjc-framework-Cocoa>=12
+pyobjc-framework-Quartz>=12

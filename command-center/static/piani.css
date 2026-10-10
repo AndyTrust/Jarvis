@@ -1,0 +1,36 @@
+/* I «Piani» del Command Center (2026-10-04). Va con piani.js. Token di app.css con valori di riserva: segue il tema. */
+.vista-piani.attiva { display: block; padding: 14px; max-width: 920px; }
+.pi-intro { margin: 0 0 12px; }
+.pi-pagina { font-size: 15px; font-weight: 650; margin: 0 0 2px; color: var(--testo, #f0f0f0); }
+.pi-sotto { margin: 0; font-size: 13px; color: var(--tenue, rgba(240, 240, 240, .6)); }
+.pi-lista { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.pi-scheda { background: var(--rialzo, #1f1f1f); border: 1px solid var(--linea, rgba(240, 240, 240, .08)); border-radius: var(--r-xl, 12px); padding: 14px; }
+.pi-s-da_approvare, .pi-s-attesa_finale { border-color: rgba(230, 180, 50, .55); }
+.pi-testa { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 6px; }
+.pi-titolo { margin: 0; font-size: 15px; font-weight: 650; color: var(--testo, #f0f0f0); }
+.pi-stato { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--testo-2, rgba(240, 240, 240, .78)); }
+.pi-scopo { margin: 0 0 8px; font-size: 13px; color: var(--testo-2, rgba(240, 240, 240, .78)); }
+.pi-riga { margin: 2px 0; font-size: 13px; color: var(--testo, #f0f0f0); display: flex; gap: 8px; flex-wrap: wrap; }
+.pi-et { color: var(--tenue, rgba(240, 240, 240, .6)); min-width: 74px; }
+.pi-passi { list-style: none; margin: 10px 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.pi-passo { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 8px; align-items: baseline; font-size: 13px; color: var(--testo, #f0f0f0); }
+.pi-n { color: var(--tenue, rgba(240, 240, 240, .6)); text-align: center; }
+.pi-tipo { font-size: 11px; padding: 1px 8px; border-radius: var(--r-pill, 999px); border: 1px solid var(--linea, rgba(240, 240, 240, .2)); color: var(--tenue, rgba(240, 240, 240, .6)); }
+.pi-irreversibile .pi-tipo { color: var(--rosso, #e5534b); border-color: var(--rosso, #e5534b); font-weight: 600; }
+.pi-fatto .pi-testo { text-decoration: line-through; opacity: .7; }
+.pi-finale { margin: 10px 0; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(230, 180, 50, .6); background: rgba(230, 180, 50, .08); }
+.pi-finale h4 { margin: 0 0 6px; font-size: 13px; color: var(--testo, #f0f0f0); }
+.pi-cmd { margin: 0; padding-left: 20px; font-size: 13px; color: var(--testo, #f0f0f0); }
+.pi-cmd pre { margin: 4px 0 8px; padding: 8px 10px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; border-radius: 8px;
+  background: var(--fondo, #151515); border: 1px solid var(--linea, rgba(240, 240, 240, .12)); font: 12px/1.45 ui-monospace, Menlo, monospace; }
+.pi-senza { margin: 4px 0 8px; font-size: 12px; color: var(--rosso, #e5534b); }
+.pi-azioni { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.pi-btn { font: inherit; font-size: 13px; font-weight: 600; min-height: 40px; padding: 8px 18px; border-radius: var(--r-pill, 999px); cursor: pointer;
+  background: transparent; color: var(--testo, #f0f0f0); border: 1px solid var(--linea, rgba(240, 240, 240, .25)); }
+.pi-btn:disabled { opacity: .6; cursor: progress; }
+.pi-si { background: rgba(70, 180, 110, .2); border-color: rgba(70, 180, 110, .7); }
+.pi-no { border-color: rgba(150, 150, 150, .6); }
+.pi-btn:focus-visible, .pi-cmd pre:focus-visible { outline: 2px solid var(--accento, #599ce7); outline-offset: 2px; }
+.pi-esito { margin: 8px 0 0; font-size: 12px; color: var(--tenue, rgba(240, 240, 240, .6)); }
+.pi-errore { margin: 0 0 10px; padding: 8px 12px; border-radius: 8px; font-size: 13px; color: var(--rosso, #e5534b); border: 1px solid var(--rosso, #e5534b); }
+.pi-nota { margin: 6px 0; font-size: 12px; line-height: 1.45; color: var(--tenue, rgba(240, 240, 240, .6)); }

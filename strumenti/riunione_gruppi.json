@@ -1,0 +1,35 @@
+{
+  "_nota": "Configurazione della riunione giornaliera degli agenti (strumenti/riunione.py). Un blocco per gruppo: capogruppo, specialisti con i temi, revisore, fonti, scadenze, metriche, dove stanno strategie e report. MEM = la tua memoria condivisa (~/.jarvis/percorsi.json). Questo è un esempio: sostituiscilo con i tuoi gruppi.",
+  "grazia_giorni": 30,
+  "gruppi": {
+    "esempio": {
+      "nome": "Esempio",
+      "spazio": "Lavoro",
+      "modo": "interno",
+      "capogruppo": {
+        "agente": "capogruppo-esempio",
+        "profilo": "~/Progetti/esempio/.claude/agents/capogruppo-esempio.md"
+      },
+      "membri": [
+        {
+          "agente": "ricercatore-web",
+          "profilo": "~/.claude/agents/ricercatore-web.md",
+          "temi": [
+            "novità del settore"
+          ]
+        }
+      ],
+      "fonti": [
+        {
+          "nome": "Stato dello spazio",
+          "percorso": "MEM/Lavoro/Stato.md",
+          "max_giorni": 14
+        }
+      ],
+      "scadenze": [],
+      "metriche": [],
+      "strategie": "MEM/Lavoro/Strategie",
+      "report": "MEM/Report"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+# Valori che scripts/imposta-affiliazione.sh scrive nei documenti al posto dei segnaposto.
+# Un valore per riga, nella forma NOME=valore. Dopo una modifica: bash scripts/imposta-affiliazione.sh
+#
+# LINK_AFFILIAZIONE_VPS: link di affiliazione dell'autore di Jarvis verso un provider di VPS.
+# Chi compra da questo link può far ricevere una commissione all'autore, senza costi in più per chi compra.
+# La VPS è facoltativa: Jarvis funziona sul Mac anche senza.
+LINK_AFFILIAZIONE_VPS=https://www.hostinger.com/it/prezzi?REFERRALCODE=ITALOMARZIANO
+# URL_REPOSITORY: da dove si scarica questa distribuzione (git clone).
+URL_REPOSITORY=https://github.com/AndyTrust/Jarvis

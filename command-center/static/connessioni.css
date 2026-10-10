@@ -1,0 +1,26 @@
+/* Le «Connessioni» del Command Center (2026-10-04). Va con connessioni.js. Colori dai token di app.css con valori
+   di riserva: segue il tema. Telefono prima: una colonna, i tre tasti sotto il nome; da 700 px sulla stessa riga. */
+.vista-connessioni.attiva { display: block; padding: 14px; max-width: 920px; }
+.cn-testa { margin: 0 0 12px; }
+.cn-titolo { font-size: 15px; font-weight: 650; margin: 0 0 2px; color: var(--testo, #f0f0f0); }
+.cn-sotto { margin: 0; font-size: 13px; color: var(--tenue, rgba(240, 240, 240, .6)); }
+.cn-lista { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.cn-riga { background: var(--rialzo, #1f1f1f); border: 1px solid var(--linea, rgba(240, 240, 240, .08)); border-radius: var(--r-xl, 12px);
+  padding: 12px 14px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-items: center; }
+@media (min-width: 700px) { .cn-riga { grid-template-columns: minmax(0, 1fr) auto; } }
+.cn-nome { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-width: 0; color: var(--testo, #f0f0f0); font-size: 14px; }
+.cn-uso { font-size: 12px; color: var(--tenue, rgba(240, 240, 240, .6)); }
+.cn-destra { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cn-tre { display: inline-flex; gap: 2px; padding: 3px; border-radius: var(--r-pill, 999px); background: var(--fondo, #151515);
+  border: 1px solid var(--linea, rgba(240, 240, 240, .08)); justify-self: start; }
+.cn-pos { font: inherit; font-size: 13px; font-weight: 600; min-height: 36px; padding: 6px 14px; border: 0; border-radius: var(--r-pill, 999px);
+  background: transparent; color: var(--testo-2, rgba(240, 240, 240, .78)); cursor: pointer; }
+.cn-pos:disabled { opacity: .6; cursor: progress; }
+.cn-pos-consentito.cn-attiva { background: rgba(70, 180, 110, .18); color: var(--testo, #f0f0f0); box-shadow: inset 0 0 0 1px rgba(70, 180, 110, .6); }
+.cn-pos-chiedi.cn-attiva { background: rgba(230, 180, 50, .18); color: var(--testo, #f0f0f0); box-shadow: inset 0 0 0 1px rgba(230, 180, 50, .6); }
+.cn-pos-spento.cn-attiva { background: rgba(150, 150, 150, .2); color: var(--testo, #f0f0f0); box-shadow: inset 0 0 0 1px rgba(150, 150, 150, .6); }
+.cn-pos:focus-visible, .cn-mini:focus-visible { outline: 2px solid var(--accento, #599ce7); outline-offset: 2px; }
+.cn-mini { font: inherit; font-size: 12px; min-height: 32px; padding: 4px 12px; border-radius: var(--r-pill, 999px); cursor: pointer;
+  background: transparent; color: var(--testo-2, rgba(240, 240, 240, .78)); border: 1px solid var(--linea, rgba(240, 240, 240, .2)); }
+.cn-errore { margin: 0 0 10px; padding: 8px 12px; border-radius: 8px; font-size: 13px; color: var(--rosso, #e5534b); border: 1px solid var(--rosso, #e5534b); }
+.cn-nota, .cn-fisso { margin: 6px 0; font-size: 12px; line-height: 1.45; color: var(--tenue, rgba(240, 240, 240, .6)); }

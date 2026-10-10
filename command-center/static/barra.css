@@ -1,0 +1,58 @@
+/* La barra in alto (2026-10-04, disegno approvato dall'utente). Va con barra.js: «Altro ▾» con il menu a tendina e ✎ per la
+   modalità Modifica. Colori dai token di app.css con valori di riserva: segue il tema. Le voci restano .schede a (stile di
+   app.css); qui solo «Altro», la tendina e il pannello. Sul telefono la barra in alto la nasconde mobile.css: niente da fare. */
+.schede.menu.bm-attiva { align-items: center; }
+.bm-altro { display: inline-flex; flex: none; }
+.bm-altro[hidden] { display: none; }
+.schede .bm-altro-btn, .schede .bm-matita { font: inherit; font-size: 13px; cursor: pointer; flex: none; }
+/* quando la barra è stretta (finestra piccola) le voci scorrono, «Altro» e ✎ restano attaccati a destra */
+.schede.menu.bm-attiva .bm-altro { position: sticky; right: 32px; background: var(--fondo, #181818); box-shadow: -8px 0 8px -2px var(--fondo, #181818); }
+.schede.menu.bm-attiva .bm-matita { position: sticky; right: 0; background: var(--fondo, #181818); min-width: 32px; justify-content: center; }
+.schede.menu.bm-attiva .bm-matita:hover, .schede.menu.bm-attiva .bm-matita.attiva { background: var(--attivo, rgba(240, 240, 240, .10)); }
+.bm-freccia { font-size: 10px; opacity: .75; }
+.schede .bm-matita { padding: 5px 7px; }
+.bm-altro-btn[aria-expanded="true"] { color: var(--testo, #f0f0f0); background: var(--hover, rgba(240, 240, 240, .06)); }
+.schede a:focus-visible, .schede .bm-altro-btn:focus-visible, .schede .bm-matita:focus-visible, .bm-pannello button:focus-visible {
+  outline: 2px solid var(--accento, #599ce7); outline-offset: 1px; }
+
+/* la tendina: fissa sulla pagina, così la barra che scorre di lato non la taglia */
+.bm-pop { position: fixed; z-index: 60; min-width: 190px; max-height: min(70vh, 520px); overflow-y: auto; padding: 4px;
+  display: flex; flex-direction: column; gap: 1px; border-radius: var(--r-lg, 8px);
+  background: var(--rialzo-2, var(--rialzo, #1f1f1f)); border: 1px solid var(--linea-2, var(--linea, rgba(240, 240, 240, .14)));
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .35); }
+.bm-pop[hidden] { display: none; }
+.schede .bm-pop a { display: flex; width: 100%; box-sizing: border-box; padding: 7px 10px; }
+
+/* il pannello «Modifica la barra» */
+.bm-pannello { position: fixed; z-index: 61; top: 52px; right: 12px; width: min(360px, calc(100vw - 24px)); max-height: calc(100vh - 70px);
+  overflow-y: auto; box-sizing: border-box; padding: 12px 14px; border-radius: var(--r-xl, 12px); font-size: 13px;
+  color: var(--testo, #f0f0f0); background: var(--rialzo-2, var(--rialzo, #1f1f1f));
+  border: 1px solid var(--linea-2, var(--linea, rgba(240, 240, 240, .14))); box-shadow: 0 16px 40px rgba(0, 0, 0, .4); }
+.bm-pannello[hidden] { display: none; }
+.bm-testa { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+.bm-testa b { font-size: 14px; font-weight: 650; }
+.bm-nota { margin: 0 0 8px; font-size: 12px; color: var(--tenue, rgba(240, 240, 240, .6)); }
+.bm-sotto { margin: 10px 0 4px; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--tenue, rgba(240, 240, 240, .6)); }
+.bm-lista { list-style: none; margin: 0; padding: 3px; min-height: 34px; display: flex; flex-direction: column; gap: 2px;
+  border-radius: var(--r, 6px); border: 1px dashed var(--linea, rgba(240, 240, 240, .12)); }
+.bm-riga { display: flex; align-items: center; gap: 6px; padding: 3px 4px 3px 2px; border-radius: var(--r, 6px);
+  background: var(--fondo, #181818); border: 1px solid transparent; }
+.bm-maniglia { cursor: grab; touch-action: none; user-select: none; padding: 4px 6px; color: var(--tenue, rgba(240, 240, 240, .6));
+  font-size: 14px; line-height: 1; letter-spacing: -2px; }
+.bm-trascinando, .bm-trascinando * { cursor: grabbing !important; user-select: none; }
+.bm-trascino { border-color: var(--accento-linea, rgba(89, 156, 231, .45)); background: var(--accento-fondo, rgba(89, 156, 231, .14)); }
+.bm-nome { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bm-pannello button { font: inherit; font-size: 12px; cursor: pointer; border-radius: var(--r, 6px); color: var(--testo, #f0f0f0);
+  background: transparent; border: 1px solid var(--linea, rgba(240, 240, 240, .14)); padding: 3px 8px; min-height: 28px; }
+.bm-pannello button:hover:not(:disabled) { background: var(--hover, rgba(240, 240, 240, .06)); }
+.bm-pannello button:disabled { opacity: .35; cursor: default; }
+.bm-pannello .bm-mini { min-width: 28px; padding: 3px 0; }
+.bm-pannello .bm-dove { min-width: 70px; color: var(--tenue, rgba(240, 240, 240, .6)); }
+.bm-pannello .bm-dove.bm-in-barra { color: var(--testo, #f0f0f0); border-color: var(--accento-linea, rgba(89, 156, 231, .45));
+  background: var(--accento-fondo, rgba(89, 156, 231, .14)); }
+.bm-pannello .bm-partenza { margin-top: 12px; color: var(--tenue, rgba(240, 240, 240, .6)); }
+.bm-errore { margin: 0 0 8px; padding: 6px 10px; border-radius: var(--r, 6px); font-size: 12px; color: var(--rosso, #e34671);
+  border: 1px solid var(--rosso, #e34671); }
+.bm-errore[hidden] { display: none; }
+/* 2026-10-05: una pagina, una voce. Il secondo <a> con lo stesso data-vista lo segna barra.js e non si vede da nessuna parte */
+.schede.menu a.bm-doppione { display: none !important; }

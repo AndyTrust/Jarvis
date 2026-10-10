@@ -1,0 +1,19 @@
+# Jarvis (template) in un contenitore pulito — scritto e provato il 2026-09-26.
+# Si costruisce dalla radice di un clone del template:
+#   docker build -f docker/Dockerfile.template -t jarvis-template .
+#   docker run -d --name jarvis -p 7777:7777 jarvis-template
+# La porta di fuori deve essere uguale a CC_PORTA: il server accetta solo Host 127.0.0.1:<CC_PORTA>.
+FROM python:3.12-slim
+RUN apt-get update && apt-get install -y --no-install-recommends nodejs npm git lsof curl procps \
+    && rm -rf /var/lib/apt/lists/*
+# Claude Code: il login si fa dopo, dentro il contenitore (docker exec -it jarvis claude)
+RUN npm i -g @anthropic-ai/claude-code && claude --version
+# cartella_agente di configurazione.esempio.json è ~/jarvis
+COPY . /root/jarvis
+WORKDIR /root/jarvis
+RUN rm -rf .git && cp -n command-center/configurazione.esempio.json command-center/configurazione.json
+# CC_PROVA=1: niente volto, niente note nel vault, niente Telegram. CC_HOST=0.0.0.0 perché
+# -p arrivi al server; fuori dal contenitore resta raggiungibile solo dal Mac (127.0.0.1).
+ENV CC_PROVA=1 CC_PORTA=7777 CC_HOST=0.0.0.0 PYTHONUNBUFFERED=1
+EXPOSE 7777
+CMD ["python3", "command-center/server.py"]

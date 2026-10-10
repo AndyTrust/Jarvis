@@ -1,0 +1,54 @@
+/* Gli «Incarichi» del Command Center (2026-10-04). Va con incarichi.js. Token di app.css con valori di riserva: segue il tema. */
+.vista-incarichi.attiva { display: block; padding: 14px; max-width: 920px; }
+.in-intro { margin: 0 0 12px; }
+.in-pagina { font-size: 15px; font-weight: 650; margin: 0 0 2px; color: var(--testo, #f0f0f0); }
+.in-sotto { margin: 0; font-size: 13px; color: var(--tenue, rgba(240, 240, 240, .6)); }
+.in-sez { margin: 16px 0 8px; font-size: 13px; font-weight: 650; color: var(--testo-2, rgba(240, 240, 240, .78)); }
+.in-battiti { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+.in-battito { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 7px 10px; font-size: 13px;
+  background: var(--rialzo, #1f1f1f); border: 1px solid var(--linea, rgba(240, 240, 240, .08)); border-radius: 10px; }
+.in-battito:not(.in-vivo) { opacity: .75; }
+.in-agente { color: var(--testo, #f0f0f0); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.in-dove { margin-left: auto; font-size: 11px; color: var(--tenue, rgba(240, 240, 240, .6)); white-space: nowrap; }
+.in-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.in-modulo { margin: 16px 0 0; padding: 14px; background: var(--rialzo, #1f1f1f); border: 1px solid var(--linea, rgba(240, 240, 240, .08)); border-radius: var(--r-xl, 12px); }
+.in-modulo .in-sez { margin-top: 0; }
+.in-campi { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 10px; align-items: center; margin: 0 0 10px; }
+.in-modulo label { font-size: 12px; color: var(--tenue, rgba(240, 240, 240, .6)); }
+.in-et-testo { display: block; margin: 0 0 4px; }
+.in-modulo select, .in-modulo textarea { font: inherit; font-size: 13px; width: 100%; box-sizing: border-box; min-height: 38px; padding: 7px 10px; border-radius: 8px;
+  color: var(--testo, #f0f0f0); background: var(--fondo, #151515); border: 1px solid var(--linea, rgba(240, 240, 240, .2)); }
+.in-modulo textarea { resize: vertical; line-height: 1.45; }
+.in-piede { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.in-conta { font-size: 11px; color: var(--tenue, rgba(240, 240, 240, .6)); }
+.in-piede .in-btn { margin-left: auto; }
+.in-lista { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.in-scheda { background: var(--rialzo, #1f1f1f); border: 1px solid var(--linea, rgba(240, 240, 240, .08)); border-radius: var(--r-xl, 12px); padding: 10px 12px; }
+.in-s-nuovo { border-color: rgba(230, 180, 50, .5); }
+.in-s-fallito { border-color: var(--rosso, #e5534b); }
+.in-testa { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; }
+.in-chi { font-weight: 600; color: var(--testo, #f0f0f0); }
+.in-tipo { font-size: 11px; padding: 1px 8px; border-radius: var(--r-pill, 999px); border: 1px solid var(--linea, rgba(240, 240, 240, .2)); color: var(--tenue, rgba(240, 240, 240, .6)); }
+.in-stato { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--testo-2, rgba(240, 240, 240, .78)); }
+.in-quando { font-size: 11px; color: var(--tenue, rgba(240, 240, 240, .6)); }
+.in-testo { margin: 6px 0 0; font-size: 13px; line-height: 1.45; color: var(--testo-2, rgba(240, 240, 240, .78)); white-space: pre-wrap; overflow-wrap: anywhere; }
+.in-apri { font: inherit; font-size: 12px; margin: 6px 0 0; padding: 4px 0; background: none; border: 0; cursor: pointer; color: var(--accento, #599ce7); }
+.in-risposta { margin: 6px 0 0; padding: 8px 10px; border-radius: 8px; background: var(--fondo, #151515); border: 1px solid var(--linea, rgba(240, 240, 240, .12)); }
+.in-fallita { border-color: var(--rosso, #e5534b); }
+.in-risposta pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.5 ui-monospace, Menlo, monospace; color: var(--testo, #f0f0f0); }
+.in-meta { margin: 4px 0; font-size: 11px; color: var(--tenue, rgba(240, 240, 240, .6)); }
+.in-azioni { display: flex; gap: 8px; margin-top: 8px; }
+.in-btn { font: inherit; font-size: 13px; font-weight: 600; min-height: 38px; padding: 7px 16px; border-radius: var(--r-pill, 999px); cursor: pointer;
+  background: transparent; color: var(--testo, #f0f0f0); border: 1px solid var(--linea, rgba(240, 240, 240, .25)); }
+.in-btn:disabled { opacity: .6; cursor: progress; }
+.in-si { background: rgba(70, 180, 110, .2); border-color: rgba(70, 180, 110, .7); }
+.in-no { border-color: rgba(150, 150, 150, .6); }
+.in-btn:focus-visible, .in-apri:focus-visible, .in-risposta pre:focus-visible, .in-modulo select:focus-visible, .in-modulo textarea:focus-visible {
+  outline: 2px solid var(--accento, #599ce7); outline-offset: 2px; }
+.in-errore { margin: 0 0 10px; padding: 8px 12px; border-radius: 8px; font-size: 13px; color: var(--rosso, #e5534b); border: 1px solid var(--rosso, #e5534b); }
+.in-avviso { margin: 0 0 10px; font-size: 12px; color: var(--testo-2, rgba(240, 240, 240, .78)); }
+.in-nota { margin: 6px 0; font-size: 12px; line-height: 1.45; color: var(--tenue, rgba(240, 240, 240, .6)); }
+@media (max-width: 520px) {
+  .in-campi { grid-template-columns: 1fr; }
+  .in-battiti { grid-template-columns: 1fr; }
+}

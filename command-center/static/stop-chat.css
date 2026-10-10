@@ -1,0 +1,5 @@
+/* Il tasto «■ Ferma» della chat (l'utente, 2026-10-04). Va con stop-chat.js: stessa forma del tasto di invio, in rosso. */
+#btn-ferma { background: var(--rosso, #d64545); color: #fff; border: 0; }
+#btn-ferma:hover:not(:disabled) { filter: brightness(1.1); }
+#btn-ferma:disabled { opacity: .6; cursor: progress; }
+#btn-ferma:focus-visible { outline: 2px solid var(--accento, #599ce7); outline-offset: 2px; }

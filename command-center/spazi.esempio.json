@@ -1,0 +1,20 @@
+{
+  "_nota": "Copia questo file in spazi.json e mettici i tuoi spazi. Uno spazio raccoglie progetti; ogni progetto ha una cartella e, se vuoi, un capogruppo (un profilo in <cartella>/.claude/agents/). ~ è la tua casa. Senza spazi.json il pannello usa questo esempio.",
+  "spazi": [
+    {
+      "id": "personale",
+      "nome": "Personale",
+      "memoria": "",
+      "report": "",
+      "progetti": [
+        {
+          "id": "jarvis",
+          "nome": "Jarvis",
+          "cartella": "~/jarvis",
+          "capogruppo": null,
+          "sezioni_memoria": []
+        }
+      ]
+    }
+  ]
+}

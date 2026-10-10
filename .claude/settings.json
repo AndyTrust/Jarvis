@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 strumenti/installa_guidata.py --prova:*)",
+      "Bash(python3 strumenti/collega_memoria.py)",
+      "Bash(python3 strumenti/verifica_installazione.py:*)",
+      "Bash(python3 strumenti/mac.py:*)",
+      "Bash(./installa.sh --prova:*)"
+    ],
+    "deny": [
+      "Read(./.env*)",
+      "Read(~/.env.jarvis)"
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Logo di Jarvis (27/09/2026, dal disegno scelto dall'utente): la J con le quattro onde della voce -->
+  <defs><linearGradient id="fondo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1f2553"/><stop offset="1" stop-color="#141731"/></linearGradient><linearGradient id="bianco" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e8e9f3"/></linearGradient></defs>
+  <rect x="8" y="8" width="1008" height="1008" rx="236" fill="url(#fondo)" stroke="#3a4170" stroke-width="6"/>
+  <g transform="translate(512 512) scale(0.93) translate(-512 -505)">
+    <rect x="160" y="208" width="104" height="224" rx="52" fill="#b4aaf0"/>
+    <rect x="306" y="150" width="104" height="330" rx="52" fill="#14d6c3"/>
+    <rect x="614" y="150" width="104" height="330" rx="52" fill="#14d6c3"/>
+    <rect x="760" y="208" width="104" height="224" rx="52" fill="#b4aaf0"/>
+    <path d="M512 150 V660 Q512 866 322 866 Q196 866 172 742" fill="none" stroke="url(#bianco)" stroke-width="134" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

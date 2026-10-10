@@ -1,0 +1,158 @@
+/* La pagina «Routine» e i comandi rapidi della lavagna (2026-10-05). Va con routine.js. Token di app.css con valori di
+   riserva: segue il tema. A 360 px tutto va a capo, niente scorrimento orizzontale della pagina. */
+.vista-routine.attiva { display: block; padding: 14px; max-width: 980px; }
+.ro-intro { margin: 0 0 10px; }
+.ro-intro-testa { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ro-pagina { font-size: 15px; font-weight: 650; margin: 0 auto 0 0; color: var(--testo, #f0f0f0); }
+.ro-sotto-titolo { margin: 4px 0 2px; font-size: 13px; color: var(--tenue, rgba(240, 240, 240, .6)); }
+.ro-stato { font-size: 12px; color: var(--tenue, rgba(240, 240, 240, .6)); }
+.ro-filtri { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0 0 10px; }
+.ro-filtro { font: inherit; font-size: 12px; min-height: 32px; padding: 4px 12px; border-radius: var(--r-pill, 999px); cursor: pointer;
+  background: transparent; color: var(--testo-2, rgba(240, 240, 240, .78)); border: 1px solid var(--linea-2, rgba(240, 240, 240, .14)); }
+.ro-filtro[aria-pressed="true"] { background: var(--accento-fondo, rgba(89, 156, 231, .14)); border-color: var(--accento-linea, rgba(89, 156, 231, .45)); color: var(--testo, #f0f0f0); }
+.ro-sel-gruppo { font: inherit; font-size: 12px; min-height: 32px; padding: 4px 8px; border-radius: var(--r-lg, 8px); max-width: 100%;
+  background: var(--rialzo, #1f1f1f); color: var(--testo, #f0f0f0); border: 1px solid var(--linea-2, rgba(240, 240, 240, .14)); }
+.ro-lista { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ro-scheda { background: var(--rialzo, #1f1f1f); border: 1px solid var(--linea, rgba(240, 240, 240, .08)); border-radius: var(--r-xl, 12px); padding: 10px 12px; min-width: 0; }
+.ro-spenta { opacity: .78; }
+.ro-testa { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ro-testa .spia { flex: none; }
+.ro-titolo { margin: 0; font-size: 14px; font-weight: 600; color: var(--testo, #f0f0f0); min-width: 0; flex: 1 1 auto; overflow-wrap: anywhere; }
+.ro-dove { margin-left: auto; flex: none; max-width: 45%; font-size: 12px; font-weight: 600; color: var(--testo-2, rgba(240, 240, 240, .78));
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.ro-sotto { margin: 4px 0 0 18px; font-size: 12px; color: var(--testo-2, rgba(240, 240, 240, .78)); display: flex; flex-wrap: wrap; gap: 2px 12px; }
+.ro-nome { color: var(--tenue, rgba(240, 240, 240, .6)); overflow-wrap: anywhere; }
+.ro-fermo { color: var(--tenue, rgba(240, 240, 240, .6)); font-style: italic; }
+.ro-vivo { margin: 2px 0 0 18px; font-size: 12px; }
+.ro-vivo:empty { display: none; }
+.ro-ok { color: var(--verde, #3fa266); }
+.ro-ko { color: var(--rosso, #e34671); }
+.ro-lavora { color: var(--accento, #599ce7); }
+.ro-azioni { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0 18px; }
+.ro-btn { font: inherit; font-size: 12px; font-weight: 600; min-height: 34px; padding: 5px 12px; border-radius: var(--r-pill, 999px); cursor: pointer;
+  background: transparent; color: var(--testo, #f0f0f0); border: 1px solid var(--linea-3, rgba(240, 240, 240, .22)); }
+.ro-btn:disabled { opacity: .5; cursor: not-allowed; }
+.ro-si { background: rgba(70, 180, 110, .18); border-color: rgba(70, 180, 110, .65); }
+.ro-avvia:not(:disabled) { border-color: var(--accento-linea, rgba(89, 156, 231, .45)); }
+.ro-btn:focus-visible, .ro-filtro:focus-visible, .ro-log:focus-visible, .ro-prep pre:focus-visible { outline: 2px solid var(--accento, #599ce7); outline-offset: 2px; }
+.ro-log, .ro-prep pre, .ro-esito pre { margin: 8px 0 0; padding: 8px 10px; max-height: 340px; overflow: auto; white-space: pre-wrap; word-break: break-all;
+  border-radius: var(--r-lg, 8px); background: var(--fondo, #151515); border: 1px solid var(--linea-2, rgba(240, 240, 240, .12));
+  font: 11.5px/1.45 var(--mono, ui-monospace, Menlo, monospace); color: var(--testo, #f0f0f0); }
+.ro-form { margin: 10px 0 0; padding: 10px 12px; border-radius: var(--r-lg, 8px); border: 1px solid var(--linea-2, rgba(240, 240, 240, .14));
+  display: flex; flex-direction: column; gap: 8px; background: var(--rialzo-2, #262626); min-width: 0; }
+.ro-nuova { margin: 0 0 10px; }
+.ro-campo { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--testo-2, rgba(240, 240, 240, .78)); min-width: 0; }
+.ro-campo input, .ro-campo select, .ro-campo textarea { font: inherit; font-size: 13px; padding: 7px 9px; border-radius: var(--r, 6px); min-width: 0; width: 100%; box-sizing: border-box;
+  background: var(--fondo, #151515); color: var(--testo, #f0f0f0); border: 1px solid var(--linea-3, rgba(240, 240, 240, .22)); }
+.ro-campo textarea { font-family: var(--mono, ui-monospace, Menlo, monospace); font-size: 12px; resize: vertical; }
+.ro-campo :disabled { opacity: .55; }
+.ro-et { font-weight: 600; color: var(--testo-2, rgba(240, 240, 240, .78)); }
+.ro-aiuto { color: var(--tenue, rgba(240, 240, 240, .6)); font-size: 11px; }
+.ro-riga2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
+.ro-spunta { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--testo, #f0f0f0); }
+.ro-form .ro-azioni { margin-left: 0; }
+.ro-prep { margin: 10px 0 0; padding: 10px 12px; border-radius: var(--r-lg, 8px); border: 1px solid rgba(230, 180, 50, .6); background: rgba(230, 180, 50, .08); min-width: 0; }
+.ro-prep h4, .ro-esito h4 { margin: 0 0 6px; font-size: 13px; color: var(--testo, #f0f0f0); }
+.ro-riep { margin: 0 0 4px; padding-left: 18px; font-size: 12px; color: var(--testo, #f0f0f0); }
+.ro-prep .ro-azioni, .ro-esito .ro-btn { margin: 8px 0 0; }
+.ro-esito { margin: 10px 0; padding: 10px 12px; border-radius: var(--r-lg, 8px); border: 1px solid currentColor; }
+.ro-errore { margin: 0 0 10px; padding: 8px 12px; border-radius: 8px; font-size: 13px; color: var(--rosso, #e34671); border: 1px solid var(--rosso, #e34671); }
+.ro-nota { margin: 4px 0; font-size: 12px; line-height: 1.45; color: var(--tenue, rgba(240, 240, 240, .6)); list-style: none; }
+.ro-reg summary { cursor: pointer; font-size: 12px; color: var(--tenue, rgba(240, 240, 240, .6)); }
+.ro-registro { margin: 6px 0; padding-left: 0; list-style: none; font-size: 12px; color: var(--testo-2, rgba(240, 240, 240, .78)); }
+.ro-registro li { display: flex; gap: 8px; padding: 2px 0; overflow-wrap: anywhere; }
+.ro-registro .ro-et { flex: none; font-weight: 400; color: var(--tenue, rgba(240, 240, 240, .6)); font-variant-numeric: tabular-nums; }
+
+/* comandi rapidi della lavagna */
+.ro-rapidi { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; position: relative; max-width: 100%; }
+.ro-menu { position: relative; }
+.ro-menu > summary { list-style: none; cursor: pointer; user-select: none; display: inline-flex; align-items: center; min-height: 28px; padding: 3px 10px;
+  border-radius: var(--r, 6px); border: 1px solid var(--linea-2, rgba(240, 240, 240, .14)); font-size: 12px; color: var(--testo, #f0f0f0); }
+.ro-menu > summary::-webkit-details-marker { display: none; }
+.ro-menu[open] > summary { background: var(--attivo, rgba(240, 240, 240, .10)); }
+.ro-menu-lista { position: absolute; z-index: 60; top: calc(100% + 4px); left: 0; min-width: 220px; max-width: min(320px, calc(100vw - 24px));
+  max-height: 60vh; overflow: auto; padding: 6px; border-radius: var(--r-lg, 8px); display: flex; flex-direction: column; gap: 2px;
+  background: var(--rialzo-2, #262626); border: 1px solid var(--linea-3, rgba(240, 240, 240, .22)); box-shadow: 0 8px 24px rgba(0, 0, 0, .35); }
+.ro-voce { font: inherit; font-size: 13px; text-align: left; padding: 7px 10px; min-height: 34px; border-radius: var(--r, 6px); cursor: pointer;
+  background: transparent; border: 0; color: var(--testo, #f0f0f0); text-decoration: none; display: block; }
+.ro-voce:hover, .ro-voce:focus-visible { background: var(--hover, rgba(240, 240, 240, .06)); outline: none; }
+.ro-voce-vuota { color: var(--tenue, rgba(240, 240, 240, .6)); }
+.ro-voce-vuota small { color: var(--accento, #599ce7); }
+.ro-voce-tutti { border-top: 1px solid var(--linea-2, rgba(240, 240, 240, .14)); border-radius: 0 0 var(--r, 6px) var(--r, 6px); font-weight: 600; }
+.ro-voce:disabled { opacity: .5; cursor: not-allowed; }
+#ro-rapidi-stato:empty { display: none; }
+
+/* 2026-10-05 sera: l'effetto della routine (routine-gruppi.json) e gli errori dentro il modulo */
+.ro-eff { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: var(--r-pill, 999px); font-size: 10.5px; font-weight: 600;
+  line-height: 17px; vertical-align: middle; border: 1px solid currentColor; white-space: nowrap; }
+.ro-eff-scrive { color: var(--arancio, #d08770); }
+.ro-eff-invia { color: var(--viola, #9386f2); }
+.ro-eff-ignoto { color: var(--tenue, rgba(240, 240, 240, .6)); }
+.ro-eff-lettura { color: var(--verde, #3fa266); }
+.ro-errore-campo { color: var(--rosso, #e34671); font-size: 12px; font-weight: 600; }
+.ro-campo-ko input, .ro-campo-ko textarea, .ro-campo-ko select { border-color: var(--rosso, #e34671); }
+
+@media (max-width: 520px) {
+  .vista-routine.attiva { padding: 10px; }
+  .ro-testa { flex-wrap: wrap; }
+  .ro-dove { margin-left: 18px; max-width: 100%; white-space: normal; flex: 1 1 100%; }
+  .ro-sotto, .ro-vivo, .ro-azioni { margin-left: 0; }
+  .ro-btn { flex: 1 1 auto; }
+  .ro-menu-lista { position: fixed; left: 12px; right: 12px; top: auto; max-width: none; }
+}
+
+/* 2026-10-05 pomeriggio: l'editor come le attività pianificate di Claude Code (frequenza, fasce, giorni, periodo, regola) */
+.ro-quando { border: 1px solid var(--linea-2, rgba(240, 240, 240, .14)); border-radius: var(--r-lg, 8px); padding: 8px 10px 10px; margin: 0;
+  display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.ro-quando legend { font-size: 12px; font-weight: 600; color: var(--testo-2, rgba(240, 240, 240, .78)); padding: 0 4px; }
+.ro-freq { display: flex; flex-wrap: wrap; gap: 4px 6px; }
+.ro-radio { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 4px 10px; border-radius: var(--r-pill, 999px);
+  border: 1px solid var(--linea-2, rgba(240, 240, 240, .14)); font-size: 13px; color: var(--testo, #f0f0f0); cursor: pointer; }
+.ro-radio:has(input:checked) { background: var(--accento-fondo, rgba(89, 156, 231, .14)); border-color: var(--accento-linea, rgba(89, 156, 231, .45)); }
+.ro-radio input { margin: 0; accent-color: var(--accento, #599ce7); }
+.ro-inline, .ro-fasce { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 13px; color: var(--testo, #f0f0f0); }
+.ro-fasce > .ro-et { min-width: 88px; font-size: 12px; }
+.ro-fascia { display: inline-flex; align-items: center; gap: 4px; }
+.ro-quando input[type="time"], .ro-quando input[type="date"], .ro-quando select, .ro-inline select { font: inherit; font-size: 13px; padding: 5px 7px; min-height: 34px;
+  border-radius: var(--r, 6px); background: var(--fondo, #151515); color: var(--testo, #f0f0f0); border: 1px solid var(--linea-3, rgba(240, 240, 240, .22)); color-scheme: dark; }
+.ro-x { font: inherit; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--linea-2, rgba(240, 240, 240, .14)); background: transparent;
+  color: var(--tenue, rgba(240, 240, 240, .6)); cursor: pointer; }
+.ro-piccolo { min-height: 30px; padding: 3px 10px; }
+.ro-giorni { display: flex; flex-wrap: wrap; gap: 4px; }
+.ro-giorno { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 3px 9px; border-radius: var(--r, 6px); font-size: 12px;
+  border: 1px solid var(--linea-2, rgba(240, 240, 240, .14)); cursor: pointer; color: var(--testo, #f0f0f0); }
+.ro-giorno:has(input:checked) { background: var(--accento-fondo, rgba(89, 156, 231, .14)); border-color: var(--accento-linea, rgba(89, 156, 231, .45)); }
+.ro-anteprima { padding: 8px 10px; border-radius: var(--r-lg, 8px); background: var(--fondo, #151515); font-size: 13px; color: var(--testo, #f0f0f0);
+  display: flex; flex-direction: column; gap: 2px; border: 1px dashed var(--linea-3, rgba(240, 240, 240, .22)); }
+.ro-anteprima b { font-weight: 600; }
+.ro-prossime { color: var(--testo-2, rgba(240, 240, 240, .78)); font-variant-numeric: tabular-nums; }
+.ro-avviso { color: var(--giallo, #e5b454); }
+.ro-avviso-ed { margin: 0; font-size: 13px; color: var(--giallo, #e5b454); }
+.ro-script { padding: 10px 12px; border-radius: var(--r-lg, 8px); border: 1px solid var(--linea-3, rgba(240, 240, 240, .22)); min-width: 0; }
+.ro-script h4 { margin: 0 0 6px; font-size: 13px; color: var(--testo, #f0f0f0); overflow-wrap: anywhere; }
+.ro-script-attento { border-color: var(--rosso, #e34671); background: rgba(227, 70, 113, .06); }
+.ro-script summary, .ro-avanzato summary { cursor: pointer; font-size: 12px; color: var(--testo-2, rgba(240, 240, 240, .78)); margin: 4px 0; }
+.ro-script pre, .ro-esito pre { margin: 6px 0 0; padding: 8px 10px; max-height: 320px; overflow: auto; white-space: pre-wrap; word-break: break-all;
+  border-radius: var(--r-lg, 8px); background: var(--fondo, #151515); border: 1px solid var(--linea-2, rgba(240, 240, 240, .12));
+  font: 11.5px/1.45 var(--mono, ui-monospace, Menlo, monospace); color: var(--testo, #f0f0f0); }
+.ro-avanzato { border-top: 1px solid var(--linea-2, rgba(240, 240, 240, .14)); padding-top: 6px; display: flex; flex-direction: column; gap: 8px; }
+.ro-avanzato[open] > .ro-campo { margin-top: 6px; }
+.ro-editor .ro-esito { margin: 4px 0 0; }
+@media (max-width: 520px) {
+  .ro-radio { flex: 1 1 calc(50% - 6px); }
+  .ro-fasce > .ro-et { min-width: 100%; }
+  .ro-quando input[type="date"] { flex: 1 1 120px; min-width: 0; }
+}
+
+/* 2026-10-05 (verificatore): sul telefono ogni cosa che si tocca è alta almeno 40 px */
+@media (max-width: 820px) {
+  .ro-btn, .ro-filtro, .ro-sel-gruppo, .ro-radio, .ro-giorno, .ro-voce, .ro-menu > summary,
+  .ro-reg summary, .ro-script summary, .ro-avanzato summary, .ro-esito summary,
+  .ro-quando input[type="time"], .ro-quando input[type="date"], .ro-quando select, .ro-inline select,
+  .ro-campo input, .ro-campo select { min-height: 40px; }
+  .ro-reg summary, .ro-script summary, .ro-avanzato summary, .ro-esito summary { display: flex; align-items: center; }
+  .ro-x { width: 40px; height: 40px; }
+  .ro-piccolo { min-height: 40px; }
+  .ro-spunta { min-height: 40px; }
+  .ro-spunta input { width: 22px; height: 22px; }
+}

@@ -1,0 +1,1346 @@
+/* Command Center di Jarvis — stile un'app esterna (24/09/2026).
+   I colori vengono dal tema scuro di un'app esterna.app (Resources/app.asar,
+   index-*.css): chrome #141414, pannelli #181818, testo #F0F0F0 con le
+   trasparenze, accento #599CE7, raggi 6/8/12 px, testo 13 px. */
+:root {
+  --chrome: #141414;
+  --fondo: #181818;
+  --rialzo: #1f1f1f;
+  --rialzo-2: #262626;
+  --testo: #f0f0f0;
+  --testo-2: rgba(240, 240, 240, .72);
+  --tenue: rgba(240, 240, 240, .48);
+  --linea: rgba(240, 240, 240, .08);
+  --linea-2: rgba(240, 240, 240, .14);
+  --linea-3: rgba(240, 240, 240, .22);
+  --hover: rgba(240, 240, 240, .06);
+  --attivo: rgba(240, 240, 240, .10);
+  --accento: #599ce7;
+  --accento-fondo: rgba(89, 156, 231, .14);
+  --accento-linea: rgba(89, 156, 231, .45);
+  --verde: #3fa266;
+  --giallo: #e5b454;
+  --rosso: #e34671;
+  --viola: #9386f2;
+  --arancio: #d08770;
+  --grigio: #5a5a5a;
+  --r-sm: 4px; --r: 6px; --r-lg: 8px; --r-xl: 12px; --r-pill: 9999px;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --dolce: cubic-bezier(.2, .8, .2, 1);
+  --lato: 272px;
+  --destra: 420px;
+  color-scheme: dark;
+  font-synthesis: none;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--chrome); color: var(--testo);
+  font: 13px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased; overflow: hidden;
+}
+::selection { background: rgba(89, 156, 231, .4); }
+* { scrollbar-width: thin; scrollbar-color: var(--linea-2) transparent; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.nascosto { display: none !important; }
+
+h2 { font-size: 13px; font-weight: 600; margin: 0 0 10px; color: var(--testo); }
+h3 { font-size: 12px; font-weight: 600; margin: 14px 0 6px; color: var(--testo-2); }
+h2 small, h3 small { color: var(--tenue); font-weight: 400; margin-left: 4px; }
+
+button {
+  background: var(--rialzo); color: var(--testo); border: 1px solid var(--linea-2);
+  border-radius: var(--r); padding: 6px 11px; font: inherit; cursor: pointer;
+  transition: background .15s var(--dolce), border-color .2s, box-shadow .3s var(--dolce), transform .1s, opacity .15s;
+}
+button:hover { background: var(--rialzo-2); border-color: var(--linea-3); }
+button:active { transform: scale(.98); }
+button:disabled { opacity: .45; cursor: default; transform: none; box-shadow: none; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible,
+.agente:focus-visible { outline: 2px solid var(--accento); outline-offset: 1px; }
+button.primario { background: var(--testo); color: #111; border-color: var(--testo); font-weight: 600; }
+/* i pulsanti principali si illuminano al passaggio (mockup 26/09/2026, idea 4) */
+button.primario:not(:disabled):hover { background: #fff; box-shadow: 0 0 0 3px rgba(89, 156, 231, .28), 0 0 22px rgba(89, 156, 231, .45); }
+button.piccolo { padding: 3px 9px; font-size: 12px; }
+button.pericolo:not(:disabled):hover { border-color: var(--rosso); color: var(--rosso); }
+.icona { background: transparent; border-color: transparent; padding: 4px 8px; color: var(--testo-2); }
+.icona:hover { background: var(--hover); border-color: transparent; color: var(--testo); }
+input, select, textarea {
+  background: var(--chrome); color: var(--testo); border: 1px solid var(--linea-2); border-radius: var(--r);
+  padding: 6px 9px; font: inherit; min-width: 0; transition: border-color .15s;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accento-linea); }
+textarea { resize: vertical; }
+code { font-family: var(--mono); font-size: 12px; }
+
+.pallino { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--grigio); vertical-align: middle; flex: none; }
+.pallino.verde { background: var(--verde); box-shadow: 0 0 0 3px rgba(63, 162, 102, .18); }
+.pallino.giallo { background: var(--giallo); box-shadow: 0 0 0 3px rgba(229, 180, 84, .18); }
+.pallino.rosso { background: var(--rosso); box-shadow: 0 0 0 3px rgba(227, 70, 113, .18); }
+.pallino.grigio { background: var(--grigio); box-shadow: none; }
+
+/* ======================================================= le tre colonne */
+.app { display: grid; grid-template-columns: var(--lato) minmax(0, 1fr) var(--destra); height: 100vh; height: 100dvh; }
+.app.senza-destra { grid-template-columns: var(--lato) minmax(0, 1fr) 0; }
+.app.senza-destra .destra { visibility: hidden; }
+
+/* ------------------------------------------------------- sinistra */
+.lato { background: var(--chrome); border-right: 1px solid var(--linea); display: flex; flex-direction: column; min-height: 0; padding: 10px 8px; gap: 8px; }
+.lato-testa { display: flex; align-items: center; gap: 4px; padding: 2px 4px 4px; }
+.logo { display: flex; align-items: center; gap: 9px; margin-right: auto; }
+.logo b { font-size: 14px; letter-spacing: .02em; }
+/* il logo di Jarvis (27/09/2026): la J con le onde; in modo tecnico prende il bordo arancione che aveva l'anello */
+.logo-img { width: 22px; height: 22px; display: block; border-radius: 6px; }
+.logo-nome { display: inline-block; }
+.logo-nome::first-letter { color: #8fa8f0; }
+body.modo-tecnico .logo-img { outline: 2px solid var(--arancio); outline-offset: 1px; }
+.anello { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--testo); position: relative; }
+.anello::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--testo); transition: background .3s; }
+body.modo-tecnico .anello { border-color: var(--arancio); }
+body.modo-tecnico .anello::after { background: var(--arancio); }
+.nuova-chat { display: flex; align-items: center; gap: 8px; width: 100%; background: transparent; border-color: var(--linea-2); text-align: left; padding: 7px 10px; }
+.nuova-chat span { color: var(--tenue); }
+
+/* Selettore di motore (26/09/2026): stessa lista in sidebar e nella bolla del widget desktop. */
+.motore { padding: 2px 4px 8px; }
+.motore-titolo { display: block; font-size: 11px; color: var(--tenue); padding: 2px 6px 4px; }
+.motore-elenco { display: flex; flex-direction: column; gap: 2px; }
+.motore-voce { display: flex; align-items: center; gap: 8px; width: 100%; background: transparent; border-color: transparent;
+  text-align: left; padding: 5px 8px; border-radius: var(--r); font-size: 13px; color: var(--testo-2); }
+.motore-voce:hover:not(:disabled) { background: var(--hover); color: var(--testo); }
+.motore-voce.attivo { background: var(--attivo); color: var(--testo); }
+.motore-voce:disabled { opacity: .5; cursor: default; }
+.motore-voce small { margin-left: auto; color: var(--tenue); font-size: 10px; }
+.cerca { display: flex; align-items: center; gap: 6px; padding: 0 8px; border: 1px solid transparent; border-radius: var(--r); background: var(--hover); }
+.cerca:focus-within { border-color: var(--accento-linea); }
+.cerca span { color: var(--tenue); }
+.cerca input { border: 0; background: transparent; padding: 6px 0; flex: 1; }
+.cerca input:focus { outline: none; }
+
+.gruppi { flex: 1; min-height: 0; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
+.gruppo { margin-bottom: 4px; border-radius: var(--r-lg); transition: background .15s; }
+.gruppo.sopra { background: var(--accento-fondo); }
+.gruppo-testa { display: flex; align-items: center; gap: 6px; padding: 5px 6px; border-radius: var(--r); cursor: pointer; user-select: none; color: var(--tenue); font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.gruppo-testa:hover { background: var(--hover); color: var(--testo-2); }
+.gruppo-testa .freccia { width: 10px; transition: transform .2s var(--dolce); font-size: 9px; }
+.gruppo.chiuso .freccia { transform: rotate(-90deg); }
+.gruppo-testa .nome-gruppo { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gruppo-testa .nome-gruppo[contenteditable="true"] { text-transform: none; color: var(--testo); background: var(--chrome); outline: 1px solid var(--accento-linea); border-radius: var(--r-sm); padding: 0 4px; cursor: text; }
+.gruppo-testa .quanti { font-weight: 400; }
+.gruppo-testa .azione-g { opacity: 0; padding: 0 5px; font-size: 12px; transition: opacity .15s; }
+.gruppo-testa:hover .azione-g, .gruppo-testa:focus-within .azione-g { opacity: 1; }
+.gruppo-corpo { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .25s var(--dolce), opacity .2s; }
+.gruppo.chiuso .gruppo-corpo { grid-template-rows: 0fr; opacity: 0; }
+.gruppo-lista { overflow: hidden; min-height: 0; padding: 1px 0 3px; }
+.gruppo-lista .vuoto-gruppo { margin: 2px 6px 6px 22px; padding: 6px 8px; border: 1px dashed var(--linea-2); border-radius: var(--r); color: var(--tenue); font-size: 11px; }
+.sotto-progetto { padding: 4px 8px 2px 22px; color: var(--tenue); font-size: 11px; }
+
+.agente {
+  --c: var(--accento);
+  display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 10px;   /* avatar da 40 px (26/09/2026) */
+  padding: 5px 6px 5px 8px; margin: 1px 0; border-radius: var(--r); cursor: pointer; user-select: none;
+  position: relative; transition: background .15s, transform .2s var(--dolce), opacity .2s;
+}
+.agente::before { content: ""; position: absolute; left: 0; top: 7px; bottom: 7px; width: 2px; border-radius: 2px; background: var(--c); opacity: .75; }
+.agente:hover { background: var(--hover); }
+.agente.scelto { background: var(--attivo); }
+.agente.trascinato { opacity: .35; }
+.agente.inserisci-sopra { box-shadow: 0 -2px 0 var(--accento) inset, 0 -2px 0 var(--accento); }
+.agente .avatar { width: 40px; height: 40px; font-size: 18px; }
+.agente .testo { min-width: 0; }
+.agente .testo b { display: block; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agente .testo small { display: block; color: var(--tenue); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agente .mod { font: 10px var(--mono); color: var(--tenue); }
+.avatar {
+  display: grid; place-items: center; border-radius: 50%; flex: none; position: relative; overflow: hidden;
+  background: color-mix(in srgb, var(--c, var(--accento)) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c, var(--accento)) 40%, transparent);
+  width: 40px; height: 40px; font-size: 18px; line-height: 1;
+}
+.avatar.grande { width: 72px; height: 72px; font-size: 32px; }
+/* il volto «beam» è un quadrato: tondo anche lui, così l'anello di chi lavora gli gira attorno */
+.avatar svg { display: block; border-radius: 50%; }
+.avatar-j { --c: #f0f0f0; font-weight: 600; color: var(--testo); }
+/* al lavoro adesso: si illumina, stesso badge ovunque appaia l'avatar (sinistra, lavagna, scheda, catena) */
+[data-agente].attivo .avatar::after, .avatar.al-lavoro::after {
+  content: ""; position: absolute; right: -2px; bottom: -2px; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--verde); border: 2px solid var(--chrome);
+  animation: polso-attivo 1.6s infinite;
+}
+@keyframes polso-attivo {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(63, 162, 102, .35); }
+  50% { box-shadow: 0 0 0 5px rgba(63, 162, 102, .12); }
+}
+
+.lato-azioni { display: flex; gap: 6px; }
+.lato-azioni button { flex: 1; background: transparent; }
+.piede { display: flex; justify-content: space-between; gap: 8px; padding: 8px 6px 2px; border-top: 1px solid var(--linea); color: var(--tenue); font-size: 11px; }
+.piede b { color: var(--testo-2); font-weight: 500; }
+
+/* ------------------------------------------------------- centro */
+.centro { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--fondo); }
+.barra { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-bottom: 1px solid var(--linea); min-height: 44px; }
+.schede { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; flex: 1; min-width: 0; }
+.schede::-webkit-scrollbar { display: none; }
+.schede a, .schede button {
+  display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: var(--r);   /* 11 schede con la spia: più strette (26/09/2026) */
+  color: var(--tenue); text-decoration: none; white-space: nowrap; border: 1px solid transparent;
+  background: transparent; font-size: 13px; transition: color .15s, background .15s;
+}
+.schede a:hover, .schede button:hover { color: var(--testo); background: var(--hover); }
+.schede a.attiva, .schede button.attiva { color: var(--testo); background: var(--attivo); }
+.schede a.tecnico { color: color-mix(in srgb, var(--arancio) 70%, transparent); }
+.schede a.tecnico.attiva { color: var(--arancio); background: rgba(208, 135, 112, .14); }
+.conta { min-width: 18px; padding: 0 5px; border-radius: var(--r-pill); font-size: 10px; text-align: center; background: var(--accento-fondo); color: var(--accento); font-weight: 600; }
+.conta:empty { display: none; }
+.stato-generale { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--tenue); max-width: 260px; min-width: 0; }
+#testo-generale { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.orologio { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.15; }
+.orologio b { font: 500 13px var(--mono); color: var(--testo); }
+.orologio small { color: var(--tenue); font-size: 10px; white-space: nowrap; }
+.solo-stretto { display: none; }
+
+.avviso { margin: 10px 14px 0; padding: 9px 12px; border: 1px solid rgba(229, 180, 84, .4); background: rgba(229, 180, 84, .07); border-radius: var(--r-lg); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+main { flex: 1; min-height: 0; overflow-y: auto; position: relative; }
+.vista { display: none; }
+.vista.attiva { display: grid; gap: 12px; padding: 14px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); align-items: start; animation: entra .22s var(--dolce); }
+@keyframes entra { from { opacity: 0; transform: translateY(6px); } }
+.vista[data-vista="missioni"].attiva, .vista[data-vista="server"].attiva { grid-template-columns: minmax(0, 1fr); }
+/* Catena · Lavori (una scheda sola dal 26/09/2026): in alto chi lavora e le chiavi, poi i
+   lavori col dettaglio a tutta larghezza, poi gli spazi, sotto sessioni e scadenze */
+.vista[data-vista="agenti"].attiva { grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); }
+.blocco-lavori { grid-column: 1 / -1; display: grid; gap: 12px; align-items: start; min-width: 0; scroll-margin-top: 14px;
+  grid-template-columns: minmax(300px, 1fr) minmax(0, 1fr); }
+/* la lista a sinistra, il risultato protagonista a destra quando un lavoro è scelto */
+.blocco-lavori.con-scelto { grid-template-columns: minmax(300px, 400px) minmax(0, 1fr); }
+.blocco-lavori.ris-intero { grid-template-columns: minmax(0, 1fr); }
+.blocco-lavori.ris-intero .lavori { display: none; }
+
+.pannello { background: var(--rialzo); border: 1px solid var(--linea); border-radius: var(--r-xl); padding: 14px; min-width: 0; }
+.pannello.largo { grid-column: 1 / -1; }
+.griglia-stato { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr) minmax(300px, 1fr); grid-column: 1 / -1; }
+.riquadro { width: 100%; height: 520px; border: 1px solid var(--linea); border-radius: var(--r-lg); background: var(--chrome); display: block; }
+.riquadro.alto { height: 440px; margin-bottom: 10px; }
+
+/* ------------------------------------------------------- chat */
+.vista-chat.attiva { display: flex; flex-direction: column; align-items: stretch; padding: 0; height: 100%; gap: 0; }
+.chat-testa { display: flex; align-items: center; gap: 10px; padding: 10px 18px; border-bottom: 1px solid var(--linea); }
+.interlocutore { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.interlocutore > div { min-width: 0; }
+.interlocutore b { display: block; font-size: 14px; }
+.interlocutore small { display: block; color: var(--tenue); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-strumenti { display: flex; align-items: center; gap: 8px; }
+/* interruttore lavoro | lettura (26/09/2026): verde quando lavora davvero, grigio quando legge e basta */
+.modo-chat { display: inline-flex; padding: 2px; gap: 2px; border: 1px solid var(--linea-2); border-radius: var(--r-pill); background: var(--chrome); }
+.modo-chat button { border: 0; background: transparent; color: var(--tenue); padding: 3px 11px; border-radius: var(--r-pill); font-size: 11px; }
+.modo-chat button:hover:not(:disabled) { color: var(--testo); background: var(--hover); }
+.modo-chat button.attivo { color: var(--testo); background: var(--rialzo-2); }
+.modo-chat button[data-modo="lavoro"].attivo { color: #bff0d0; background: rgba(63, 162, 102, .22); box-shadow: 0 0 10px rgba(63, 162, 102, .25); }
+.chat-testa .avatar { width: 72px; height: 72px; font-size: 30px; }
+
+.messaggi { flex: 1; min-height: 0; overflow-y: auto; padding: 22px max(18px, calc((100% - 760px) / 2)) 12px; display: flex; flex-direction: column; gap: 16px; scroll-behavior: smooth; }
+.benvenuto { margin: auto; text-align: center; color: var(--tenue); max-width: 440px; animation: entra .4s var(--dolce); }
+.benvenuto b { display: block; color: var(--testo); font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+.benvenuto .spunti { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 16px; }
+.benvenuto .spunti button { border-radius: var(--r-pill); background: transparent; font-size: 12px; color: var(--testo-2); }
+.msg { display: flex; gap: 10px; max-width: 100%; animation: entra .25s var(--dolce); }
+.msg .avatar { width: 26px; height: 26px; font-size: 13px; margin-top: 2px; }
+.msg .corpo { min-width: 0; flex: 1; }
+.msg .chi { font-size: 11px; color: var(--tenue); margin-bottom: 3px; display: flex; gap: 8px; align-items: center; }
+.msg .chi .azioni-msg { opacity: 0; transition: opacity .15s; display: inline-flex; gap: 2px; }
+.msg:hover .chi .azioni-msg, .msg:focus-within .chi .azioni-msg { opacity: 1; }
+.msg .chi .azioni-msg button { padding: 0 6px; font-size: 11px; }
+.msg .testo { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.6; color: var(--testo); }
+.msg .testo[contenteditable="true"] { outline: 1px solid var(--accento-linea); border-radius: var(--r); padding: 4px 6px; background: var(--chrome); }
+.msg .testo pre { background: var(--chrome); border: 1px solid var(--linea); border-radius: var(--r-lg); padding: 10px; overflow-x: auto; font: 12px/1.5 var(--mono); white-space: pre; }
+.msg .testo code { background: var(--hover); padding: 1px 4px; border-radius: var(--r-sm); }
+.msg .testo pre code { background: none; padding: 0; }
+.msg.mio { flex-direction: row-reverse; }
+.msg.mio .corpo { flex: 0 1 auto; max-width: 78%; }
+.msg.mio .chi { justify-content: flex-end; }
+.msg.mio .testo { background: var(--rialzo-2); border-radius: 16px 16px 4px 16px; padding: 8px 13px; }
+.msg.mio .avatar { display: none; }
+.msg.errore .testo { color: var(--rosso); }
+.msg.comando .testo { font: 12px/1.55 var(--mono); background: var(--chrome); border: 1px solid var(--linea); border-radius: var(--r-lg); padding: 10px 12px; max-height: 420px; overflow: auto; white-space: pre-wrap; }
+.pensa { display: inline-flex; gap: 4px; padding: 6px 0; }
+.pensa i { width: 6px; height: 6px; border-radius: 50%; background: var(--tenue); animation: salta 1.2s infinite ease-in-out; }
+.pensa i:nth-child(2) { animation-delay: .15s; }
+.pensa i:nth-child(3) { animation-delay: .3s; }
+@keyframes salta { 0%, 80%, 100% { opacity: .3; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
+.durata { font: 11px var(--mono); color: var(--tenue); }
+
+.compositore { padding: 8px max(18px, calc((100% - 760px) / 2)) 14px; position: relative; }
+.comandi-diretti { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+.comandi-diretti button { font: 12px var(--mono); padding: 3px 10px; border-radius: var(--r-pill); background: transparent; color: var(--testo-2); }
+.comandi-diretti button:not(:disabled):hover { color: var(--testo); border-color: rgba(89, 156, 231, .75); background: var(--accento-fondo);
+  box-shadow: 0 0 0 1px rgba(89, 156, 231, .2), 0 0 16px rgba(89, 156, 231, .35); }
+.pillola { display: flex; align-items: flex-end; gap: 8px; background: var(--rialzo); border: 1px solid var(--linea-2); border-radius: 22px; padding: 7px 7px 7px 16px; transition: border-color .2s, box-shadow .2s; }
+.pillola:focus-within { border-color: var(--linea-3); box-shadow: 0 0 0 4px rgba(240, 240, 240, .04); }
+.pillola textarea { flex: 1; border: 0; background: transparent; resize: none; padding: 7px 0; max-height: 200px; font-size: 14px; line-height: 1.45; }
+.pillola textarea:focus { outline: none; }
+.invia { width: 34px; height: 34px; border-radius: 50%; padding: 0; background: var(--testo); color: #111; border: 0; font-size: 16px; font-weight: 700; flex: none; }
+.invia:hover { background: #fff; }
+.invia:disabled { background: var(--linea-3); color: var(--tenue); }
+.nota-compositore { display: block; text-align: center; color: var(--tenue); font-size: 11px; margin-top: 6px; }
+.suggerimenti { position: absolute; left: max(18px, calc((100% - 760px) / 2)); right: max(18px, calc((100% - 760px) / 2)); bottom: calc(100% - 34px); background: var(--rialzo-2); border: 1px solid var(--linea-2); border-radius: var(--r-lg); padding: 4px; box-shadow: 0 12px 32px rgba(0, 0, 0, .45); z-index: 4; animation: entra .15s var(--dolce); }
+.suggerimenti button { display: flex; width: 100%; gap: 10px; text-align: left; background: transparent; border: 0; padding: 7px 9px; }
+.suggerimenti button b { font: 12px var(--mono); min-width: 80px; }
+.suggerimenti button small { color: var(--tenue); }
+.suggerimenti button.scelto, .suggerimenti button:hover { background: var(--attivo); }
+
+/* ------------------------------------------------------- destra */
+.destra { background: var(--chrome); border-left: 1px solid var(--linea); display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
+.destra-testa { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-bottom: 1px solid var(--linea); min-height: 44px; }
+.pannello-destra { display: none; flex: 1; min-height: 0; flex-direction: column; gap: 8px; padding: 8px; }
+.pannello-destra.attivo { display: flex; animation: entra .2s var(--dolce); }
+
+.lavagna-barra { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.lavagna-barra button { background: transparent; }
+.lav-titolo:not(:empty) { margin-right: 6px; padding: 3px 10px; border-radius: var(--r-pill); background: var(--accento-fondo); color: var(--accento); font-size: 12px; }
+.lav-stato { margin-left: auto; color: var(--tenue); font-size: 11px; }
+.lavagna {
+  flex: 1; min-height: 0; position: relative; overflow: hidden; border: 1px solid var(--linea); border-radius: var(--r-lg);
+  background-color: var(--fondo);
+  background-image: radial-gradient(circle, rgba(240, 240, 240, .09) 1px, transparent 1.2px);
+  background-size: 18px 18px; cursor: grab; touch-action: none;
+}
+.lavagna.sopra { border-color: var(--accento-linea); background-color: #1b1f26; }
+.lavagna.muove { cursor: grabbing; }
+.lavagna:focus { outline: none; }
+.lav-mondo { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; }
+.lav-fili { position: absolute; left: 0; top: 0; width: 4000px; height: 4000px; overflow: visible; pointer-events: none; }
+.lav-fili path { fill: none; stroke: var(--linea-3); stroke-width: 1.6; pointer-events: stroke; cursor: pointer; transition: stroke .15s; marker-end: url(#freccia); }
+.lav-fili path:hover { stroke: var(--testo-2); }
+.lav-fili path.scelto { stroke: var(--accento); stroke-width: 2.2; }
+.lav-fili path.filo-presa { stroke: transparent; stroke-width: 16; marker-end: none; stroke-linecap: round; }
+.lav-fili path.filo.sopra { stroke: var(--testo-2); stroke-width: 2.4; }
+.lav-fili path.guida { stroke: var(--accento); stroke-width: 1; stroke-dasharray: 4 4; marker-end: none; pointer-events: none; opacity: .8; }
+.lav-x-filo {
+  position: absolute; width: 24px; height: 24px; margin: -12px 0 0 -12px; padding: 0; border-radius: 50%; z-index: 4;
+  background: var(--rosso); color: #fff; border: 2px solid var(--fondo); font-size: 12px; line-height: 1; cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .45); transform: scale(calc(var(--inv, 1)));
+}
+.lav-x-filo:hover { filter: brightness(1.15); }
+.lav-fili path.provvisorio { stroke: var(--accento); stroke-dasharray: 5 4; pointer-events: none; }
+.lav-fili marker path { fill: var(--linea-3); stroke: none; }
+.lav-vuota { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; color: var(--tenue); font-size: 12px; pointer-events: none; padding: 20px; line-height: 1.7; }
+.nodo {
+  --c: var(--accento);
+  position: absolute; width: 192px; padding: 8px 10px; border-radius: var(--r-lg);
+  background: var(--rialzo); border: 1px solid color-mix(in srgb, var(--c) 35%, var(--linea)); color: var(--testo);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .35); cursor: grab; user-select: none;
+  display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; align-items: center;
+  transition: box-shadow .2s, border-color .2s;
+}
+.nodo:hover { border-color: color-mix(in srgb, var(--c) 60%, var(--linea)); }
+.nodo.scelto { box-shadow: 0 0 0 2px var(--accento), 0 8px 22px rgba(0, 0, 0, .45); }
+.nodo.trascina { cursor: grabbing; box-shadow: 0 14px 30px rgba(0, 0, 0, .5); z-index: 3; }
+.nodo.bersaglio { box-shadow: 0 0 0 2px var(--verde), 0 8px 22px rgba(0, 0, 0, .45); }
+.nodo .testo { min-width: 0; }
+.nodo b { display: block; font-weight: 500; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nodo small { display: block; color: var(--tenue); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nodo.nota { grid-template-columns: 1fr; background: #2a2618; border-color: rgba(229, 180, 84, .35); }
+.nodo.nota .testo-nota { font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; min-height: 18px; cursor: text; }
+.nodo.nota .testo-nota[contenteditable="true"] { outline: none; }
+.porta {
+  position: absolute; right: -7px; top: 50%; width: 13px; height: 13px; margin-top: -6.5px; border-radius: 50%;
+  background: var(--fondo); border: 2px solid var(--linea-3); cursor: crosshair; transition: transform .15s, border-color .15s, background .15s;
+}
+.nodo:hover .porta { border-color: var(--accento); }
+.porta:hover { transform: scale(1.3); background: var(--accento); }
+
+/* desktop della VPS (tunnel SSH + noVNC sul Mac) */
+.vps-barra { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.vps-testo { flex: 1; min-width: 0; color: var(--testo-2); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vps-barra button:not(.primario) { background: transparent; }
+.vps-frame { flex: 1; min-height: 0; width: 100%; border: 1px solid var(--linea); border-radius: var(--r-lg); background: #000; }
+.vps-vuoto { flex: 1; display: grid; place-content: center; gap: 6px; text-align: center; color: var(--tenue); font-size: 12px; padding: 20px; border: 1px dashed var(--linea-2); border-radius: var(--r-lg); }
+.vps-vuoto b { color: var(--testo); font-size: 15px; font-weight: 600; }
+.app.destra-intera .vps-frame { border-radius: var(--r); }
+.pannello-destra .nota { min-height: 0; margin: 0; }
+
+/* terminale (ttyd sul Mac su socket UNIX, dietro il pannello) */
+.term-barra { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.term-barra button:not(.primario) { background: transparent; }
+.segmenti { display: inline-flex; padding: 2px; gap: 2px; border: 1px solid var(--linea-2); border-radius: var(--r-lg); background: var(--fondo); }
+.segmenti button { border: 0; border-radius: var(--r); padding: 3px 12px; font-size: 12px; color: var(--tenue); background: transparent; display: inline-flex; gap: 7px; align-items: center; }
+.segmenti button:hover { color: var(--testo); background: var(--hover); }
+.segmenti button.attivo { color: var(--testo); background: var(--rialzo-2); box-shadow: 0 1px 3px rgba(0, 0, 0, .3); }
+.segmenti .pallino { width: 7px; height: 7px; }
+.term-testo { flex: 1; min-width: 0; color: var(--testo-2); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.term-schermo { flex: 1; min-height: 0; position: relative; display: flex; }
+.term-frame { flex: 1; min-height: 0; width: 100%; border: 1px solid var(--linea); border-radius: var(--r-lg); background: #141414; }
+.term-vuoto { gap: 8px; }
+.term-vuoto code { background: var(--hover); padding: 1px 5px; border-radius: var(--r-sm); color: var(--testo-2); }
+.term-vuoto button { justify-self: center; margin-top: 8px; }
+.term-prompt { font: 600 30px var(--mono); color: var(--accento); opacity: .8; margin-bottom: 4px; }
+.app.destra-intera .term-frame { border-radius: var(--r); }
+/* terminale accanto alla chat: la colonna destra si allarga e ospita la shell */
+.app.con-terminale { grid-template-columns: var(--lato) minmax(360px, 1fr) minmax(460px, 1.15fr); }
+.app.con-terminale .destra { visibility: visible; }
+.chat-strumenti .interruttore-term { display: inline-flex; gap: 6px; align-items: center; background: transparent; }
+.icona-term { font: 600 11px var(--mono); color: var(--accento); }
+.chat-strumenti .interruttore-term.attivo { background: var(--accento-fondo); border-color: var(--accento-linea); color: var(--testo); }
+
+/* ------------------------------------------------------- scheda agente */
+dialog.scheda-agente { background: var(--rialzo); color: var(--testo); border: 1px solid var(--linea-2); border-radius: var(--r-xl); padding: 0; width: min(440px, calc(100vw - 32px)); box-shadow: 0 30px 80px rgba(0, 0, 0, .6); }
+dialog.scheda-agente[open] { animation: sale .22s var(--dolce); }
+dialog::backdrop { background: rgba(0, 0, 0, .55); backdrop-filter: blur(2px); }
+@keyframes sale { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+.scheda-agente form { padding: 16px; display: grid; gap: 10px; }
+.scheda-agente header { display: flex; gap: 12px; align-items: center; }
+.scheda-agente header div { flex: 1; min-width: 0; }
+.scheda-agente header b { display: block; font-size: 15px; }
+.scheda-agente header small { color: var(--tenue); font-size: 11px; }
+.scheda-agente h3 { margin: 4px 0 0; }
+#sg-nome { display: block; width: 100%; font-size: 15px; font-weight: 600; background: transparent; border: 1px solid transparent; border-radius: var(--r); padding: 2px 4px; margin: -2px 0 0 -4px; color: inherit; font-family: inherit; }
+#sg-nome:hover, #sg-nome:focus { border-color: var(--linea-2); background: var(--hover); }
+.sg-squadra { max-height: 260px; overflow-y: auto; }
+.sa-riga { display: grid; gap: 4px; color: var(--testo-2); font-size: 12px; }
+.sa-riga textarea { resize: vertical; min-height: 44px; }
+.sa-campi { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.sa-campi label { display: inline-flex; align-items: center; gap: 6px; color: var(--testo-2); font-size: 12px; }
+.sa-campi input[type=color] { width: 34px; height: 28px; padding: 2px; }
+.sa-campi select { max-width: 170px; }
+.chip-lista { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; gap: 6px; align-items: center; padding: 2px 4px 2px 9px; border-radius: var(--r-pill); border: 1px solid var(--linea-2); font-size: 12px; }
+.chip button { padding: 0 6px; border: 0; background: transparent; color: var(--tenue); }
+.scheda-agente footer { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-top: 4px; }
+
+/* ======================================================= sezioni di sempre */
+.nota { color: var(--tenue); font-size: 11px; margin: 8px 0 0; }
+.azioni-riga { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.riga-form input { min-width: 0; }
+.riga-int { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; column-gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--linea); }
+.riga-int span:first-child { font-weight: 500; }
+.riga-int small { grid-column: 1; color: var(--tenue); font-size: 11px; }
+.riga-int .switch, .riga-int .spia { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+.riga-int.telegram { grid-template-columns: 1fr auto auto; }
+.riga-int.telegram .riaggancia { grid-column: 2; grid-row: 1 / span 2; align-self: center; padding: 2px 8px; }
+.riga-int.telegram .switch { grid-column: 3; }
+.riga-int.sola-lettura { display: flex; gap: 8px; align-items: center; }
+.riga-int.sola-lettura small { flex: 1; }
+/* interruttori morbidi con luce (mockup 26/09/2026, idea 4): il pallino scorre, acceso = bagliore.
+   --luce è il colore del bagliore: blu di norma, arancio per telefono e banco tecnico. */
+.switch {
+  --luce: 89, 156, 231;
+  width: 40px; height: 22px; border-radius: var(--r-pill); padding: 0; position: relative;
+  background: #101010; border-color: var(--linea-2);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, .5);
+  transition: background .3s var(--dolce), border-color .3s var(--dolce), box-shadow .35s var(--dolce);
+}
+.switch::after {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+  background: #d8d8d8; box-shadow: 0 1px 3px rgba(0, 0, 0, .5);
+  transition: transform .32s cubic-bezier(.3, 1.4, .5, 1), background .25s, box-shadow .3s;
+}
+.switch:hover { background: #1a1a1a; border-color: var(--linea-3); }
+.switch:active { transform: none; }
+.switch:active::after { width: 19px; }
+.switch.on { background: rgb(var(--luce)); border-color: rgb(var(--luce));
+  box-shadow: 0 0 0 1px rgba(var(--luce), .35), 0 0 14px rgba(var(--luce), .55), inset 0 1px 2px rgba(0, 0, 0, .2); }
+.switch.on:hover { box-shadow: 0 0 0 1px rgba(var(--luce), .5), 0 0 20px rgba(var(--luce), .7); }
+.switch.on::after { transform: translateX(18px); background: #fff; box-shadow: 0 0 8px rgba(255, 255, 255, .6), 0 1px 3px rgba(0, 0, 0, .35); }
+.switch.on:active::after { transform: translateX(15px); }
+.spia { width: 10px; height: 10px; border-radius: 50%; background: var(--grigio); }
+.spia.on { background: var(--verde); }
+.spia.attenzione { background: var(--giallo); }
+.riga-int[data-int="telefono"] span:first-child, .riga-int[data-int="schermo_telefono"] span:first-child { color: var(--arancio); }
+.riga-int[data-int="telefono"] .switch, .riga-int[data-int="schermo_telefono"] .switch { --luce: 208, 135, 112; }
+
+/* scheda Stato: lo stemma e la chat a voce sono due moduli distinti (26/09/2026) */
+.nucleo { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; align-self: stretch; }
+.nucleo h2 { align-self: flex-start; }
+.nucleo .sfera { margin: auto; width: 150px; }
+.chat-voce-p { display: flex; flex-direction: column; gap: 10px; }
+.chat-voce-p h2 { margin: 0; }
+.chat-voce-form { display: flex; gap: 8px; }
+.chat-voce-form input { flex: 1; }
+#chat-voce-attesa { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+#chat-voce-attesa.nascosto { display: none !important; }
+#chat-voce-attesa small { color: var(--tenue); font-size: 11px; }
+.sfera { width: 120px; aspect-ratio: 1; position: relative; display: grid; place-items: center; margin: 4px auto 8px; }
+.orbita { position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--linea-3); animation: gira 18s linear infinite; }
+.o1 { transform: rotateX(70deg); }
+.o2 { inset: 8%; border-style: dashed; animation-duration: 26s; animation-direction: reverse; }
+.o3 { inset: 18%; border-color: var(--accento-linea); animation-duration: 12s; }
+.orbita::before { content: ""; position: absolute; top: -3px; left: 50%; width: 6px; height: 6px; border-radius: 50%; background: var(--testo); }
+.cuore { width: 60%; aspect-ratio: 1; border-radius: 50%; display: grid; place-content: center; text-align: center; background: radial-gradient(circle at 50% 35%, #2c2c2c, #151515); border: 1px solid var(--linea-2); transition: box-shadow .3s; }
+.cuore b { font-size: 11px; letter-spacing: .3em; padding-left: .3em; }
+.cuore small { color: var(--tenue); font-size: 9px; }
+.sfera.listening .cuore { box-shadow: 0 0 0 4px rgba(63, 162, 102, .35); }
+.sfera.thinking .orbita { animation-duration: 3s; }
+.sfera.speaking .cuore { animation: pulsa .6s ease-in-out infinite alternate; }
+.sfera.spenta { opacity: .4; }
+@keyframes gira { to { rotate: 360deg; } }
+@keyframes pulsa { to { box-shadow: 0 0 0 6px rgba(89, 156, 231, .35); } }
+.chat-voce-box { max-height: 340px; overflow-y: auto; border: 1px solid var(--linea); border-radius: var(--r-lg); padding: 8px 10px; background: var(--chrome); font-size: 13px; }
+
+.lista-eventi, .lista-task, .lista-lavori { list-style: none; margin: 0; padding: 0; }
+.lista-eventi { max-height: 260px; overflow: auto; }
+.lista-eventi li { padding: 5px 0; border-bottom: 1px solid var(--linea); font-size: 12px; color: var(--testo-2); }
+.lista-eventi time { color: var(--tenue); font-family: var(--mono); margin-right: 8px; }
+.elenco div { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; font-size: 13px; }
+.elenco.piccolo div { font-size: 12px; color: var(--testo-2); }
+.elenco.cliccabile div { cursor: pointer; border-radius: var(--r-lg); padding: 4px 8px; margin: 0 -8px; transition: background .15s; }
+.elenco.cliccabile div:hover { background: var(--hover); }
+.sezione-chiedi { margin: -4px 0 12px; }
+details summary { cursor: pointer; color: var(--testo-2); margin: 8px 0; font-size: 12px; }
+.barre { display: grid; gap: 6px; margin-top: 8px; font-size: 12px; color: var(--tenue); }
+.barre label { display: grid; grid-template-columns: 44px 1fr 40px; align-items: center; gap: 8px; }
+meter { width: 100%; height: 6px; }
+.grande { font-size: 15px; margin: 4px 0 12px; }
+.istruzioni { padding-left: 18px; display: grid; gap: 8px; font-size: 12px; color: var(--tenue); }
+.istruzioni input { width: 190px; }
+.numeri { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.numeri.due { grid-template-columns: repeat(2, 1fr); }
+.numeri b { display: block; font: 600 20px var(--mono); }
+.numeri small { color: var(--tenue); font-size: 11px; }
+.lista-task li { padding: 4px 0 4px 20px; position: relative; font-size: 13px; }
+.lista-task li::before { content: "○"; position: absolute; left: 2px; color: var(--tenue); }
+.lista-task li.gruppo { padding-left: 0; color: var(--tenue); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; margin-top: 6px; }
+.lista-task li.gruppo::before { content: none; }
+.elenco-pulsanti { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; margin-bottom: 10px; }
+.elenco-pulsanti button { text-align: left; background: var(--chrome); }
+.elenco-pulsanti small { display: block; color: var(--tenue); font-size: 11px; }
+.agente-form { display: grid; gap: 8px; }
+.lista-lavori { max-height: 380px; overflow: auto; }
+.lista-lavori li { display: grid; grid-template-columns: 1fr auto; gap: 3px 8px; padding: 8px; border: 1px solid transparent; border-radius: var(--r-lg); cursor: pointer; transition: background .15s; }
+.lista-lavori li:hover, .lista-lavori li.scelto { background: var(--hover); border-color: var(--linea); }
+.lista-lavori li.vuoto-lavori { cursor: default; }
+.lista-lavori li.vuoto-lavori:hover { background: transparent; border-color: transparent; }
+.lista-lavori small { color: var(--tenue); font-size: 11px; }
+.etichetta { font-size: 10px; padding: 1px 7px; border-radius: var(--r-pill); border: 1px solid; align-self: start; white-space: nowrap; }
+.etichetta.in-corso, .etichetta.attende-conferma { color: var(--giallo); border-color: rgba(229, 180, 84, .5); }
+.etichetta.finito { color: var(--verde); border-color: rgba(63, 162, 102, .5); }
+.etichetta.errore, .etichetta.interrotta { color: var(--rosso); border-color: rgba(227, 70, 113, .5); }
+.etichetta.attende-istruzioni, .etichetta.in-avvio { color: var(--accento); border-color: var(--accento-linea); }
+.etichetta.chiusa { color: var(--tenue); border-color: var(--linea-2); }
+.etichetta.ascolto { color: var(--verde); border-color: rgba(63, 162, 102, .35); }
+.sent-pulizia { display: block; font-size: 11px; color: var(--tenue); margin: 4px 0 6px; }
+.uscita { margin: 0; white-space: pre-wrap; word-break: break-word; font: 12px/1.5 var(--mono); max-height: 380px; overflow: auto; color: var(--testo-2); }
+.uscita.alta { max-height: 70vh; min-height: 160px; background: var(--chrome); border: 1px solid var(--linea); border-radius: var(--r-lg); padding: 10px; }
+/* ---- pagina Lavori (26/09/2026) ---- */
+.filtri { display: flex; gap: 4px; margin-bottom: 8px; flex-wrap: wrap; }
+.filtri button { background: transparent; border-color: transparent; color: var(--tenue); padding: 3px 10px; border-radius: var(--r-pill); font-size: 12px; }
+.filtri button:hover { color: var(--testo); background: var(--hover); }
+.filtri button.attivo { color: var(--testo); background: var(--attivo); border-color: var(--linea-2); }
+.filtri button[data-n]:not([data-n=""])::after { content: attr(data-n); margin-left: 6px; font: 600 10px var(--mono); color: var(--tenue); }
+.lavori .cerca { margin-bottom: 8px; }
+.lista-lavori-grande { max-height: min(620px, calc(100vh - 220px)); min-height: 220px; display: grid; gap: 3px; align-content: start; }
+.lista-lavori li.lavoro { position: relative; grid-template-columns: minmax(0, 1fr) auto; padding: 9px 10px 9px 12px; }
+.lista-lavori li.lavoro::before { content: ""; position: absolute; left: 0; top: 9px; bottom: 9px; width: 2px; border-radius: 2px; background: transparent; transition: background .15s; }
+.lista-lavori li.lavoro:hover::before { background: var(--linea-3); }
+.lista-lavori li.lavoro.scelto { background: var(--accento-fondo); border-color: var(--accento-linea); }
+.lista-lavori li.lavoro.scelto::before { background: var(--accento); }
+.lista-lavori li.lavoro:focus-visible { outline: 2px solid var(--accento); outline-offset: -2px; }
+.lavoro-titolo { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-weight: 500; line-height: 1.4; }
+.lavoro-badge { grid-column: 1 / -1; display: flex; gap: 5px; align-items: center; flex-wrap: wrap; margin-top: 3px; }
+.lavoro-badge small { margin-left: auto; font-family: var(--mono); font-size: 10.5px; }
+.ferma-lavoro { grid-column: 1 / -1; justify-self: start; padding: 1px 8px; font-size: 11px; color: var(--rosso); margin-top: 2px; }
+.polso { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--giallo); margin-right: 7px; vertical-align: 1px; animation: polso-giallo 1.4s infinite; }
+@keyframes polso-giallo { 0%, 100% { box-shadow: 0 0 0 2px rgba(229, 180, 84, .35); } 50% { box-shadow: 0 0 0 5px rgba(229, 180, 84, .08); } }
+.risultato { display: flex; flex-direction: column; min-height: 320px; position: sticky; top: 0; }
+.ris-vuoto { flex: 1; display: grid; place-content: center; justify-items: center; gap: 6px; text-align: center; color: var(--tenue); font-size: 12px; padding: 40px 24px; min-height: 300px; border: 1px dashed var(--linea-2); border-radius: var(--r-lg); }
+.ris-vuoto b { color: var(--testo); font-size: 15px; font-weight: 600; }
+.ris-vuoto span:last-child { max-width: 380px; line-height: 1.6; }
+.ris-vuoto-icona { font-size: 28px; opacity: .5; }
+.ris-dettaglio { display: flex; flex-direction: column; gap: 10px; min-width: 0; animation: entra .2s var(--dolce); }
+.ris-testa { display: flex; gap: 12px; align-items: flex-start; }
+.ris-intesta { flex: 1; min-width: 0; }
+.ris-testa h2 { font-size: 15px; margin: 0 0 6px; line-height: 1.35; overflow-wrap: anywhere; }
+.ris-testa .etichetta { font-size: 11px; padding: 2px 9px; }
+.ris-meta { display: flex; flex-wrap: wrap; gap: 5px; }
+.ris-azioni { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 0; border-top: 1px solid var(--linea); border-bottom: 1px solid var(--linea); }
+.ris-azioni button:not(.primario) { background: transparent; }
+.ris-azioni .spazio { flex: 1; }
+.ris-azioni .icona-q[aria-pressed="true"] { background: var(--attivo); }
+.ris-richiesta { background: var(--chrome); border: 1px solid var(--linea); border-radius: var(--r-lg); padding: 0 12px; }
+.ris-richiesta summary { margin: 0; padding: 8px 0; font-weight: 500; }
+.ris-richiesta summary small { color: var(--tenue); font-weight: 400; margin-left: 6px; }
+.ris-richiesta pre { max-height: 240px; padding-bottom: 10px; color: var(--testo); }
+.ris-uscita-testa { display: flex; align-items: baseline; gap: 8px; }
+.ris-uscita-testa b { font-size: 12px; color: var(--testo-2); }
+.ris-uscita-testa small { color: var(--tenue); font-size: 11px; }
+.ris-acapo { margin-left: auto; font-size: 11px; color: var(--tenue); display: inline-flex; gap: 5px; align-items: center; cursor: pointer; }
+.ris-uscita { max-height: calc(100vh - 360px); min-height: 260px; background: var(--chrome); border: 1px solid var(--linea); border-radius: var(--r-lg); padding: 12px 14px; color: var(--testo); font-size: 12.5px; line-height: 1.6; }
+.ris-uscita.senza-acapo { white-space: pre; }
+.ris-uscita.in-corso { border-color: rgba(229, 180, 84, .35); }
+.blocco-lavori.ris-intero .ris-uscita { max-height: calc(100vh - 250px); }
+
+.claude-ora #claude-azione, .claude-ora #claude-richiesta { display: block; color: var(--tenue); margin: 2px 0 6px; overflow-wrap: anywhere; }
+/* la catena in «Claude adesso»: avatar da 48 px, chi lavora ha l'anello che gira (26/09/2026) */
+.catena { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.catena li { display: flex; gap: 12px; align-items: center; margin-left: calc(var(--liv, 0) * 24px); min-width: 0;
+  padding: 4px 8px 4px 4px; border-radius: var(--r-lg); border: 1px solid transparent; transition: background .4s, border-color .4s; }
+.catena li .avatar { width: 48px; height: 48px; font-size: 20px; }
+.catena .cat-testo { min-width: 0; display: grid; }
+.catena .cat-riga { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.catena li .nome { white-space: nowrap; font-weight: 500; }
+.catena li small { color: var(--tenue); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; font-size: 11.5px; }
+.catena li.attivo { background: rgba(63, 162, 102, .07); border-color: rgba(63, 162, 102, .25); }
+.catena li.attivo .nome { color: var(--verde); }
+.modello { font-size: 10px; padding: 0 6px; border-radius: var(--r-pill); border: 1px solid var(--linea-2); color: var(--tenue); font-family: var(--mono); }
+.modello.opus { color: var(--viola); border-color: rgba(147, 134, 242, .45); }
+.modello.sonnet { color: var(--accento); border-color: var(--accento-linea); }
+.modello.haiku { color: var(--verde); border-color: rgba(63, 162, 102, .45); }
+/* una riga sola verso Memoria (26/09/2026): la tabella della sincronia sta là */
+.sincro-riga { display: block; margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--linea-2); font-size: 11.5px; color: var(--tenue); text-decoration: none; }
+.sincro-riga:hover { color: var(--testo); }
+.sincro-riga.ok { color: var(--verde); }
+.sincro-riga.attenzione { color: var(--giallo); }
+.sincro-riga.guasto { color: var(--rosso); }
+/* ---- Agenti per spazio (26/09/2026): sezioni a tendina, una card per progetto ---- */
+.spazi-p { grid-column: 1 / -1; }
+.testa-pannello { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.testa-pannello h2 { margin: 0; margin-right: auto; }
+.gruppo-pulsanti { display: inline-flex; gap: 4px; }
+.gruppo-pulsanti button { background: transparent; }
+.cerca-piccola { min-width: 220px; flex: 0 1 280px; }
+.cerca-piccola input { padding: 4px 0; font-size: 12px; }
+.legenda { margin: -4px 0 12px; }
+.agenti-spazi { display: grid; gap: 10px; }
+.spazio-catena {
+  --c: var(--accento);
+  border: 1px solid var(--linea); border-radius: var(--r-xl); background: var(--fondo);
+  transition: border-color .2s var(--dolce), box-shadow .2s var(--dolce); overflow: hidden;
+}
+.spazio-catena[open] { border-color: color-mix(in srgb, var(--c) 22%, var(--linea)); box-shadow: 0 8px 24px rgba(0, 0, 0, .18); }
+.spazio-catena > summary {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; list-style: none; user-select: none;
+  position: relative; transition: background .15s;
+}
+.spazio-catena > summary::-webkit-details-marker { display: none; }
+.spazio-catena > summary::before { content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px; border-radius: 0 3px 3px 0; background: var(--c); }
+.spazio-catena > summary:hover { background: var(--hover); }
+.spazio-emoji { width: 34px; height: 34px; border-radius: var(--r-lg); display: grid; place-items: center; font-size: 17px; flex: none;
+  background: color-mix(in srgb, var(--c) 16%, transparent); border: 1px solid color-mix(in srgb, var(--c) 35%, transparent); }
+.spazio-titolo { min-width: 0; flex: 1; }
+.spazio-titolo h4 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: .01em; }
+.spazio-titolo small { display: block; color: var(--tenue); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.spazio-modelli { display: inline-flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.spazio-lavagna { background: transparent; opacity: 0; transition: opacity .15s, background .15s; }
+.spazio-catena > summary:hover .spazio-lavagna, .spazio-lavagna:focus-visible { opacity: 1; }
+.freccia-spazio { color: var(--tenue); font-size: 18px; line-height: 1; width: 14px; text-align: center; transition: transform .22s var(--dolce); }
+.spazio-catena[open] .freccia-spazio { transform: rotate(90deg); }
+.progetti-griglia { display: grid; gap: 10px; padding: 2px 14px 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); animation: entra .22s var(--dolce); }
+.progetti-griglia.uno { grid-template-columns: minmax(0, 1fr); }
+.progetto-card {
+  display: flex; flex-direction: column; min-width: 0; background: var(--rialzo); border: 1px solid var(--linea);
+  border-radius: var(--r-lg); box-shadow: 0 1px 0 rgba(255, 255, 255, .02) inset, 0 4px 14px rgba(0, 0, 0, .16);
+  transition: border-color .2s, transform .2s var(--dolce);
+}
+.progetto-card:hover { border-color: var(--linea-2); }
+.card-testa { display: flex; align-items: baseline; gap: 8px; padding: 10px 12px 8px; border-bottom: 1px solid var(--linea); }
+.card-testa b { font-size: 13px; font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card-testa small { color: var(--tenue); font-size: 11px; white-space: nowrap; }
+.card-righe { display: grid; gap: 2px; padding: 6px; }
+.progetto-card.solo .card-righe { grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); column-gap: 6px; }
+.progetto-card.solo .riga-catena.capo { grid-column: 1 / -1; }
+.card-vuota { padding: 8px 8px 10px; margin: 0; }
+.card-piede { margin-top: auto; padding: 6px 12px; border-top: 1px solid var(--linea); color: var(--tenue); font: 10.5px var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+.riga-catena {
+  --c: var(--accento);
+  display: grid; grid-template-columns: 32px minmax(0, 1fr) auto auto; align-items: center; gap: 10px;
+  padding: 7px 8px; border-radius: var(--r); cursor: pointer; position: relative;
+  border: 1px solid transparent; transition: background .15s, border-color .15s;
+}
+.riga-catena .avatar { width: 32px; height: 32px; font-size: 15px; }
+.riga-catena:hover, .riga-catena:focus-visible { background: var(--hover); border-color: var(--linea); outline: none; }
+.riga-catena:hover::before, .riga-catena:focus-visible::before { content: ""; position: absolute; left: -1px; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: var(--accento); }
+.riga-catena.attivo { background: rgba(63, 162, 102, .07); }
+.riga-catena.capo { background: color-mix(in srgb, var(--accento) 7%, transparent); border-color: color-mix(in srgb, var(--accento) 18%, transparent); margin-bottom: 4px; }
+.riga-catena.capo:hover { background: color-mix(in srgb, var(--accento) 12%, transparent); }
+.riga-testo { min-width: 0; }
+.riga-testo b { display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 13px; overflow: hidden; white-space: nowrap; }
+.riga-testo small { display: block; color: var(--tenue); font-size: 11.5px; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.riga-catena.capo .riga-testo small { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.riga-azioni { display: inline-flex; gap: 0; opacity: 0; transition: opacity .15s; }
+.riga-azioni .icona { padding: 2px 6px; font-size: 13px; }
+.riga-catena:hover .riga-azioni, .riga-catena:focus-within .riga-azioni { opacity: 1; }
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; line-height: 1.5; padding: 0 7px; border-radius: var(--r-pill);
+  border: 1px solid var(--linea-2); color: var(--testo-2); background: var(--hover); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.badge.capo { color: var(--accento); border-color: var(--accento-linea); background: var(--accento-fondo); font-weight: 500; }
+.badge.chi { color: var(--testo); border-color: var(--linea-3); }
+.badge.dove { font-family: var(--mono); font-size: 10px; }
+.badge.durata { font-family: var(--mono); font-size: 10px; color: var(--testo-2); }
+.scadenze { list-style: none; margin: 0; padding: 0; max-height: 560px; overflow: auto; }
+.scadenze li { display: grid; grid-template-columns: 50px minmax(0, 1fr); gap: 2px 10px; padding: 6px 0; border-bottom: 1px solid var(--linea); font-size: 12px; }
+.scadenze time { font-family: var(--mono); color: var(--testo-2); }
+.scadenze li.scaduta time { color: var(--rosso); }
+.scadenze small { grid-column: 2; color: var(--tenue); font-size: 11px; }
+
+/* missioni */
+.nuova-missione { display: grid; gap: 10px; }
+.nuova-missione .riga-campi { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+.nuova-missione label { display: inline-flex; gap: 6px; align-items: center; }
+.nuova-missione input[type=number] { width: 64px; }
+.nuova-missione .campo-progetti, .nuova-missione .modalita { display: inline-flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.nuova-missione .primario { margin-left: auto; }
+.missioni-lista { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+details.missione { border: 1px solid var(--linea); border-radius: var(--r-lg); padding: 8px 12px; background: var(--chrome); min-width: 0; overflow: hidden; }
+details.missione > summary { display: flex; gap: 10px; align-items: baseline; cursor: pointer; min-width: 0; color: var(--testo); }
+details.missione > summary time { color: var(--tenue); font: 12px var(--mono); }
+details.missione > summary .titolo { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.albero-box { margin: 10px 0 6px; font: 12px/1.8 var(--mono); min-width: 0; }
+.albero-box .orch, .albero li { display: flex; gap: 10px; align-items: baseline; min-width: 0; }
+.albero { list-style: none; margin: 0; padding: 0 0 0 10px; }
+.albero .ramo { color: var(--tenue); }
+.albero .nome, .albero-box .orch .nome { white-space: nowrap; min-width: 150px; }
+.albero .st { white-space: nowrap; min-width: 110px; }
+.albero .dur { color: var(--tenue); min-width: 32px; }
+.albero .cosa { color: var(--tenue); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
+.albero li.lavora .nome { color: var(--giallo); }
+.albero li.consegnato .nome { color: var(--verde); }
+.albero li.errore .nome { color: var(--rosso); }
+.albero li.attesa, .albero li.in-coda { opacity: .7; }
+.conferme { display: grid; gap: 10px; }
+.conferma { border: 1px solid rgba(229, 180, 84, .5); background: rgba(229, 180, 84, .06); border-radius: var(--r-lg); padding: 12px; display: grid; gap: 8px; }
+.conferma b { color: var(--giallo); }
+.conferma code { display: block; white-space: pre-wrap; word-break: break-word; background: var(--chrome); padding: 8px; border-radius: var(--r); max-height: 220px; overflow: auto; }
+.conferma .si { border-color: var(--verde); color: var(--verde); }
+.conferma .no { border-color: var(--rosso); color: var(--rosso); }
+details.registro > summary { font-size: 12px; }
+.missione .istruzione input { flex: 1; }
+.missione .report { color: var(--verde); flex: 1; }
+
+/* memoria, chiavi */
+.battito { font-weight: normal; }
+.battito.ok::before { content: "● "; color: var(--verde); }
+.battito.no::before { content: "● "; color: var(--rosso); }
+table.progetti { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.progetti td { padding: 4px 6px; border-bottom: 1px solid var(--linea); }
+table.progetti td:first-child { white-space: nowrap; }
+table.progetti td:nth-child(n+2):nth-child(-n+4) { text-align: right; font-variant-numeric: tabular-nums; color: var(--testo-2); }
+table.progetti tr.tardi td { background: rgba(229, 180, 84, .08); }
+table.progetti tr.nota td { color: var(--tenue); border-bottom: none; }
+table.progetti td.cliccabile { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 2px; }
+table.progetti td.cliccabile:hover { color: var(--accento); }
+p.comando { font: 12px var(--mono); user-select: all; background: var(--chrome); padding: 8px; border-radius: var(--r); word-break: break-all; }
+/* chiavi e anomalie del portiere, elenco intero (26/09/2026): tipo e pid a sinistra, chi è e bottoni a destra */
+.chiavi-note, .sent-anomalie { list-style: none; margin: 10px 0 0; padding: 0; font-size: 12px; max-height: 520px; overflow: auto; }
+.chiavi-note li { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 2px 10px; padding: 7px 0; border-bottom: 1px solid var(--linea); }
+.chiavi-note .cn-tipo, .sent-anomalie .cn-tipo { font: 600 10px var(--mono); letter-spacing: .06em; color: var(--tenue); }
+.chiavi-note .cn-pid { grid-column: 1; grid-row: 2; font: 11px var(--mono); color: var(--tenue); }
+.chiavi-note .cn-dettagli { grid-column: 2; grid-row: 1 / span 2; display: grid; gap: 2px; min-width: 0; }
+.chiavi-note .cn-chi { font-weight: 500; color: var(--testo); overflow-wrap: anywhere; }
+.chiavi-note .cn-cmd { font: 11px var(--mono); color: var(--testo-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chiavi-note .cn-cwd { color: var(--tenue); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+.chiavi-note .cn-azioni { grid-column: 2; display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.chiavi-note .cn-azioni button { padding: 3px 9px; font-size: 11px; }
+.chiavi-note li.n-abusivo .cn-tipo, .chiavi-note li.n-fantasma .cn-tipo, .sent-anomalie li.n-guasto .cn-tipo { color: var(--rosso); }
+.chiavi-note li.n-muto .cn-tipo, .chiavi-note li.n-scaduta .cn-tipo, .chiavi-note li.n-lunga .cn-tipo, .sent-anomalie li.n-attenzione .cn-tipo { color: var(--giallo); }
+.chiavi-note li.vuoto, .sent-anomalie li.vuoto, .salute-lista li.vuoto { display: block; color: var(--tenue); border-bottom: none; }
+.sent-anomalie li { display: grid; grid-template-columns: 110px minmax(0, 1fr) auto; gap: 8px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--linea); }
+.sent-anomalie small { color: var(--tenue); white-space: nowrap; }
+.telefono .lista-lavori { max-height: 260px; }
+/* i motori della voce sono pochi e fissi: si vedono tutti, senza una barra che taglia a metà riga */
+.telefono #voci-lista { max-height: none; overflow: visible; margin-bottom: 14px; }
+.telefono #voci-lista li { cursor: default; }
+#form-chiamata { padding-top: 12px; border-top: 1px solid var(--linea); }
+#form-chiamata .azioni-riga input { flex: 1 1 160px; }
+.chiamata-esito { color: var(--tenue); font-size: 12px; }
+.chiamata-domande { color: var(--giallo); font-size: 12px; }
+.chiedi { display: flex; flex-direction: column; gap: 8px; }
+.schede-dl, dl.schede { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0 0 14px; }
+dl.schede dt { color: var(--tenue); font-size: 12px; }
+dl.schede dd { margin: 0; }
+
+/* banco tecnico: arancione, per decisione dell'utente del 20/09/2026 — non deve mai
+   sembrare il pannello di tutti i giorni */
+.vista-tecnica .pannello { border-color: rgba(208, 135, 112, .4); }
+.vista-tecnica h2 { color: var(--arancio); }
+.vista-tecnica .switch { --luce: 208, 135, 112; }
+
+.toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(16px); opacity: 0; background: var(--rialzo-2); border: 1px solid var(--linea-2); color: var(--testo); padding: 9px 15px; border-radius: var(--r-lg); transition: opacity .25s var(--dolce), transform .25s var(--dolce); pointer-events: none; max-width: min(560px, 90vw); z-index: 20; box-shadow: 0 12px 30px rgba(0, 0, 0, .5); }
+.toast.visibile { opacity: 1; transform: translateX(-50%); }
+.toast.errore { border-color: rgba(227, 70, 113, .6); }
+.velo { display: none; }
+/* lavagna, browser e Canva a pagina intera (richiesta dell'utente del 24/09/2026) */
+.app.destra-intera .destra { position: fixed; top: 0; right: 0; bottom: 0; left: var(--lato); width: auto; z-index: 15; transform: none; visibility: visible; border-left: 0; box-shadow: none; animation: entra .2s var(--dolce); }
+/* la colonna degli agenti resta visibile anche a pagina intera: si trascina da lì nella lavagna */
+.app.destra-intera .lato { position: relative; z-index: 16; }
+/* 🔴 fino al 26/09/2026 a pagina intera la griglia teneva la terza colonna da 420 px: la barra delle
+   schede restava stretta e le ultime (Telefono… Terminale) sparivano dietro la lavagna */
+.app.destra-intera { grid-template-columns: var(--lato) minmax(0, 1fr) 0; }
+
+/* ======================================================= finestre strette */
+@media (max-width: 1280px) { :root { --destra: 360px; --lato: 248px; } }
+/* sotto i 1100 px: fuori da Lavagna/VPS la colonna destra resta a 0 (niente cassetto, non serve più) */
+@media (max-width: 1100px) {
+  .app, .app.senza-destra { grid-template-columns: var(--lato) minmax(0, 1fr); }
+  .app.destra-intera .destra { transform: none; width: auto; }
+  .app.lato-aperto .velo { display: block; position: fixed; inset: 0; background: rgba(0, 0, 0, .45); z-index: 11; }
+  .griglia-stato { grid-template-columns: 1fr; }
+  .vista[data-vista="agenti"].attiva { grid-template-columns: 1fr; }
+  .blocco-lavori, .blocco-lavori.con-scelto { grid-template-columns: minmax(0, 1fr); }
+  .risultato { position: static; }
+  .lista-lavori-grande { max-height: 420px; }
+}
+/* sotto i 760 px anche la sinistra diventa un cassetto (☰) */
+@media (max-width: 760px) {
+  .app, .app.senza-destra { grid-template-columns: minmax(0, 1fr); }
+  .lato { position: fixed; top: 0; left: 0; bottom: 0; width: min(300px, 86vw); z-index: 12; transform: translateX(-100%); transition: transform .28s var(--dolce); box-shadow: 20px 0 50px rgba(0, 0, 0, .5); }
+  .app.lato-aperto .lato { transform: none; }
+  .solo-stretto { display: inline-flex; }
+  .orologio, .stato-generale #testo-generale { display: none; }
+  .vista.attiva { padding: 10px; grid-template-columns: minmax(0, 1fr); }
+  .messaggi, .compositore { padding-left: 12px; padding-right: 12px; }
+  .suggerimenti { left: 12px; right: 12px; }
+  .msg.mio .corpo { max-width: 88%; }
+  .nota-compositore { display: none; }
+  .albero .nome, .albero-box .orch .nome { min-width: 0; }
+  .albero .cosa { display: none; }
+  .riquadro { height: 360px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* un solo giro: con la durata a zero e i giri infiniti le animazioni continue sfarfallavano */
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  /* le animazioni che dicono uno stato (sta scrivendo, lavoro in corso) restano, più lente
+     e senza spostamenti: sono informazione, non decorazione */
+  .bolla-scrive i { animation: sfuma 2.4s ease-in-out infinite !important; }
+  .bolla-scrive i:nth-child(2) { animation-delay: .4s !important; }
+  .bolla-scrive i:nth-child(3) { animation-delay: .8s !important; }
+  .lav-barra.indeterminata i { animation: sfuma 2.4s ease-in-out infinite !important; left: 0 !important; width: 100% !important; }
+}
+@keyframes sfuma { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+
+/* dato non più fresco (letto da troppo o lettura fallita): grigio, il motivo nel title (26/09/2026) */
+.dato-vecchio { opacity: .5; filter: grayscale(1); }
+
+/* ======================================================= migliorie del mockup (26/09/2026)
+   Fonte visiva: barehands/media/misc/mockup-migliorie-5-idee.png. Stesso tema scuro, più vivo. */
+
+/* ---- 3 · sfondo aurora: due macchie sfumate dietro i pannelli, quasi ferme ---- */
+body::before {
+  content: ""; position: fixed; inset: -15%; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(38% 42% at 22% 18%, rgba(89, 156, 231, .13), transparent 70%),
+    radial-gradient(34% 40% at 82% 86%, rgba(147, 134, 242, .10), transparent 70%);
+  animation: aurora 90s ease-in-out infinite alternate;
+}
+@keyframes aurora { to { transform: translate(3%, -2%) scale(1.06); } }
+.app { position: relative; z-index: 1; }
+/* il fondo del centro e della sinistra lascia passare un filo di aurora; i pannelli restano pieni */
+.centro { background: rgba(24, 24, 24, .72); }
+.lato { background: rgba(20, 20, 20, .82); }
+
+/* ---- 1 · Jarvis sempre visibile nell'intestazione ---- */
+.avatar-jarvis {
+  display: inline-flex; align-items: center; gap: 8px; flex: none; text-decoration: none; color: var(--tenue);
+  padding: 3px 10px 3px 3px; border: 1px solid var(--linea); border-radius: var(--r-pill); font-size: 11.5px;
+  background: rgba(20, 20, 20, .6); transition: border-color .3s, color .3s;
+}
+.avatar-jarvis:hover { border-color: var(--accento-linea); color: var(--testo); }
+.avatar-jarvis small { font-size: inherit; white-space: nowrap; }
+.aj-cerchio {
+  --luce: 89, 156, 231;
+  width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; position: relative;
+  background: radial-gradient(circle at 50% 35%, #2c3440, #111418);
+  border: 1px solid rgba(var(--luce), .55);
+  box-shadow: 0 0 0 0 rgba(var(--luce), .0), 0 0 10px rgba(var(--luce), .25);
+  animation: respira 5s ease-in-out infinite;
+  transition: border-color .4s, opacity .4s;
+}
+.aj-cerchio b { font-size: 11px; font-weight: 600; color: var(--testo); }
+.aj-cerchio::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; border: 2px solid transparent; }
+@keyframes respira {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--luce), 0), 0 0 8px rgba(var(--luce), .2); }
+  50% { box-shadow: 0 0 0 3px rgba(var(--luce), .12), 0 0 16px rgba(var(--luce), .45); }
+}
+/* ascolta: verde; pensa: un arco che gira; parla: il battito si fa veloce; spenta: tenue */
+.avatar-jarvis.listening .aj-cerchio { --luce: 63, 162, 102; }
+.avatar-jarvis.listening { color: var(--verde); }
+.avatar-jarvis.thinking .aj-cerchio::after { border-top-color: var(--accento); border-right-color: rgba(89, 156, 231, .35); animation: gira 1.1s linear infinite; }
+.avatar-jarvis.thinking, .avatar-jarvis.speaking { color: var(--testo-2); }
+.avatar-jarvis.speaking .aj-cerchio { animation-duration: .7s; }
+.avatar-jarvis.spenta .aj-cerchio { animation: none; opacity: .45; border-color: var(--linea-2); box-shadow: none; }
+
+/* ---- 2 · card lavori vive: avatarino che gira mentre lavora, barra di avanzamento ---- */
+.lista-lavori li.lavoro { grid-template-columns: 30px minmax(0, 1fr) auto; column-gap: 10px; }
+.lista-lavori li.lavoro > .lavoro-titolo { grid-column: 2; grid-row: 1; }
+.lista-lavori li.lavoro > .etichetta { grid-column: 3; grid-row: 1; }
+.lista-lavori li.lavoro > .lavoro-badge, .lista-lavori li.lavoro > .lav-barra,
+.lista-lavori li.lavoro > .ferma-lavoro { grid-column: 2 / -1; }
+.lav-avatar {
+  grid-column: 1; grid-row: 1 / span 2; align-self: start; margin-top: 1px;
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; position: relative;
+  background: var(--rialzo-2); border: 1px solid var(--linea-2);
+}
+.lav-avatar b { position: relative; z-index: 1; font-size: 12px; font-weight: 600; color: var(--testo); }
+.lav-avatar.in-corso { border-color: transparent; background: conic-gradient(from 0deg, #599ce7, #9386f2, #c77dd8, #599ce7); animation: gira 6s linear infinite; }
+/* la lettera resta ferma mentre il cerchio gira */
+.lav-avatar.in-corso b { animation: gira 6s linear infinite reverse; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
+.lav-avatar.in-corso::before { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: radial-gradient(circle at 50% 35%, rgba(40, 44, 60, .55), rgba(17, 17, 24, .75)); }
+.lav-avatar.in-corso::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; box-shadow: 0 0 12px rgba(147, 134, 242, .35); }
+.lav-avatar.finito { border-color: rgba(63, 162, 102, .5); background: rgba(63, 162, 102, .12); }
+.lav-avatar.errore { border-color: rgba(227, 70, 113, .5); background: rgba(227, 70, 113, .12); }
+.lav-barra { display: block; position: relative; height: 3px; margin-top: 6px; border-radius: var(--r-pill); background: rgba(240, 240, 240, .08); overflow: hidden; }
+.lav-barra i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: inherit; background: linear-gradient(90deg, #599ce7, #9386f2); transition: width .6s var(--dolce); }
+.lav-barra.indeterminata i { width: 38%; animation: va-e-viene 1.8s ease-in-out infinite; }
+@keyframes va-e-viene { 0% { left: -38%; } 100% { left: 100%; } }
+
+/* ---- 5 · bolla «sto scrivendo»: tre puntini in fila e una scia di luce sotto ---- */
+.bolla-scrive {
+  display: inline-flex; align-items: center; gap: 5px; position: relative; overflow: hidden;
+  padding: 10px 14px; margin-top: 2px; border-radius: 14px 14px 14px 4px;
+  background: #121418; border: 1px solid var(--linea-2); box-shadow: 0 4px 14px rgba(0, 0, 0, .3);
+}
+.bolla-scrive i { width: 7px; height: 7px; border-radius: 50%; background: #7fb3ee; animation: salta-bolla 1.3s infinite ease-in-out; }
+.bolla-scrive i:nth-child(2) { animation-delay: .16s; }
+.bolla-scrive i:nth-child(3) { animation-delay: .32s; }
+@keyframes salta-bolla { 0%, 60%, 100% { transform: translateY(0); opacity: .45; } 30% { transform: translateY(-5px); opacity: 1; } }
+.bolla-scrive::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(89, 156, 231, .9), transparent);
+  background-size: 50% 100%; background-repeat: no-repeat; animation: scia 1.8s linear infinite;
+}
+@keyframes scia { from { background-position: -100% 0; } to { background-position: 200% 0; } }
+
+@media (max-width: 760px) { .avatar-jarvis small { display: none; } .avatar-jarvis { padding-right: 3px; } }
+
+/* ======================================================= stato vivo (26/09/2026)
+   Richiesta dell'utente: ogni sezione dice a che punto è illuminandosi, gli avatar più grandi
+   e più animati. Regole delle spie nel contratto API, punto 7; le calcola spieSchede(). */
+
+/* ---- spie: sulle schede della barra e nelle righe della Salute ---- */
+.spia.grigia { background: var(--grigio); opacity: .6; }
+.spia.ok { background: var(--verde); box-shadow: 0 0 6px rgba(63, 162, 102, .6); }
+.spia.attenzione { box-shadow: 0 0 6px rgba(229, 180, 84, .6); }
+.spia.guasto { background: var(--rosso); box-shadow: 0 0 7px rgba(227, 70, 113, .75); }
+.spia.lavora { background: var(--accento); box-shadow: 0 0 7px rgba(89, 156, 231, .75); }
+.schede .spia { width: 7px; height: 7px; flex: none; transition: background .4s var(--dolce), box-shadow .4s var(--dolce), opacity .4s; }
+.schede a.attiva .spia.grigia { opacity: .9; }
+
+/* ---- indicatore del flusso in tempo reale ---- */
+.flusso { flex: none; font: 11px var(--mono); color: var(--tenue); white-space: nowrap; padding: 2px 8px; border-radius: var(--r-pill); border: 1px solid var(--linea); }
+.flusso.vivo { color: var(--verde); border-color: rgba(63, 162, 102, .35); background: rgba(63, 162, 102, .08); }
+
+/* ---- i box si illuminano col loro stato: alone morbido, 400 ms ---- */
+.pannello { transition: border-color .4s var(--dolce), box-shadow .4s var(--dolce); }
+.pannello[data-stato="ok"] { border-color: rgba(63, 162, 102, .28); box-shadow: 0 0 18px -8px rgba(63, 162, 102, .45); }
+.pannello[data-stato="attenzione"] { border-color: rgba(229, 180, 84, .4); box-shadow: 0 0 22px -8px rgba(229, 180, 84, .55); }
+.pannello[data-stato="guasto"] { border-color: rgba(227, 70, 113, .5); box-shadow: 0 0 24px -6px rgba(227, 70, 113, .6); }
+.pannello[data-stato="lavora"] { border-color: var(--accento-linea); box-shadow: 0 0 24px -8px rgba(89, 156, 231, .6); }
+
+/* ---- Salute del pannello ---- */
+.salute-lista { list-style: none; margin: 8px 0 0; padding: 0; }
+.salute-lista li.sal { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--linea); }
+.salute-lista .sal-testo { display: grid; min-width: 0; }
+.salute-lista .sal-testo b { font-weight: 500; }
+.salute-lista .sal-testo small { color: var(--tenue); font-size: 11px; }
+.salute-lista .sal-errore { color: var(--rosso) !important; overflow-wrap: anywhere; }
+.salute-lista .icona { padding: 2px 8px; }
+.testa-pannello h2 { margin-bottom: 0; flex: 1; min-width: 0; }
+
+/* ---- Sentinella ---- */
+.riga-sent { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--tenue); }
+.sent-rapporto { margin-top: 10px; }
+.sent-rapporto summary { cursor: pointer; color: var(--testo-2); font-size: 12px; }
+.sent-rapporto summary small { color: var(--tenue); margin-left: 4px; }
+.sent-testo { margin-top: 6px; padding: 10px 12px; border-radius: var(--r-lg); background: var(--chrome); border: 1px solid var(--linea);
+  white-space: pre-wrap; font-size: 12px; max-height: 320px; overflow: auto; }
+
+/* ---- avatar: anello per chi lavora ----
+   Chi lavora (.attivo sulle righe, .al-lavoro sull'avatar) ha un anello conico attorno al volto:
+   fermo con prefers-reduced-motion, che gira e respira altrimenti. */
+@property --giro { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+[data-agente].attivo .avatar, .catena li.attivo .avatar, .avatar.al-lavoro {
+  padding: 3px; border-color: transparent;
+  background: conic-gradient(from var(--giro), #599ce7, #9386f2, #c77dd8, #3fa266, #599ce7);
+  box-shadow: 0 0 14px rgba(147, 134, 242, .4);
+}
+/* avatar di Jarvis nella barra: 36 px */
+.aj-cerchio { width: 36px; height: 36px; }
+.aj-cerchio b { font-size: 14px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .pannello[data-stato="lavora"] { animation: respira-box 2.6s ease-in-out infinite; }
+  .spia.lavora { animation: pulsa-spia 1.4s ease-in-out infinite; }
+  [data-agente].attivo .avatar, .catena li.attivo .avatar, .avatar.al-lavoro {
+    animation: giro-anello 3.2s linear infinite, respiro-avatar 2.4s ease-in-out infinite;
+  }
+  /* inclinazione 3D leggera al passaggio del mouse */
+  .avatar { transition: transform .35s var(--dolce), box-shadow .35s var(--dolce); transform: perspective(240px) rotateX(0) rotateY(0); }
+  .avatar:hover, [data-agente]:hover .avatar { transform: perspective(240px) rotateX(4deg) rotateY(-4deg); }
+  /* quando Jarvis parla: un'onda che si allarga attorno al cerchio */
+  .avatar-jarvis.speaking .aj-cerchio::before, .avatar-jarvis.listening .aj-cerchio::before {
+    content: ""; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid rgba(var(--luce), .6);
+    animation: onda 1.3s ease-out infinite;
+  }
+  .avatar-jarvis.speaking .aj-cerchio::after { border: 2px solid rgba(var(--luce), .35); animation: onda 1.3s ease-out .65s infinite; }
+}
+@keyframes giro-anello { to { --giro: 360deg; } }
+@keyframes respiro-avatar { 0%, 100% { scale: 1; } 50% { scale: 1.04; } }
+@keyframes respira-box {
+  0%, 100% { box-shadow: 0 0 18px -10px rgba(89, 156, 231, .45); }
+  50% { box-shadow: 0 0 30px -6px rgba(89, 156, 231, .75); }
+}
+@keyframes pulsa-spia { 0%, 100% { box-shadow: 0 0 3px rgba(89, 156, 231, .5); opacity: .75; } 50% { box-shadow: 0 0 10px rgba(89, 156, 231, .95); opacity: 1; } }
+@keyframes onda { from { transform: scale(1); opacity: .9; } to { transform: scale(1.55); opacity: 0; } }
+@media (max-width: 760px) { .flusso { display: none; } }
+
+/* righe del portiere: il terminale VPS senza chiave è giallo, le note del pannello grigie (26/09/2026) */
+.chiavi-note li.n-vps .cn-tipo { color: var(--giallo); }
+.chiavi-note li.n-pannello { opacity: .6; }
+.chiavi-note .cn-pannello { color: var(--tenue); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; }
+/* un bottone che aspetta il server: spento, e gira */
+button.in-attesa { cursor: progress; }
+button.icona.in-attesa { animation: gira 1s linear infinite; }
+button.piccolo.in-attesa::before, .sezione-chiedi button.in-attesa::before, #sent-giro.in-attesa::before {
+  content: ""; display: inline-block; width: 9px; height: 9px; margin-right: 6px; vertical-align: -1px;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: gira .8s linear infinite;
+}
+.chiavi-riq .sezione-chiedi { margin-top: 10px; }
+/* etichette degli spazi nella catena: la nota prende il colore dello spazio (26/09/2026) */
+.nodo.nota.colorata { background: color-mix(in srgb, var(--c) 16%, var(--rialzo)); border-color: color-mix(in srgb, var(--c) 60%, transparent); }
+.nodo.nota.colorata .testo-nota { font-weight: 600; color: color-mix(in srgb, var(--c) 55%, #fff); }
+
+/* ======================================================= Stato e Scadenze (26/09/2026, richiesta dell'utente) */
+/* ---- «Cosa succede» in cima a Stato ---- */
+#box-eventi .lista-eventi { max-height: 430px; }
+.lista-eventi li { display: grid; grid-template-columns: auto 8px minmax(0, 1fr); gap: 8px; align-items: baseline; }
+.lista-eventi li.vuoto { display: block; color: var(--tenue); }
+.lista-eventi time { margin-right: 0; font-size: 11px; }
+.lista-eventi .ev-punto { width: 7px; height: 7px; border-radius: 50%; background: var(--grigio); align-self: center; }
+.lista-eventi li.ev-finito { color: #9fdcb6; }
+.lista-eventi li.ev-finito .ev-punto { background: var(--verde); }
+.lista-eventi li.ev-errore { color: #f3a3b9; }
+.lista-eventi li.ev-errore .ev-punto { background: var(--rosso); }
+.lista-eventi li.ev-avviato .ev-punto { background: var(--accento); box-shadow: 0 0 6px rgba(89, 156, 231, .8); }
+
+/* ---- Jarvis: bolla audio attorno alla sfera e onda sotto la scritta ---- */
+.nucleo .sfera { width: 170px; }
+.bolla-audio { position: absolute; inset: 20%; pointer-events: none; }
+.bolla-audio i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(89, 156, 231, .55); opacity: 0; }
+.onda-voce { display: flex; gap: 3px; justify-content: center; align-items: flex-end; height: 14px; margin-top: 4px; }
+.onda-voce i { width: 3px; height: 4px; border-radius: 2px; background: var(--tenue); opacity: .5; transition: background .3s, opacity .3s; }
+.sfera.speaking .onda-voce i { background: var(--accento); opacity: 1; }
+.sfera.listening .onda-voce i { background: var(--verde); opacity: 1; }
+.sfera.thinking .bolla-audio i:first-child { opacity: 1; border-color: transparent; border-top-color: var(--accento); border-right-color: rgba(89, 156, 231, .35); }
+@media (prefers-reduced-motion: no-preference) {
+  .sfera.speaking .bolla-audio i { animation: bolla-si-allarga 2s ease-out infinite; }
+  .sfera.speaking .bolla-audio i:nth-child(2) { animation-delay: .5s; }
+  .sfera.speaking .bolla-audio i:nth-child(3) { animation-delay: 1s; }
+  .sfera.speaking .bolla-audio i:nth-child(4) { animation-delay: 1.5s; }
+  .sfera.speaking .onda-voce i, .sfera.listening .onda-voce i { animation: barra-voce .9s ease-in-out infinite; }
+  .onda-voce i:nth-child(2) { animation-delay: .15s !important; }
+  .onda-voce i:nth-child(3) { animation-delay: .3s !important; }
+  .onda-voce i:nth-child(4) { animation-delay: .45s !important; }
+  .onda-voce i:nth-child(5) { animation-delay: .6s !important; }
+  .sfera.thinking .bolla-audio i:first-child { animation: gira 1.1s linear infinite; }
+  .lista-eventi li.ev-avviato .ev-punto { animation: pulsa-spia 1.4s ease-in-out infinite; }
+}
+@keyframes bolla-si-allarga { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(1.9); opacity: 0; } }
+@keyframes barra-voce { 0%, 100% { height: 4px; } 50% { height: 14px; } }
+
+/* ---- pagina Scadenze ---- */
+.vista-scadenze { position: relative; }
+.scad-lista { list-style: none; margin: 10px 0 0; padding: 0; }
+.scad-lista li.vuoto { color: var(--tenue); padding: 8px 0; }
+.scad-riga { display: grid; grid-template-columns: 18px 76px minmax(0, 1fr); gap: 10px; align-items: start; padding: 8px 0; border-bottom: 1px solid var(--linea); transition: opacity .3s; }
+.scad-riga input[type="checkbox"] { margin: 3px 0 0; accent-color: var(--verde); cursor: pointer; }
+.scad-data { display: grid; font-family: var(--mono); line-height: 1.25; }
+.scad-data b { font-size: 14px; font-weight: 600; color: var(--testo); }
+.scad-data small { font-size: 10.5px; color: var(--tenue); }
+.scad-riga.vicina .scad-data b, .scad-riga.vicina .scad-data small { color: var(--giallo); }
+.scad-riga.scaduta .scad-data b, .scad-riga.scaduta .scad-data small { color: var(--rosso); }
+.scad-testo { display: grid; min-width: 0; font-size: 12.5px; }
+.scad-testo span { overflow-wrap: anywhere; }
+.scad-testo small { color: var(--tenue); font-size: 11px; }
+.scad-aggiungi { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.scad-aggiungi input[name="testo"] { flex: 1 1 180px; min-width: 0; }
+.scad-aggiungi input { background: var(--chrome); color: var(--testo); border: 1px solid var(--linea-2); border-radius: var(--r); padding: 5px 8px; font: inherit; }
+.scad-annulla { position: fixed; left: 50%; bottom: 70px; transform: translateX(-50%); z-index: 19; display: flex; gap: 12px; align-items: center;
+  background: var(--rialzo-2); border: 1px solid var(--linea-2); border-radius: var(--r-lg); padding: 8px 12px; box-shadow: 0 12px 30px rgba(0, 0, 0, .5); max-width: 92vw; }
+/* 12 schede con la spia (26/09/2026): sotto i 1700 px la scritta accanto all'avatar di Jarvis lascia
+   il posto alle schede (lo stato della voce resta nel title e nella sfera di Stato) */
+@media (max-width: 1700px) {
+  .avatar-jarvis small { display: none; }
+  .avatar-jarvis { padding-right: 3px; }
+  .stato-generale { max-width: 150px; }
+  .schede a { padding: 5px 7px; }
+}
+
+/* ======================================================= lavagna in dimostrazione (26/09/2026, video dell'utente) */
+.solo-demo { display: none !important; }
+body.lav-demo .solo-demo { display: inline-flex !important; }
+#lav-demo.attivo { color: #1a1206; background: var(--giallo); border-color: var(--giallo); }
+.lav-demo-badge { position: absolute; top: 10px; right: 12px; z-index: 4; pointer-events: none; font: 600 11px var(--mono); letter-spacing: .06em;
+  color: #1a1206; background: var(--giallo); padding: 4px 10px; border-radius: var(--r-pill); box-shadow: 0 4px 14px rgba(0, 0, 0, .4); }
+.nodo.nota.grande { width: 260px; padding: 12px 14px; }
+.nodo.nota.grande .testo-nota { font-size: 16px; text-align: center; }
+.nodo.nota.colorata .testo-nota { font-size: 13px; }
+/* chi lavora nella dimostrazione: la scheda si illumina e un anello conico le gira attorno */
+.nodo.al-lavoro { box-shadow: 0 0 0 2px var(--accento), 0 0 26px rgba(89, 156, 231, .65); }
+.nodo.al-lavoro::before {
+  content: ""; position: absolute; inset: -4px; border-radius: 11px; padding: 2px; pointer-events: none;
+  background: conic-gradient(from var(--giro), #599ce7, #9386f2, #c77dd8, #3fa266, #599ce7);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.lav-fili path.acceso { stroke: var(--accento); stroke-width: 2.6; filter: drop-shadow(0 0 4px rgba(89, 156, 231, .8)); }
+@media (prefers-reduced-motion: no-preference) {
+  .nodo.al-lavoro::before { animation: giro-anello 2.4s linear infinite; }
+  .lav-fili path.acceso { stroke-dasharray: 8 6; animation: scorre-filo .8s linear infinite; }
+}
+@keyframes scorre-filo { to { stroke-dashoffset: -28; } }
+.lavagna-barra .demo-via { background: var(--accento); border-color: var(--accento); color: #0d1520; font-weight: 600; }
+.lavagna-barra .demo-via:hover { background: #6eaaf0; }
+
+/* menu «/» con tutti i comandi, in gruppi (26/09/2026) */
+.suggerimenti { max-height: 320px; overflow: auto; }
+.suggerimenti .sug-gruppo { position: sticky; top: -4px; z-index: 1; padding: 7px 9px 4px; background: var(--rialzo-2);
+  font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--tenue); }
+.suggerimenti button { align-items: baseline; }
+.suggerimenti button b { flex: none; }
+.suggerimenti button small { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.suggerimenti .sug-etichetta { flex: none; font: 10px var(--mono); color: var(--accento); border: 1px solid var(--accento-linea); border-radius: var(--r-pill); padding: 0 6px; }
+/* spunti della chat vuota: le frequenti con ×N e la x per toglierle */
+.benvenuto .spunto-freq { display: inline-flex; align-items: stretch; }
+.benvenuto .spunto-freq > button:first-child { border-radius: var(--r-pill) 0 0 var(--r-pill); border-right: 0; }
+.benvenuto .spunto-freq > button.togli { border-radius: 0 var(--r-pill) var(--r-pill) 0; padding: 0 9px; color: var(--tenue); }
+.benvenuto .spunto-freq > button.togli:hover { color: var(--rosso); }
+.benvenuto .spunti small { color: var(--tenue); font-size: 10.5px; }
+
+/* ======================================================= chi lavora davvero (26/09/2026, richiesta dell'utente)
+   Le stesse classi della dimostrazione: .al-lavoro sulle schede della lavagna, .acceso sui fili. */
+.agente.attivo { background: rgba(89, 156, 231, .09); box-shadow: inset 2px 0 0 var(--accento), 0 0 14px -6px rgba(89, 156, 231, .7); }
+.gruppo.acceso .gruppo-testa { color: var(--testo); }
+.gruppo.acceso .gruppo-testa::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--verde); box-shadow: 0 0 6px rgba(63, 162, 102, .8); flex: none; }
+.gruppo-testa .al-lavoro-n { font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--verde); font-size: 10.5px; white-space: nowrap; }
+.gruppo-testa .al-lavoro-n:empty { display: none; }
+.sotto-progetto { border-left: 3px solid transparent; transition: border-color .4s, color .4s; }
+.sotto-progetto.acceso { border-left-color: var(--verde); color: var(--testo); }
+@media (prefers-reduced-motion: no-preference) {
+  .gruppo.acceso .gruppo-testa::before { animation: pulsa-verde 1.4s ease-in-out infinite; }
+}
+@keyframes pulsa-verde { 0%, 100% { box-shadow: 0 0 3px rgba(63, 162, 102, .5); opacity: .75; } 50% { box-shadow: 0 0 10px rgba(63, 162, 102, 1); opacity: 1; } }
+
+/* ======================================================= sinapsi (contratto, punto 11, 26/09/2026 sera)
+   Stesso filo che scorre della dimostrazione e dell'attività; «inverso» scorre al contrario, «errore» è rosso. */
+.lav-fili path.sinapsi { stroke: var(--accento); stroke-width: 2.6; filter: drop-shadow(0 0 4px rgba(89, 156, 231, .8)); }
+.lav-fili path.sinapsi.errore { stroke: var(--rosso); filter: drop-shadow(0 0 4px rgba(227, 70, 113, .8)); }
+/* verso, con la freccia dalla parte giusta (29/09/2026): la richiesta va in blu verso chi la riceve, la risposta torna in verde.
+   «inverso» = il filo è disegnato al contrario, quindi la punta sta all'inizio (auto-start-reverse la gira). */
+.lav-fili path.sinapsi { marker-end: url(#freccia-andata); marker-start: none; }
+.lav-fili path.sinapsi.inverso { marker-end: none; marker-start: url(#freccia-andata); }
+.lav-fili path.sinapsi.risposta { stroke: #3fa266; filter: drop-shadow(0 0 4px rgba(63, 162, 102, .85)); marker-end: url(#freccia-ritorno); marker-start: none; }
+.lav-fili path.sinapsi.risposta.inverso { marker-end: none; marker-start: url(#freccia-ritorno); }
+.lav-fili path.sinapsi.errore { marker-end: url(#freccia); }
+.lav-fili path.sinapsi.errore.inverso { marker-end: none; marker-start: url(#freccia); }
+.lav-fili path.filo-temp { stroke-dasharray: 5 5; pointer-events: none; marker-end: url(#freccia); }
+@media (prefers-reduced-motion: no-preference) {
+  .lav-fili path.sinapsi { stroke-dasharray: 8 6; animation: scorre-filo .8s linear infinite; }
+  .lav-fili path.sinapsi.inverso { animation-direction: reverse; }
+}
+.sinapsi-bolla { position: absolute; z-index: 5; width: max-content; max-width: 240px; padding: 6px 10px; border-radius: 12px 12px 12px 4px; pointer-events: none;
+  background: #121418; border: 1px solid var(--accento-linea); color: var(--testo); font-size: 11.5px; line-height: 1.35;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .5), 0 0 14px -4px rgba(89, 156, 231, .6);
+  transform: translate(-50%, -100%) scale(var(--inv, 1)); transform-origin: 50% 100%; animation: entra .25s var(--dolce); }
+.sinapsi-bolla b { color: var(--accento); font-weight: 600; }
+.sinapsi-bolla.errore { border-color: rgba(227, 70, 113, .6); }
+.sinapsi-bolla.errore b { color: var(--rosso); }
+.nodo.sinapsi-tmp.sentinella { opacity: .9; border-style: dashed; }
+/* colonna sinistra: chi riceve un messaggio */
+.agente.riceve { background: rgba(89, 156, 231, .12); }
+.agente .sinapsi-riga { color: var(--accento) !important; white-space: normal !important; overflow: visible !important; font-size: 10.5px !important; }
+.agente .sinapsi-riga.errore { color: var(--rosso) !important; }
+.gruppo.sinapsi .gruppo-testa { color: var(--accento); }
+/* il pannello «Sinapsi» sotto la barra della lavagna */
+.lav-sinapsi { margin: 0 0 6px; border: 1px solid var(--linea); border-radius: var(--r-lg); background: var(--rialzo); }
+.lav-sinapsi summary { cursor: pointer; padding: 6px 10px; font-size: 12px; font-weight: 600; color: var(--testo-2); }
+.lav-sinapsi summary small { font-weight: 400; color: var(--tenue); margin-left: 6px; }
+.sinapsi-lista { list-style: none; margin: 0; padding: 0 10px 8px; max-height: 220px; overflow: auto; font-size: 12px; }
+.sinapsi-lista li { display: grid; grid-template-columns: 64px minmax(120px, auto) minmax(0, 1fr) auto; gap: 10px; align-items: baseline; padding: 4px 0; border-bottom: 1px solid var(--linea); }
+.sinapsi-lista time { font: 11px var(--mono); color: var(--tenue); }
+.sinapsi-lista b { font-weight: 500; white-space: nowrap; }
+.sinapsi-lista span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--testo-2); }
+.sinapsi-lista small { color: var(--tenue); white-space: nowrap; }
+.sinapsi-lista li.sin-in-corso b { color: var(--accento); }
+.sinapsi-lista li.sin-errore b, .sinapsi-lista li.sin-errore small { color: var(--rosso); }
+
+/* ======================================================= Scadenze: controllo e pulizia (26/09/2026 sera) */
+.vista-scadenze .scad-pulizia { grid-column: 1 / -1; }
+.segmenti-scad { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--linea-2); border-radius: var(--r-pill); }
+.segmenti-scad button { border: 0; background: transparent; border-radius: var(--r-pill); padding: 3px 11px; font-size: 11.5px; color: var(--tenue); }
+.segmenti-scad button.attivo { background: var(--rialzo-2); color: var(--testo); }
+.scad-riga-comandi { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-top: 8px; font-size: 12px; color: var(--testo-2); }
+.scad-riga-comandi select { background: var(--chrome); color: var(--testo); border: 1px solid var(--linea-2); border-radius: var(--r); padding: 3px 6px; font: inherit; }
+.scad-riga-comandi label { display: inline-flex; gap: 5px; align-items: center; }
+.scad-filtri { padding-top: 8px; border-top: 1px dashed var(--linea-2); }
+.scad-proposte { margin-top: 10px; padding: 8px 10px; border: 1px solid var(--accento-linea); border-radius: var(--r-lg); background: var(--accento-fondo); }
+.scad-proposte h3 { margin-top: 0; }
+.scad-perche { color: var(--accento) !important; }
+/* la riga ora ha la casella di selezione a sinistra e il ✓ «fatto» a destra */
+.scad-riga { grid-template-columns: 18px 76px minmax(0, 1fr) auto; }
+.scad-riga.selezionata { background: rgba(89, 156, 231, .07); }
+.scad-riga .scad-fatto { padding: 1px 8px; color: var(--tenue); }
+.scad-riga .scad-fatto:hover { color: var(--verde); border-color: rgba(63, 162, 102, .5); }
+.scad-riga.chiusa { opacity: .75; }
+.scad-attesa { display: inline-block; width: 9px; height: 9px; border: 2px solid var(--accento); border-right-color: transparent; border-radius: 50%; vertical-align: -1px; }
+@media (prefers-reduced-motion: no-preference) { .scad-attesa { animation: gira .8s linear infinite; } }
+
+/* ======================================================= la lavagna come motore degli agenti (punto 13, 26/09/2026 18:10) */
+/* agente spento: in grigio, avatar desaturato, in colonna e sulla lavagna */
+.agente.spento, .nodo.spento, .riga-catena.spento { opacity: .5; }
+.agente.spento .avatar, .nodo.spento .avatar { filter: grayscale(1); }
+.agente.archiviato { opacity: .55; cursor: default; grid-template-columns: 40px minmax(0, 1fr) auto; }
+.agente.archiviato .avatar { filter: grayscale(1); font-size: 14px; }
+/* nascita di un agente nuovo e lampeggio dei profili cambiati */
+@media (prefers-reduced-motion: no-preference) {
+  .nodo.nasce { animation: nasce .7s cubic-bezier(.3, 1.4, .5, 1) both; }
+  .lampeggia { animation: lampeggia 1.5s ease-in-out 1; }
+}
+.nodo.nasce { box-shadow: 0 0 0 2px var(--verde), 0 0 26px rgba(63, 162, 102, .7); }
+@keyframes nasce { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes lampeggia { 0%, 100% { box-shadow: none; } 30% { box-shadow: 0 0 0 2px var(--giallo), 0 0 26px rgba(229, 180, 84, .8); } }
+/* barra della lavagna */
+#lav-allineamento.allinea-ok { color: var(--verde); border-color: rgba(63, 162, 102, .45); }
+#lav-allineamento.allinea-no { color: var(--giallo); border-color: rgba(229, 180, 84, .5); }
+#lav-spazio-catena { background: var(--rialzo); color: var(--testo); border: 1px solid var(--linea-2); border-radius: var(--r); padding: 4px 6px; font: inherit; font-size: 12px; }
+.lav-catena-conta { font: 11px var(--mono); color: var(--accento); white-space: nowrap; }
+.lav-catena-conta:empty { display: none; }
+/* scheda agente: umorismo e interruttore «attivo» */
+.sa-umorismo { align-items: center; }
+.sa-umorismo input[type="range"] { accent-color: var(--accento); width: 140px; }
+.sa-attivo { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font-size: 12px; }
+.sa-attivo small { color: var(--tenue); }
+#sa-attivo { --luce: 63, 162, 102; }
+.scheda-agente.spento header .avatar { filter: grayscale(1); opacity: .6; }
+
+/* bolle flottanti (26/09/2026 18:32): schede della tela, si trascinano, × chiude, ⌖ rimette al posto di partenza */
+.sinapsi-bolla { pointer-events: auto; cursor: grab; transform: scale(var(--inv, 1)); transform-origin: 0 0; padding: 18px 12px 8px;
+  border-radius: var(--r-lg); box-shadow: 0 10px 26px rgba(0, 0, 0, .55), 0 0 16px -4px rgba(89, 156, 231, .6); animation: none; }
+.sinapsi-bolla.trascina { cursor: grabbing; z-index: 8; box-shadow: 0 16px 34px rgba(0, 0, 0, .6), 0 0 0 1px var(--accento); }
+.sinapsi-bolla.temporanea { border-style: dashed; }
+.sinapsi-bolla .bolla-comandi { position: absolute; top: 2px; right: 4px; display: flex; gap: 2px; }
+.sinapsi-bolla .bolla-comandi button { padding: 0 5px; font-size: 11px; line-height: 16px; border: 0; background: transparent; color: var(--tenue); }
+.sinapsi-bolla .bolla-comandi button:hover { color: var(--testo); background: var(--hover); }
+/* un gruppo nuovo nasce anche in colonna (punto 14) */
+@media (prefers-reduced-motion: no-preference) { .sotto-progetto.nasce-riga, .agente.nasce { animation: nasce-riga 1.4s var(--dolce) 1; } }
+@keyframes nasce-riga { 0% { background: rgba(63, 162, 102, .35); transform: scaleY(.2); } 40% { transform: scaleY(1); } 100% { background: transparent; } }
+.sotto-progetto.nasce-riga { border-left-color: var(--verde); color: var(--testo); }
+/* modifiche non ancora aggiornate (punto 15) */
+.lav-mod-badge { position: absolute; top: 10px; left: 12px; z-index: 4; pointer-events: none; font: 600 11px var(--mono); color: #1a1206;
+  background: var(--giallo); padding: 4px 10px; border-radius: var(--r-pill); box-shadow: 0 4px 14px rgba(0, 0, 0, .4); }
+#lav-aggiorna-ultime:not(:disabled) { color: var(--giallo); border-color: rgba(229, 180, 84, .5); }
+.mod-titolo { margin: 8px 10px 2px; font-size: 11.5px; color: var(--testo-2); }
+.mod-titolo small { color: var(--tenue); font-weight: 400; margin-left: 6px; }
+
+.gruppi-archiviati { margin: 6px 10px; font-size: 12px; color: var(--tenue); }
+.gruppi-archiviati ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
+.gruppi-archiviati li { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+/* 02/10/2026 (audit menu): «Ripristina» ed «Elimina definitivamente» affiancati; il nome va a capo, i bottoni no */
+.gruppi-archiviati li > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.gruppi-archiviati .azioni-archiviato { display: flex; gap: 4px; flex-shrink: 0; }
+/* gruppo fantasma o lavagna orfana in fondo al menu: solo «Togli» */
+.agente.fantasma { margin: 4px 0; border: 1px dashed var(--tenue); border-radius: 8px; }
+
+/* ---- Assistenza a distanza a pagamento (2026-09-29): banner fisso e scheda nella pagina Stato */
+.assist-banner { margin: 10px 14px 0; padding: 9px 12px; border: 1px solid rgba(227, 70, 113, .55);
+  background: rgba(227, 70, 113, .12); border-radius: var(--r-lg); display: flex; gap: 8px; align-items: center;
+  flex-wrap: wrap; font-size: 13px; position: sticky; top: 0; z-index: 30; }
+.assist-banner #assist-banner-tempo { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.assist-banner .assist-ferma-piccolo { margin-left: auto; border-color: var(--rosso); color: var(--rosso); font-weight: 600; }
+.assist-griglia { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr) minmax(280px, 1fr); }
+.assist-condizioni ul { margin: 0; padding-left: 18px; color: var(--testo-2); }
+.assist-condizioni li { margin: 2px 0; }
+.assist-condizioni h3:first-child { margin-top: 0; }
+.assist-azioni { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.assist-saldo { display: flex; align-items: baseline; gap: 10px; padding: 10px 12px; background: var(--chrome);
+  border: 1px solid var(--linea-2); border-radius: var(--r-lg); }
+.assist-saldo span { color: var(--tenue); }
+.assist-saldo b { font-size: 20px; font-variant-numeric: tabular-nums; }
+.assist-saldo small { color: var(--tenue); }
+#assist-codice { font-family: var(--mono); flex: 1; }
+.assist-consenso { display: flex; gap: 8px; align-items: flex-start; color: var(--testo-2); margin-bottom: 8px; cursor: pointer; }
+.assist-consenso input { margin-top: 3px; }
+.assist-ssh { display: flex; gap: 8px; align-items: center; }
+.assist-ssh code { flex: 1; min-width: 0; overflow-wrap: anywhere; font-family: var(--mono); font-size: 12px;
+  padding: 8px 10px; background: var(--chrome); border: 1px solid var(--linea-2); border-radius: var(--r); }
+.assist-info { margin: 0; color: var(--testo-2); }
+.assist-info:empty { display: none; }
+button.assist-stop { width: 100%; padding: 14px; font-size: 16px; font-weight: 700; letter-spacing: .02em;
+  background: var(--rosso); border-color: var(--rosso); color: #fff; }
+button.assist-stop:hover { filter: brightness(1.1); }
+.assist-registro { margin-top: 12px; color: var(--tenue); font-size: 12px; }
+.assist-registro ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 2px; font-family: var(--mono); }
+@media (max-width: 760px) { .assist-griglia { grid-template-columns: 1fr; } }
+/* lato tecnico dell'assistenza (2026-09-29) */
+#assistenza-tecnico h3 { margin: 0; }
+.tec-form { display: flex; flex-direction: column; gap: 8px; }
+.tec-form label:not(.assist-consenso) { display: flex; flex-direction: column; gap: 4px; color: var(--tenue); font-size: 12px; }
+.tec-due { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+#tec-ssh { font-family: var(--mono); flex: 1; width: 100%; box-sizing: border-box; }
+#tec-emessi li.scaduto { opacity: .55; }
+.tec-sessioni li { display: flex; gap: 8px; align-items: center; justify-content: space-between; font-size: 12px; }
+#tec-tunnel-aggiorna { margin-left: 8px; vertical-align: middle; }
+
+/* 30/09/2026: link su ogni scheda della lavagna e riquadro di selezione */
+.nodo .link-nodo { position: absolute; top: -10px; right: 6px; width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 1px solid var(--bordo, #444);
+  background: var(--rialzo, #222); color: inherit; font-size: 11px; line-height: 1; cursor: pointer; opacity: 0; transition: opacity .12s; }
+.nodo .link-nodo + .link-nodo { right: 32px; }
+.nodo:hover .link-nodo, .nodo.scelto .link-nodo { opacity: 1; }
+.nodo .link-nodo:hover { background: var(--accento, #599ce7); }
+.riquadro-selezione { position: fixed; z-index: 50; border: 1px dashed var(--accento, #599ce7); background: rgba(89, 156, 231, .12); pointer-events: none; }
+
+/* ------------------------------------------------------- repository GitHub e box spostabili (01/10/2026) */
+.repo-lista { display: grid; gap: 2px; }
+.repo-gruppo { font-size: 12px; margin: 12px 0 4px; color: var(--testo); }
+.repo-gruppo:first-child { margin-top: 0; }
+.repo-riga { display: grid; grid-template-columns: minmax(160px, 1.4fr) 70px minmax(90px, .8fr) minmax(90px, .8fr) minmax(120px, 1fr);
+  gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--linea); font-size: 12px; }
+.repo-nome { font-weight: 600; overflow-wrap: anywhere; color: var(--testo); }
+.repo-badge { font-size: 11px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--linea); color: var(--tenue); justify-self: start; }
+.repo-badge.public { color: #e5b454; border-color: rgba(229, 180, 84, .5); }
+.repo-tipo, .repo-push, .repo-stato.tenue { color: var(--tenue); }
+.repo-stato.ok { color: #3fa266; }
+.repo-stato.attenzione { color: #e5b454; }
+@media (max-width: 700px) { .repo-riga { grid-template-columns: 1fr auto; } .repo-tipo, .repo-push { display: none; } }
+
+.maniglia-box { all: unset; cursor: grab; touch-action: none; user-select: none; color: var(--tenue); font-size: 15px; line-height: 1;
+  padding: 2px 6px 2px 0; margin-right: 2px; opacity: .45; transition: opacity .15s, color .15s; }
+.pannello:hover > .maniglia-box, .pannello:hover .maniglia-box, .maniglia-box:focus-visible { opacity: 1; }
+.maniglia-box:hover { color: var(--testo); }
+.box-sollevato { outline: 2px solid #5b9dff; outline-offset: -2px; opacity: .8; box-shadow: 0 8px 28px rgba(0, 0, 0, .35); }
+body.box-in-corso, body.box-in-corso * { cursor: grabbing !important; user-select: none; }
+.pannello { transition: box-shadow .15s, opacity .15s; }
+
+/* ------------------------------------------------------- avviso di aggiornamento (01/10/2026) */
+.avviso-aggiorna { border-color: rgba(91, 157, 255, .5); background: rgba(91, 157, 255, .08); }
+.avviso-aggiorna .aggiorna-novita { flex-basis: 100%; font-size: 12px; color: var(--tenue); }
+.avviso-aggiorna .aggiorna-novita ul { margin: 6px 0 0; padding-left: 18px; }
+
+/* guida e controllo della lavagna (02/10/2026) */
+#guida-lavagna { width: min(720px, 94vw); }
+#gl-corpo { max-height: 62vh; overflow: auto; padding: 4px 2px; }
+#gl-corpo .gl-op { border-bottom: 1px solid var(--linea, #8884); padding: 8px 0; }
+#gl-corpo .gl-op summary { cursor: pointer; line-height: 1.4; }
+#gl-corpo dl { margin: 8px 0 0 0; display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; font-size: .92em; }
+#gl-corpo dt { opacity: .7; }
+#gl-corpo dd { margin: 0; }
+#gl-corpo .gl-errore { border-left: 3px solid #d33; padding-left: 8px; }
+#gl-corpo .gl-avviso { border-left: 3px solid #d9a400; padding-left: 8px; }
+
+/* Attività dell'agente (proposta 2026-10-02): tabella nella scheda, indicatori nel menu laterale */
+.sa-att-barra { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; }
+.sa-att-filtro { display: inline-flex; align-items: center; gap: 4px; color: var(--testo-2); }
+.sa-att-avvisi { list-style: none; margin: 6px 0; padding: 0; font-size: 12px; color: var(--giallo); }
+.sa-att-tabella { max-height: 260px; overflow: auto; border: 1px solid var(--linea); border-radius: var(--r-lg); }
+#sa-att { width: 100%; border-collapse: collapse; font-size: 12px; }
+#sa-att th { position: sticky; top: 0; background: var(--rialzo); text-align: left; font-weight: 500; color: var(--tenue); padding: 4px 6px; }
+#sa-att td { padding: 4px 6px; border-top: 1px solid var(--linea); vertical-align: top; }
+#sa-att time { font: 11px var(--mono); color: var(--tenue); }
+#sa-att .att-verso { color: var(--tenue); }
+#sa-att .att-testo { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+#sa-att .att-errore { display: block; color: var(--rosso); }
+#sa-att tr.att-errore .att-stato, #sa-att tr.att-rimandato .att-stato { color: var(--rosso); }
+#sa-att tr.att-al-lavoro .att-stato, #sa-att tr.att-in-corso .att-stato { color: var(--verde); }
+#sa-att tr.att-avviso { background: color-mix(in srgb, var(--giallo) 8%, transparent); }
+#sa-att .att-segno { margin-left: 4px; color: var(--giallo); }
+.agente .att-ind { margin-left: auto; font: 11px var(--mono); color: var(--verde); }
+.agente .att-ind.avviso { color: var(--giallo); }
+.agente .att-ind.errore { color: var(--rosso); }
+#sinapsi-conta::after { content: " " attr(data-sconosciuti); color: var(--giallo); }
+@media (max-width: 600px) { #sa-att th:nth-child(6), #sa-att td:nth-child(6) { display: none; } }

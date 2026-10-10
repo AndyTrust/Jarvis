@@ -1,0 +1,3 @@
+# Chiave pubblica Ed25519 dei codici di assistenza dell'utente (creata il 2026-09-29 11:20).
+# Serve solo a verificare i codici: non permette di crearne.
+632862162b663f5fe18ad4d7e8262a092c3edcc41c211c85725f780ee777b633

@@ -1,0 +1,4 @@
+# Le missioni del Command Center (command-center/missione.py) parlano con Claude Code tramite l'SDK.
+# Stanno nel venv di backtalk (backtalk/.venv), lo stesso della voce: lo crea backtalk/install.sh.
+# Da solo, senza la voce:  python3 -m venv backtalk/.venv && backtalk/.venv/bin/pip install -r requirements/missioni.txt
+claude-agent-sdk>=0.2.100

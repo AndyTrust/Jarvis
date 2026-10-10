@@ -1,0 +1,224 @@
+{
+ "calibrazione": {
+  "quando": "2026-09-19 18:37",
+  "schermi": [
+   {
+    "h": 1107,
+    "l": 1710,
+    "n": 0,
+    "principale": true,
+    "scala": 2,
+    "x": 0,
+    "y": 0
+   }
+  ],
+  "pixel_screenshot": [
+   3420,
+   2214
+  ],
+  "scala": 2.0,
+  "punti": [
+   1710,
+   1107
+  ],
+  "scarto_puntatore_max": 0,
+  "regola": "coordinate dei clic = pixel dello screenshot grezzo / scala; «guarda» rimpicciolisce già a punti"
+ },
+ "app": {
+  "Calcolatrice": {
+   "Cancella tutto": {
+    "usi": 2,
+    "via": "ax",
+    "ultimo": "2026-09-19 18:38",
+    "schermo": [
+     461,
+     408
+    ],
+    "relativo": [
+     88,
+     157
+    ],
+    "finestra": [
+     230,
+     408
+    ]
+   },
+   "7": {
+    "usi": 2,
+    "via": "ax",
+    "ultimo": "2026-09-19 18:38",
+    "schermo": [
+     407,
+     462
+    ],
+    "relativo": [
+     34,
+     211
+    ],
+    "finestra": [
+     230,
+     408
+    ]
+   },
+   "Aggiungi": {
+    "usi": 2,
+    "via": "ax",
+    "ultimo": "2026-09-19 18:38",
+    "schermo": [
+     569,
+     570
+    ],
+    "relativo": [
+     196,
+     319
+    ],
+    "finestra": [
+     230,
+     408
+    ]
+   },
+   "8": {
+    "usi": 2,
+    "via": "ax",
+    "ultimo": "2026-09-19 18:38",
+    "schermo": [
+     461,
+     462
+    ],
+    "relativo": [
+     88,
+     211
+    ],
+    "finestra": [
+     230,
+     408
+    ]
+   },
+   "Uguale": {
+    "usi": 2,
+    "via": "ax",
+    "ultimo": "2026-09-19 18:38",
+    "schermo": [
+     569,
+     624
+    ],
+    "relativo": [
+     196,
+     373
+    ],
+    "finestra": [
+     230,
+     408
+    ]
+   }
+  },
+  "Telegram": {
+   "Scrivi un messaggio": {
+    "usi": 2,
+    "via": "ocr",
+    "ultimo": "2026-09-19 19:08",
+    "schermo": [
+     554,
+     1075
+    ],
+    "relativo": [
+     554,
+     1041
+    ],
+    "finestra": [
+     1710,
+     1073
+    ]
+   },
+   "BotFather": {
+    "usi": 1,
+    "via": "ocr",
+    "ultimo": "2026-09-19 18:56",
+    "schermo": [
+     119,
+     218
+    ],
+    "relativo": [
+     119,
+     184
+    ],
+    "finestra": [
+     1710,
+     1073
+    ]
+   }
+  },
+  "WhatsApp": {
+   "Cerca": {
+    "usi": 1,
+    "via": "ax",
+    "ultimo": "2026-09-19 22:03",
+    "schermo": [
+     342,
+     102
+    ],
+    "relativo": [
+     255,
+     68
+    ],
+    "finestra": [
+     1170,
+     1073
+    ]
+   }
+  },
+  "Google Chrome": {
+   "Gmail Pass": {
+    "usi": 1,
+    "via": "ocr",
+    "ultimo": "2026-09-26 11:20",
+    "schermo": [
+     143,
+     761
+    ],
+    "relativo": [
+     143,
+     605
+    ],
+    "finestra": [
+     1710,
+     951
+    ]
+   },
+   "Cerca risorsa": {
+    "usi": 2,
+    "via": "ocr",
+    "ultimo": "2026-09-26 11:22",
+    "schermo": [
+     582,
+     166
+    ],
+    "relativo": [
+     582,
+     10
+    ],
+    "finestra": [
+     1710,
+     951
+    ]
+   },
+   "Gamail Pass": {
+    "usi": 1,
+    "via": "ocr",
+    "ultimo": "2026-09-26 11:22",
+    "schermo": [
+     385,
+     356
+    ],
+    "relativo": [
+     385,
+     200
+    ],
+    "finestra": [
+     1710,
+     951
+    ]
+   }
+  }
+ }
+}

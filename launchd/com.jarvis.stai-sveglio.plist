@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Il Mac non dorme (l'utente, 28/09/2026): Command Center, tunnel verso la VPS e
+	     Telegram VPS devono restare raggiungibili. Tiene solo il SISTEMA sveglio
+	     (caffeinate -s), non il display: lo schermo si spegne comunque da solo.
+	     Per fermarlo: launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.jarvis.stai-sveglio.plist -->
+	<key>Label</key>
+	<string>com.jarvis.stai-sveglio</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/usr/bin/caffeinate</string>
+		<string>-s</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>ProcessType</key>
+	<string>Background</string>
+</dict>
+</plist>

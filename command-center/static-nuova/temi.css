@@ -1,0 +1,329 @@
+/* Temi del Command Center (2026-10-03, richiesta dell'utente: «inserisci anche i temi nero, chiaro e Claude»).
+   Si carica DOPO tutti gli altri fogli (app.css, mobile.css, approvazioni.css, attivita.css, chiamata.css,
+   computer.css, registro.css). Un solo interruttore: l'attributo data-tema su <html>
+     scuro (o assente) · nero · chiaro · claude · auto (+ data-auto="chiaro|scuro", lo mette temi.js)
+   Con «scuro» questo file non cambia niente: ogni regola dei temi sta sotto un selettore
+   :root[data-tema=…] diverso da «scuro». Le sole regole senza tema sono quelle del selettore
+   (.tema-*), elementi nuovi che prima non c'erano.
+   Come funziona: 1) ogni tema ridefinisce le variabili di app.css (--chrome, --testo, --accento…);
+   2) i colori scritti a mano negli altri fogli (#141414, rgba(20,20,20,.82), #111 sui pulsanti
+   chiari…) passano da variabili nuove --t-* con un override mirato per componente.
+   Inventario completo e motivo di ogni override: INTEGRA-TEMI.md. */
+
+/* ======================================================================= 1. PALETTE */
+
+/* ---- Nero: nero vero per OLED, bordi sottili ma visibili, testo bianco pieno ---- */
+:root[data-tema="nero"] {
+  color-scheme: dark;
+  --chrome: #000; --fondo: #000; --rialzo: #0b0b0b; --rialzo-2: #1a1a1a;
+  --testo: #fff; --testo-2: rgba(255, 255, 255, .82); --tenue: rgba(255, 255, 255, .64);
+  --linea: rgba(255, 255, 255, .15); --linea-2: rgba(255, 255, 255, .25); --linea-3: rgba(255, 255, 255, .38);
+  --hover: rgba(255, 255, 255, .08); --attivo: rgba(255, 255, 255, .14);
+  --accento: #6aaefc; --accento-fondo: rgba(106, 174, 252, .16); --accento-linea: rgba(106, 174, 252, .6);
+  --verde: #4cc27d; --giallo: #f0c060; --rosso: #ff5c88; --viola: #a99bff; --arancio: #eb9c80; --grigio: #6e6e6e;
+  --t-sel: rgba(106, 174, 252, .45);
+  --t-primario: #fff; --t-primario-hover: #fff; --t-su-primario: #000;
+  --t-su-giallo: #1a1206; --t-su-accento: #04101f;
+  --t-logo-j: #9fb6f5; --t-j: #fff;
+  --t-centro: #000; --t-lato: #000; --t-vetro: #000; --t-barra-sotto: rgba(0, 0, 0, .96);
+  --t-aurora: none;
+  --t-cuore: radial-gradient(circle at 50% 35%, #1c1c1c, #000);
+  --t-aj: radial-gradient(circle at 50% 35%, #18202c, #000);
+  --t-griglia: rgba(255, 255, 255, .16); --t-lavagna-sopra: #05101d; --t-filo: rgba(255, 255, 255, .45);
+  --t-nota: #1d190b; --t-bolla: #0b0b0b; --t-puntini: #8fc0f5;
+  --t-switch: #000; --t-switch-bordo: rgba(255, 255, 255, .38); --t-pomello: #e8e8e8;
+  --t-verde-testo: #a6e6bf; --t-rosso-testo: #ffb1c5; --t-giallo-testo: #f7dfb0; --t-rosso-chiaro: #ffc9d6;
+  --t-dentro-lavoro: rgba(0, 0, 0, .7);
+  --t-vassoio-lav: rgba(0, 0, 0, .95); --t-velo-voce: rgba(0, 0, 0, .97);
+  --t-ombra: 0 6px 18px rgba(0, 0, 0, .6); --t-ombra-forte: 0 30px 80px rgba(0, 0, 0, .8);
+  --t-serif: inherit;
+}
+
+/* ---- Chiaro: fondo chiaro, testo quasi nero, accento blu scuro; pensato per il sole sul telefono ---- */
+:root:is([data-tema="chiaro"], [data-tema="auto"][data-auto="chiaro"]) {
+  color-scheme: light;
+  --chrome: #eceef2; --fondo: #f7f8fa; --rialzo: #fff; --rialzo-2: #e6e9ee;
+  --testo: #111418; --testo-2: #383c44; --tenue: #575c65;
+  --linea: rgba(17, 20, 24, .11); --linea-2: rgba(17, 20, 24, .19); --linea-3: rgba(17, 20, 24, .32);
+  --hover: rgba(17, 20, 24, .05); --attivo: rgba(17, 20, 24, .09);
+  --accento: #1a52a8; --accento-fondo: rgba(26, 82, 168, .10); --accento-linea: rgba(26, 82, 168, .5);
+  --verde: #1d7a44; --giallo: #865700; --rosso: #c0254f; --viola: #5b4bc4; --arancio: #a24f2d; --grigio: #8a9099;
+  --t-sel: rgba(31, 95, 191, .22);
+  --t-primario: #111418; --t-primario-hover: #2b3039; --t-su-primario: #fff;
+  --t-su-giallo: #fff; --t-su-accento: #fff;
+  --t-logo-j: #2f4fb3; --t-j: #111418;
+  --t-centro: rgba(247, 248, 250, .86); --t-lato: rgba(236, 238, 242, .9); --t-vetro: rgba(255, 255, 255, .75);
+  --t-barra-sotto: rgba(247, 248, 250, .97);
+  --t-aurora: radial-gradient(38% 42% at 22% 18%, rgba(31, 95, 191, .07), transparent 70%),
+              radial-gradient(34% 40% at 82% 86%, rgba(91, 75, 196, .05), transparent 70%);
+  --t-cuore: radial-gradient(circle at 50% 35%, #fff, #e3e7ee);
+  --t-aj: radial-gradient(circle at 50% 35%, #fff, #dfe6f2);
+  --t-griglia: rgba(17, 20, 24, .16); --t-lavagna-sopra: #e8eff9; --t-filo: #858b95;
+  --t-nota: #fff4d6; --t-bolla: #fff; --t-puntini: #1a52a8;
+  --t-switch: #d5d9e0; --t-switch-bordo: #7d838d; --t-pomello: #fff;
+  --t-verde-testo: #155f35; --t-rosso-testo: #a01d42; --t-giallo-testo: #6e4700; --t-rosso-chiaro: #8d1a3a;
+  --t-dentro-lavoro: rgba(255, 255, 255, .82);
+  --t-vassoio-lav: rgba(255, 255, 255, .96); --t-velo-voce: rgba(247, 248, 250, .98);
+  --t-ombra: 0 4px 14px rgba(17, 20, 24, .10); --t-ombra-forte: 0 24px 60px rgba(17, 20, 24, .22);
+  --t-serif: inherit;
+}
+
+/* ---- Claude: crema caldo, testo marrone-grigio quasi nero, accento terracotta, titoli con le grazie ---- */
+:root[data-tema="claude"] {
+  color-scheme: light;
+  --chrome: #f0eee6; --fondo: #faf9f5; --rialzo: #fff; --rialzo-2: #ebe7dc;
+  --testo: #1f1e1b; --testo-2: #3d3a33; --tenue: #5c584c;
+  --linea: rgba(31, 30, 27, .10); --linea-2: rgba(31, 30, 27, .18); --linea-3: rgba(31, 30, 27, .30);
+  --hover: rgba(31, 30, 27, .05); --attivo: rgba(31, 30, 27, .085);
+  --accento: #8f3f1d; --accento-fondo: rgba(198, 97, 63, .12); --accento-linea: rgba(198, 97, 63, .6);
+  --verde: #2b7443; --giallo: #865700; --rosso: #b3261e; --viola: #6a4fb8; --arancio: #93461b; --grigio: #8f8b80;
+  --t-sel: rgba(217, 119, 87, .28);
+  --t-primario: #b4532f; --t-primario-hover: #9d4626; --t-su-primario: #fff;
+  --t-su-giallo: #fff; --t-su-accento: #fff;
+  --t-logo-j: #c6613f; --t-j: #1f1e1b;
+  --t-centro: rgba(250, 249, 245, .9); --t-lato: rgba(240, 238, 230, .92); --t-vetro: rgba(255, 255, 255, .7);
+  --t-barra-sotto: rgba(250, 249, 245, .97);
+  --t-aurora: radial-gradient(38% 42% at 22% 18%, rgba(217, 119, 87, .08), transparent 70%),
+              radial-gradient(34% 40% at 82% 86%, rgba(198, 168, 120, .08), transparent 70%);
+  --t-cuore: radial-gradient(circle at 50% 35%, #fff, #ece6d8);
+  --t-aj: radial-gradient(circle at 50% 35%, #fff, #f1e3da);
+  --t-griglia: rgba(31, 30, 27, .15); --t-lavagna-sopra: #f6e9e2; --t-filo: #8c8577;
+  --t-nota: #fbf0d4; --t-bolla: #fff; --t-puntini: #c6613f;
+  --t-switch: #ddd8cc; --t-switch-bordo: #857f71; --t-pomello: #fff;
+  --t-verde-testo: #215b35; --t-rosso-testo: #8f1f18; --t-giallo-testo: #6b4500; --t-rosso-chiaro: #8f1f18;
+  --t-dentro-lavoro: rgba(255, 255, 255, .82);
+  --t-vassoio-lav: rgba(255, 255, 255, .96); --t-velo-voce: rgba(250, 249, 245, .98);
+  --t-ombra: 0 4px 14px rgba(60, 45, 30, .10); --t-ombra-forte: 0 24px 60px rgba(60, 45, 30, .20);
+  /* titoli e risposte di Jarvis con le grazie, solo font di sistema (niente rete) */
+  --t-serif: ui-serif, "New York", "Iowan Old Style", "Charter", "Bitstream Charter", Georgia, Cambria, "Times New Roman", serif;
+}
+
+/* ======================================================================= 2. OVERRIDE PER COMPONENTE
+   «T» = tutti i temi tranne Scuro; «L» = solo i chiari (Chiaro, Automatico di giorno, Claude). */
+
+/* ---- base: selezione, pulsante principale, logo ---- */
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) ::selection { background: var(--t-sel); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) :is(button.primario, .invia, .apv-si, .pc-primario) {
+  background: var(--t-primario); border-color: var(--t-primario); color: var(--t-su-primario);
+}
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) :is(button.primario:not(:disabled), .invia:not(:disabled), .apv-si:not(:disabled)):hover {
+  background: var(--t-primario-hover);
+}
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) button.primario:not(:disabled):hover {
+  box-shadow: 0 0 0 3px var(--accento-fondo), 0 0 0 1px var(--accento-linea);
+}
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .invia:disabled {
+  background: var(--linea-3); color: var(--tenue);
+}
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) :is(.logo-nome, .m-marca b)::first-letter { color: var(--t-logo-j); }
+/* l'avatar «J» di Jarvis: --c:#f0f0f0 anche scritto inline dagli script (app.js) */
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .avatar-j,
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .avatar[style*="--c:#f0f0f0"] { --c: var(--t-j) !important; }
+
+/* ---- fondo: aurora, centro, colonna, vetro dell'avatar di Jarvis ---- */
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) body::before { background: var(--t-aurora); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .centro { background: var(--t-centro); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .lato { background: var(--t-lato); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .avatar-jarvis { background: var(--t-vetro); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .aj-cerchio { background: var(--t-aj); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .cuore { background: var(--t-cuore); }
+
+/* ---- chat ---- */
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .modo-chat button[data-modo="lavoro"].attivo {
+  color: var(--t-verde-testo); background: rgba(29, 122, 68, .14); box-shadow: inset 0 0 0 1px rgba(29, 122, 68, .45);
+}
+:root[data-tema="nero"] .modo-chat button[data-modo="lavoro"].attivo { color: var(--t-verde-testo); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .bolla-scrive { background: var(--t-bolla); box-shadow: var(--t-ombra); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .bolla-scrive i { background: var(--t-puntini); }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .bolla-scrive::after {
+  background-image: linear-gradient(90deg, transparent, var(--accento), transparent);
+}
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .comandi-diretti button:not(:disabled):hover {
+  border-color: var(--accento-linea); box-shadow: 0 0 0 1px var(--accento-fondo);
+}
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .pillola:focus-within { box-shadow: 0 0 0 4px var(--accento-fondo); }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .msg.mio .testo { border: 1px solid var(--linea); }
+
+/* ---- ombre: sul chiaro le ombre nere a .35-.6 sporcano; diventano morbide ---- */
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) :is(.suggerimenti, .toast, .scad-annulla, .apv-vassoio, .apv-lav-box, .sinapsi-bolla, .progetto-card) { box-shadow: var(--t-ombra); }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) dialog.scheda-agente { box-shadow: var(--t-ombra-forte); }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) dialog::backdrop { background: rgba(17, 20, 24, .38); }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .spazio-catena[open] { box-shadow: var(--t-ombra); }
+
+/* ---- maniglia dei box: a .45 di opacità; in Server il titolo «VPS del provider» finisce DENTRO la maniglia
+   (app.js riscrive il titolo dopo boxInit) e diventa illeggibile. Nei temi nuovi la maniglia è piena. ---- */
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .maniglia-box { opacity: 1; }
+
+/* ---- schede del menu, contatori, spie ---- */
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .schede a.tecnico { color: var(--arancio); }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .schede a.tecnico.attiva { background: color-mix(in srgb, var(--arancio) 12%, transparent); }
+
+/* ---- interruttori: binario chiaro con bordo che si vede (≥ 3:1), luce più scura ---- */
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .switch:not(.on) { background: var(--t-switch); border-color: var(--t-switch-bordo); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .switch::after { background: var(--t-pomello); }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .switch { box-shadow: inset 0 1px 2px rgba(17, 20, 24, .12); }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .switch::after { box-shadow: 0 1px 3px rgba(17, 20, 24, .35), 0 0 0 1px rgba(17, 20, 24, .18); }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .switch { --luce: 26, 82, 168; }
+:root[data-tema="claude"] .switch { --luce: 180, 83, 47; }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) :is(.riga-int[data-int="telefono"], .riga-int[data-int="schermo_telefono"], .vista-tecnica) .switch { --luce: 162, 79, 45; }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) #sa-attivo { --luce: 29, 122, 68; }
+/* sul telefono il binario è il ::before (mobile.css) */
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .switch:not(.on)::before { background: var(--t-switch); border-color: var(--t-switch-bordo); }
+@media (max-width: 820px), (max-width: 1100px) and (pointer: coarse) {
+  :root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .switch:not(.on) { background: transparent; border-color: transparent; }
+  :root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .switch { box-shadow: none; }
+  :root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .switch::before { box-shadow: inset 0 1px 2px rgba(17, 20, 24, .12); }
+}
+
+/* ---- caselle e pallini del telefono (mobile.css li disegna con SVG a colori fissi) ---- */
+@media (max-width: 820px), (max-width: 1100px) and (pointer: coarse) {
+  :root[data-tema="nero"] input[type=checkbox]:not(:checked) {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Crect x='1' y='1' width='20' height='20' rx='5' fill='%23000' stroke='%23a0a0a0' stroke-width='1.5'/%3E%3C/svg%3E");
+  }
+  :root[data-tema="nero"] input[type=radio]:not(:checked) {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Ccircle cx='11' cy='11' r='9.5' fill='%23000' stroke='%23a0a0a0' stroke-width='1.5'/%3E%3C/svg%3E");
+  }
+  :root:is([data-tema="chiaro"], [data-tema="auto"][data-auto="chiaro"]) input[type=checkbox]:not(:checked) {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Crect x='1' y='1' width='20' height='20' rx='5' fill='%23fff' stroke='%23727882' stroke-width='1.5'/%3E%3C/svg%3E");
+  }
+  :root:is([data-tema="chiaro"], [data-tema="auto"][data-auto="chiaro"]) input[type=checkbox]:checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Crect x='1' y='1' width='20' height='20' rx='5' fill='%231a52a8' stroke='%231a52a8' stroke-width='1.5'/%3E%3Cpath d='M6 11.5l3.4 3.4L16.5 7.5' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+  :root:is([data-tema="chiaro"], [data-tema="auto"][data-auto="chiaro"]) input[type=radio]:not(:checked) {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Ccircle cx='11' cy='11' r='9.5' fill='%23fff' stroke='%23727882' stroke-width='1.5'/%3E%3C/svg%3E");
+  }
+  :root:is([data-tema="chiaro"], [data-tema="auto"][data-auto="chiaro"]) input[type=radio]:checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Ccircle cx='11' cy='11' r='9.5' fill='%23fff' stroke='%231a52a8' stroke-width='1.5'/%3E%3Ccircle cx='11' cy='11' r='5' fill='%231a52a8'/%3E%3C/svg%3E");
+  }
+  :root[data-tema="claude"] input[type=checkbox]:not(:checked) {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Crect x='1' y='1' width='20' height='20' rx='5' fill='%23fff' stroke='%23857f71' stroke-width='1.5'/%3E%3C/svg%3E");
+  }
+  :root[data-tema="claude"] input[type=checkbox]:checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Crect x='1' y='1' width='20' height='20' rx='5' fill='%23b4532f' stroke='%23b4532f' stroke-width='1.5'/%3E%3Cpath d='M6 11.5l3.4 3.4L16.5 7.5' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+  :root[data-tema="claude"] input[type=radio]:not(:checked) {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Ccircle cx='11' cy='11' r='9.5' fill='%23fff' stroke='%23857f71' stroke-width='1.5'/%3E%3C/svg%3E");
+  }
+  :root[data-tema="claude"] input[type=radio]:checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Ccircle cx='11' cy='11' r='9.5' fill='%23fff' stroke='%23b4532f' stroke-width='1.5'/%3E%3Ccircle cx='11' cy='11' r='5' fill='%23b4532f'/%3E%3C/svg%3E");
+  }
+  /* colonna degli agenti a cassetto e barra in basso */
+  :root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .lato { background: var(--chrome); }
+  :root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .m-schede { background: var(--t-barra-sotto); }
+  :root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) :is(.lato, .m-foglio) { box-shadow: var(--t-ombra-forte); }
+  :root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) :is(.app.lato-aperto .velo, .m-foglio-velo) { background: rgba(17, 20, 24, .35); }
+}
+
+/* ---- lavagna: puntini della griglia, fili, schede, note, badge della dimostrazione ---- */
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .lavagna {
+  background-image: radial-gradient(circle, var(--t-griglia) 1px, transparent 1.2px);
+}
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .lavagna.sopra { background-color: var(--t-lavagna-sopra); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .lav-fili path:not(.scelto, .filo-presa, .guida, .provvisorio, .sinapsi, .acceso) { stroke: var(--t-filo); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .lav-fili path.filo-presa { stroke: transparent; }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .lav-fili path:not(.filo-presa, .guida, .provvisorio, .sinapsi, .acceso):hover { stroke: var(--testo-2); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .lav-fili marker path { fill: var(--t-filo); }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .lav-fili path.sinapsi.risposta { stroke: var(--verde); }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .nodo { box-shadow: var(--t-ombra); }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .nodo.scelto { box-shadow: 0 0 0 2px var(--accento), var(--t-ombra); }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .nodo.bersaglio { box-shadow: 0 0 0 2px var(--verde), var(--t-ombra); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .nodo.nota:not(.colorata) { background: var(--t-nota); border-color: color-mix(in srgb, var(--giallo) 45%, transparent); }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .nodo.nota.colorata { background: color-mix(in srgb, var(--c) 14%, var(--rialzo)); }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .nodo.nota.colorata .testo-nota { color: color-mix(in srgb, var(--c) 45%, #000); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) :is(#lav-demo.attivo, .lav-demo-badge, .lav-mod-badge) { color: var(--t-su-giallo); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .lavagna-barra .demo-via { color: var(--t-su-accento); }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .lavagna-barra .demo-via:hover { background: var(--t-primario-hover); border-color: var(--t-primario-hover); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .sinapsi-bolla { background: var(--t-bolla); }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .lav-x-filo { box-shadow: var(--t-ombra); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .lav-barra { background: var(--linea); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .lav-avatar.in-corso::before {
+  background: var(--t-dentro-lavoro);
+}
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .lav-avatar.in-corso b { text-shadow: none; }
+
+/* ---- Stato: eventi, repository ---- */
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .lista-eventi li.ev-finito { color: var(--t-verde-testo); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .lista-eventi li.ev-errore { color: var(--t-rosso-testo); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .repo-badge.public { color: var(--giallo); border-color: color-mix(in srgb, var(--giallo) 55%, transparent); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .repo-stato.ok { color: var(--verde); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .repo-stato.attenzione { color: var(--giallo); }
+
+/* ---- ponte (mobile.css): badge, modo, note e avvisi, velo della voce ---- */
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .ponte-badge.spento { color: var(--t-rosso-testo); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .ponte-modo.lavoro { color: var(--t-verde-testo); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .ponte-modo.approvazione { color: var(--t-giallo-testo); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .ponte-nota.errore { color: var(--t-rosso-testo); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .ponte-avviso { color: var(--t-rosso-chiaro); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .ponte-velo-voce { background: var(--t-velo-voce); }
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .ponte-velo-voce .ponte-mic-grande { background: var(--t-aj); }
+
+/* ---- approvazioni: riquadro sulla lavagna ---- */
+:root:is([data-tema="nero"], [data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .apv-lav-box { background: var(--t-vassoio-lav); }
+
+/* ---- chiamata: la pillola «permesso» ha testo #111 su giallo scurito ---- */
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .chiamata-pillola.chm-pil-permesso { background: var(--giallo); color: #fff; }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .chiamata-pillola.chm-pil-permesso .chm-punto { background: #fff; }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) button.chiamata-pillola.chm-pil-permesso:hover { background: color-mix(in srgb, var(--giallo) 88%, #000); }
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) .chm-p-si { background: var(--verde); }
+/* il cerchio con la J: sul chiaro il 40% del colore di fase sporcava il centro (marrone nella fase «lavora») */
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) dialog.chiamata .chm-avatar,
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) dialog.chiamata button.chm-avatar:hover {
+  background: radial-gradient(circle at 50% 38%, var(--rialzo), color-mix(in srgb, var(--c) 14%, var(--rialzo)) 72%);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 75%, transparent), 0 12px 36px color-mix(in srgb, var(--c) 18%, transparent);
+}
+
+/* ---- schermo (computer.css): pulsante giallo con testo scuro ---- */
+:root:is([data-tema="chiaro"], [data-tema="claude"], [data-tema="auto"][data-auto="chiaro"]) :is(.pc-avviso-ico, .pc-nascondi[aria-pressed="true"]) { color: var(--t-su-giallo); }
+
+/* ---- Nero: i pulsanti pieni rossi e verdi col testo bianco (rosso e verde del Nero sono chiari, per il testo) ---- */
+:root[data-tema="nero"] :is(button.assist-stop, .ponte-stop, .ponte-mic.ascolta, .chm-chiudi, .lav-x-filo, .apv-si.apv-conferma) {
+  background: #c81e50; border-color: #c81e50; color: #fff;
+}
+:root[data-tema="nero"] :is(.chm-p-si, .chiamata-pillola:not(.chm-pil-permesso):not([data-fase="fermo"])) { background: #1a7f45; color: #fff; }
+:root[data-tema="nero"] .chiamata-pillola[data-fase="fermo"] { background: #c81e50; }
+
+/* ---- Claude: titoli e risposte di Jarvis con le grazie, utente in bolla calda ---- */
+:root[data-tema="claude"] :is(h2, .benvenuto b, .interlocutore b, .ris-testa h2, .spazio-titolo h4, .scheda-agente header b,
+  #sg-nome, .m-foglio-testa b, .rg-titolo, .apv-titolo, .vps-vuoto b, .ris-vuoto b, .chm-titolo, .tema-menu-titolo) {
+  font-family: var(--t-serif); font-weight: 600; letter-spacing: 0;
+}
+:root[data-tema="claude"] .benvenuto b { font-weight: 500; font-size: 26px; }
+:root[data-tema="claude"] .msg:not(.mio):not(.comando):not(.errore) .testo { font-family: var(--t-serif); font-size: 15.5px; line-height: 1.65; }
+:root[data-tema="claude"] .msg .testo :is(pre, code) { font-family: var(--mono); }
+:root[data-tema="claude"] .pillola { border-radius: 18px; box-shadow: 0 1px 2px rgba(60, 45, 30, .06), 0 4px 16px rgba(60, 45, 30, .05); }
+:root[data-tema="claude"] .msg.mio .testo { border-radius: 14px; }
+
+/* ======================================================================= 3. IL SELETTORE
+   Elementi nuovi (li crea temi.js): valgono in ogni tema, anche in Scuro. */
+.tema-btn { display: inline-flex; align-items: center; gap: 6px; flex: none; padding: 4px 8px; font-size: 12px; color: var(--testo-2); }
+.tema-btn[aria-expanded="true"] { background: var(--attivo); color: var(--testo); }
+.tema-pallini { display: inline-flex; flex: none; }
+.tema-pallini i { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(128, 128, 128, .55); margin-left: -3px; }
+.tema-pallini i:first-child { margin-left: 0; }
+.tema-menu {
+  position: fixed; z-index: 70; min-width: 236px; padding: 6px; border-radius: var(--r-xl);
+  background: var(--rialzo); border: 1px solid var(--linea-2); color: var(--testo);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .35); animation: entra .15s var(--dolce);
+}
+.tema-menu[hidden] { display: none; }
+.tema-menu-titolo { display: block; padding: 4px 8px 6px; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--tenue); }
+.tema-voce {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) 16px; align-items: center; gap: 10px; width: 100%;
+  text-align: left; padding: 7px 8px; border: 1px solid transparent; border-radius: var(--r); background: transparent; color: var(--testo);
+}
+.tema-voce:hover { background: var(--hover); border-color: transparent; }
+.tema-voce[aria-checked="true"] { background: var(--accento-fondo); border-color: var(--accento-linea); }
+.tema-voce b { display: block; font-weight: 500; }
+.tema-voce small { display: block; font-size: 11px; color: var(--tenue); }
+.tema-voce .tema-segno { font-weight: 700; color: var(--accento); visibility: hidden; }
+.tema-voce[aria-checked="true"] .tema-segno { visibility: visible; }
+.tema-voce .tema-pallini i { width: 14px; height: 14px; margin-left: -4px; }
+.tema-voce .tema-pallini i:first-child { margin-left: 0; }
+/* nel foglio «Altro» del telefono: una riga intera con i cinque temi */
+.tema-foglio { grid-column: 1 / -1; display: grid; gap: 6px; padding: 10px 10px 8px; border: 1px solid var(--linea); border-radius: var(--r-xl); background: var(--fondo); }
+.tema-foglio > b { font-size: 13.5px; }
+.tema-foglio-scelte { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; }
+.tema-foglio-scelte .tema-voce { grid-template-columns: auto minmax(0, 1fr); min-height: 44px; padding: 6px 8px; font-size: 13px; }
+.tema-foglio-scelte .tema-voce small, .tema-foglio-scelte .tema-segno { display: none; }
+@media (max-width: 820px) { .barra .tema-btn { display: none; } }
+@media (max-width: 1700px) { .tema-btn .tema-nome { display: none; } }

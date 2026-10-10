@@ -1,0 +1,96 @@
+/* Dots vivi (2026-10-04): l'avanzata delle richieste sulla lavagna. Lo disegna static/dots-vivi.js.
+   Colori solo dai token di app.css / temi.css (--accento, --verde, --rosso, --giallo, --rialzo, --testo…),
+   quindi tema scuro e chiaro insieme. Con prefers-reduced-motion niente movimento: solo colori e ✓ / «!». */
+
+/* lo strato sopra i fili: stesso sistema di coordinate di #lav-fili, non prende i clic */
+.dv-strato { position: absolute; left: 0; top: 0; width: 4000px; height: 4000px; overflow: visible; pointer-events: none; }
+.dv-strato path { fill: none; pointer-events: none; }
+.dv-testi { position: absolute; left: 0; top: 0; width: 0; height: 0; pointer-events: none; z-index: 6; }
+
+/* l'impulso: un tratto luminoso che corre lungo il filo (pathLength 100) */
+.dv-impulso { stroke-width: 5; stroke-linecap: round; stroke-dasharray: 12 200; stroke-dashoffset: 12; opacity: 0;
+  animation: dv-corre 1.1s var(--dolce, ease-out) both; }
+.dv-impulso.dv-andata { stroke: var(--accento); filter: drop-shadow(0 0 5px var(--accento-linea)); }
+.dv-impulso.dv-ritorno { stroke: var(--verde); filter: drop-shadow(0 0 5px color-mix(in srgb, var(--verde) 70%, transparent)); }
+.dv-impulso.dv-rovescio { animation-name: dv-corre-indietro; }
+@keyframes dv-corre { 0% { stroke-dashoffset: 12; opacity: 1; } 90% { opacity: 1; } 100% { stroke-dashoffset: -100; opacity: 0; } }
+@keyframes dv-corre-indietro { 0% { stroke-dashoffset: -100; opacity: 1; } 90% { opacity: 1; } 100% { stroke-dashoffset: 12; opacity: 0; } }
+
+/* i fili che restano accesi: richiesta aperta, risposta appena arrivata, errore (spezzato) */
+.dv-filo { stroke-width: 2.4; stroke-linecap: round; }
+.dv-filo.dv-aperto { stroke: var(--accento); opacity: .55; stroke-dasharray: 2 4; }
+.dv-filo.dv-fatto { stroke: var(--verde); opacity: .9; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--verde) 60%, transparent)); }
+.dv-filo.dv-rotto { stroke: var(--rosso); stroke-width: 2.6; stroke-dasharray: 42 16 42; opacity: .95; }
+.dv-filo.dv-temp:not(.dv-rotto) { stroke-dasharray: 5 5; }
+
+/* la scritta corta dell'incarico, a metà del filo; leggibile a ogni zoom (--inv lo mette app.js) */
+.dv-etichetta { position: absolute; width: max-content; max-width: 220px; padding: 3px 8px; border-radius: var(--r-pill, 9999px);
+  background: var(--rialzo, #1f1f1f); color: var(--testo, #f0f0f0); border: 1px solid var(--accento-linea, rgba(89, 156, 231, .45));
+  font-size: 11px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .3); transform: translate(-50%, -135%) scale(var(--inv, 1)); transform-origin: 50% 100%;
+  animation: dv-etichetta 3.8s ease both; }
+.dv-etichetta.dv-senza { border-color: var(--giallo); color: var(--testo); animation-duration: 6s; }
+@keyframes dv-etichetta { 0% { opacity: 0; } 8% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+
+/* il segno sul Dot: anello, tempo, ✓, «!» (lo span sta nel nodo, sopra l'avatar) */
+.dv-segno { position: absolute; pointer-events: none; z-index: 2; }
+.dv-segno.dv-angolo { left: -9px; top: -9px; width: 26px; height: 26px; }
+.dv-anello { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; display: none; }
+.dv-anello circle { fill: none; stroke-width: 2.6; }
+.dv-anello-fondo { stroke: color-mix(in srgb, var(--accento) 22%, transparent); }
+.dv-anello-pieno { stroke: var(--accento); stroke-linecap: round; stroke-dasharray: 26 74; transform: rotate(-90deg); transform-origin: 18px 18px; }
+.nodo.dv-lavora .dv-anello { display: block; }
+.nodo.dv-lavora.dv-percento .dv-anello-pieno { stroke-dasharray: var(--dv-pieno, 3) 100; transition: stroke-dasharray .9s linear; }
+.nodo.dv-lavora.dv-oltre .dv-anello-pieno { stroke: var(--giallo); }
+/* il tempo che passa: un attributo, così il testo del nodo non cambia */
+.dv-segno[data-t]::before { content: attr(data-t); position: absolute; left: 50%; top: 100%; transform: translate(-50%, 2px);
+  font: 500 9.5px/1.2 var(--mono, monospace); white-space: nowrap; color: var(--accento); background: var(--rialzo);
+  padding: 0 4px; border-radius: var(--r-pill, 9999px); }
+/* ✓ e «!»: un pallino in alto a destra del Dot */
+.nodo:is(.dv-ok, .dv-errore) .dv-segno::after { position: absolute; right: -2px; top: -2px; width: 16px; height: 16px; border-radius: 50%;
+  display: grid; place-items: center; font: 700 11px/1 system-ui, sans-serif; color: var(--rialzo, #fff);
+  border: 1.5px solid var(--rialzo, #1f1f1f); box-sizing: border-box; }
+.nodo.dv-ok .dv-segno::after { content: "✓"; background: var(--verde); }
+.nodo.dv-errore .dv-segno::after { content: "!"; background: var(--rosso); }
+.nodo.dv-errore { box-shadow: 0 0 0 2px var(--rosso), 0 6px 18px rgba(0, 0, 0, .35); }
+.nodo.dv-errore > .avatar { border-color: var(--rosso); background: color-mix(in srgb, var(--rosso) 28%, transparent); }
+.nodo.dv-ok { box-shadow: 0 0 0 2px var(--verde), 0 6px 18px rgba(0, 0, 0, .35); }
+
+/* 2026-10-05 (lavagna viva): il Dot che cammina avanti e indietro sul filo finché l'agente lavora */
+.dv-viaggio { stroke: var(--accento); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 0.1 200; stroke-dashoffset: 0;
+  filter: drop-shadow(0 0 6px var(--accento-linea, rgba(89, 156, 231, .6))); }
+/* il gruppo (cartella 📁 e capogruppo) di chi lavora resta acceso */
+.nodo.dv-gruppo { box-shadow: 0 0 0 2px var(--accento-linea, rgba(89, 156, 231, .55)), 0 0 18px color-mix(in srgb, var(--accento) 35%, transparent); }
+.nodo.dv-lavora { box-shadow: 0 0 0 2px var(--accento), 0 0 20px color-mix(in srgb, var(--accento) 45%, transparent); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .dv-viaggio { animation: dv-viaggia 2.4s ease-in-out infinite alternate; }
+  .dv-viaggio.dv-rovescio { animation-name: dv-viaggia-indietro; }
+  /* chi lavora «respira» finché non finisce; il suo gruppo pulsa piano */
+  .nodo.dv-lavora:not(.dv-errore) { animation: dv-respira 1.6s ease-in-out infinite; }
+  .nodo.dv-gruppo:not(.dv-lavora) { animation: dv-respira-piano 2.4s ease-in-out infinite; }
+  /* senza percentuale (meno di 3 durate): l'anello gira */
+  .nodo.dv-lavora:not(.dv-percento) .dv-anello { animation: dv-gira 1.4s linear infinite; }
+  /* A manda: il Dot si «apre» */
+  .nodo.dv-apre > :is(.avatar, .dot-extra) { animation: dv-apre .8s var(--dolce, ease-out); }
+  /* C risponde: lampo verde */
+  .nodo.dv-lampo { animation: dv-lampo 1.1s ease-out; }
+}
+@keyframes dv-gira { to { transform: rotate(360deg); } }
+@keyframes dv-viaggia { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -100; } }
+@keyframes dv-viaggia-indietro { from { stroke-dashoffset: -100; } to { stroke-dashoffset: 0; } }
+@keyframes dv-respira { 0%, 100% { box-shadow: 0 0 0 2px var(--accento), 0 0 8px color-mix(in srgb, var(--accento) 30%, transparent); }
+  50% { box-shadow: 0 0 0 3px var(--accento), 0 0 26px color-mix(in srgb, var(--accento) 65%, transparent); } }
+@keyframes dv-respira-piano { 0%, 100% { box-shadow: 0 0 0 1px var(--accento-linea, rgba(89, 156, 231, .45)); }
+  50% { box-shadow: 0 0 0 2px var(--accento-linea, rgba(89, 156, 231, .55)), 0 0 18px color-mix(in srgb, var(--accento) 35%, transparent); } }
+@keyframes dv-apre { 0% { transform: scale(1); } 35% { transform: scale(1.22); filter: brightness(1.25); } 100% { transform: scale(1); } }
+@keyframes dv-lampo { 0% { box-shadow: 0 0 0 2px var(--verde), 0 0 0 0 color-mix(in srgb, var(--verde) 80%, transparent); }
+  100% { box-shadow: 0 0 0 2px var(--verde), 0 0 0 18px transparent; } }
+
+@media (prefers-reduced-motion: reduce) {
+  /* niente corsa: il tratto si vede intero, fermo, e sparisce; niente rotazioni né rimbalzi */
+  .dv-impulso, .dv-impulso.dv-rovescio { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; opacity: .85; stroke-width: 3.5; }
+  .dv-etichetta { animation: none; }
+  .nodo.dv-lavora:not(.dv-percento) .dv-anello-pieno { stroke-dasharray: 4 4; }
+  .nodo.dv-lavora.dv-percento .dv-anello-pieno { transition: none; }
+}

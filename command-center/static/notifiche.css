@@ -1,0 +1,33 @@
+/* notifiche.css · le schede «Jarvis» e «Postino» in testa alla chat (2026-10-05, programmatore-postino;
+   fino alle 13:20 del 05/10 qui c'era il pannello laterale «Notifiche», copia in notifiche.css.prima-postino-20261005) */
+.chat-schede { display: flex; gap: 6px; padding: 8px 18px 0; min-width: 0; }
+.chat-scheda { display: inline-flex; align-items: center; gap: 7px; flex: 0 1 auto; min-width: 0; min-height: 32px;
+  padding: 3px 12px 3px 4px; border: 1px solid var(--linea); border-radius: var(--r-pill); background: transparent;
+  color: var(--tenue); font-size: 13px; line-height: 20px; cursor: pointer; white-space: nowrap; }
+.chat-scheda:hover { background: var(--hover); color: var(--testo); }
+.chat-scheda.attiva { background: var(--accento-fondo); border-color: var(--accento-linea); color: var(--testo); }
+.chat-scheda .nome { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.chat-scheda .avatar.mini { width: 24px; height: 24px; font-size: 11px; margin: 0; flex: 0 0 auto; }
+.chat-scheda .conta, .conta-notifiche { min-width: 18px; padding: 0 5px; border-radius: var(--r-pill);
+  background: var(--rosso); color: #fff; font-size: 11px; font-weight: 600; line-height: 18px; text-align: center; flex: 0 0 auto; }
+.conta-notifiche { margin-left: auto; }
+.conta-notifiche[hidden] { display: none; }
+/* i report e gli avvisi dentro la chat (bolle di app.js) */
+.msg.notifica .notifica-titolo { font-weight: 600; margin-bottom: 2px; }
+.notifica-bozza { margin-top: 8px; border: 1px solid var(--linea); border-radius: var(--r-lg); background: var(--chrome);
+  white-space: normal; }
+.notifica-bozza > summary { cursor: pointer; padding: 6px 10px; font-size: 13px; color: var(--testo); }
+.notifica-bozza[open] > summary { border-bottom: 1px solid var(--linea); }
+.notifica-bozza .campi { padding: 6px 10px 0; font-size: 12px; color: var(--tenue); }
+.notifica-bozza .campi b { color: var(--testo); font-weight: 600; }
+.notifica-bozza .corpo-bozza { padding: 6px 10px; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.notifica-bozza .azioni-bozza { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 10px 8px; }
+.notifica-bozza .azioni-bozza button { font-size: 12px; padding: 2px 10px; border-radius: var(--r-pill);
+  border: 1px solid var(--linea); background: transparent; color: var(--testo); cursor: pointer; }
+.notifica-bozza .azioni-bozza button:hover { background: var(--hover); }
+/* telefono: le due schede dividono la riga, bersagli da almeno 40 px, niente scorrimento orizzontale */
+@media (max-width: 900px) {
+  .chat-schede { padding: 6px max(10px, env(safe-area-inset-right)) 0 max(10px, env(safe-area-inset-left)); }
+  .chat-scheda { flex: 1 1 0; justify-content: center; min-height: 40px; font-size: 14px; }
+  .notifica-bozza .azioni-bozza button { min-height: 40px; }
+}

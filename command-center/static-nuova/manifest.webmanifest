@@ -1,0 +1,73 @@
+{
+  "name": "Jarvis Command Center",
+  "short_name": "Jarvis",
+  "description": "Il pannello di controllo di Jarvis: agenti, missioni, telefono, server e memoria.",
+  "lang": "it",
+  "start_url": "/#home",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#141731",
+  "theme_color": "#141731",
+  "icons": [
+    {
+      "src": "/static/icona-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icona-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icona-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/static/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Parla a Jarvis",
+      "short_name": "Parla",
+      "description": "La chat a schermo pieno con il microfono pronto",
+      "url": "/#chat-voce",
+      "icons": [
+        {
+          "src": "/static/icona-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "short_name": "Chat",
+      "description": "La chat con Jarvis",
+      "url": "/#chat",
+      "icons": [
+        {
+          "src": "/static/icona-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Agenti",
+      "url": "/#agenti"
+    },
+    {
+      "name": "Missioni",
+      "url": "/#missioni"
+    }
+  ]
+}
