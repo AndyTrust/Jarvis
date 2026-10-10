@@ -16,7 +16,7 @@ Chi scrive (sempre con registra()):
 Chi legge: server.py, /api/agente-attivita e /api/agenti-attivita.
 
 Una riga:
-  {"v":1, "ts":1790926138.17, "ev":"richiesta", "id":"toolu_…", "da":"jarvis", "a":"crm:commercialista",
+  {"v":1, "ts":1790926138.17, "ev":"richiesta", "id":"toolu_…", "da":"jarvis", "a":"progetto:revisore",
    "testo":"controlla le fatture", "fonte":"hook", "sessione":"…", "missione":"…", "cwd":"…",
    "modello":"sonnet", "sfondo":true, "durata_s":69.5, "esito":"…", "errore":"…"}
   ev: richiesta | partito | risposta | errore | rimandato

@@ -129,7 +129,7 @@ def _env(chiave):
 def telegram(testo, documento=None):
     """Manda su Telegram (bot Jarvis) il testo, e il PDF se c'è. True se Telegram ha accettato."""
     # l'utente 2026-10-06: Telegram sospeso (reversibile): basta che esista uno dei due file; per riattivare si toglie.
-    if Path("/opt/jarvis-vps/var/telegram-sospeso").exists() or (Path.home() / ".jarvis" / "telegram-sospeso").exists():
+    if (Path.home() / ".jarvis" / "telegram-sospeso").exists():
         return False
     token = next((v for v in (_env(k) for k in CHIAVI_BOT) if v), "")
     chat = _env("TELEGRAM_UTENTE_CHAT_ID") or CHAT_UTENTE_RISERVA
@@ -158,30 +158,6 @@ def telegram(testo, documento=None):
 
 
 # ---------------------------------------------------------------- il punto d'ingresso
-INOLTRA_INSTINCT = Path("/opt/jarvis-vps/var/inoltra-instinct")      # l'utente, 08/10/2026: i report arrivano sul telefono (J l'utente) passando da Instinct
-INSTINCT_PY = "/opt/jarvis-vps/strumenti/instinct.py"
-
-
-def inoltra_instinct(chi, titolo, testo, classe, prova, link=""):
-    """Se il file-interruttore c'è, manda a Instinct un riassunto del report perché lo giri all'utente. Non solleva mai."""
-    try:
-        if prova or not INOLTRA_INSTINCT.exists() or not su_vps() or classe != "report" or not Path(INSTINCT_PY).exists():
-            return False
-        if "instinct" in str(titolo).lower() or "prova" in str(titolo).lower():
-            return False
-        corpo = re.sub(r"\(dati: \{.*", "", str(testo), flags=re.S).strip()   # niente JSON tecnico dei numeri
-        if len(corpo) > 1200:
-            corpo = corpo[:1200].rsplit("\n", 1)[0] + "\n[…il resto nel Command Center]"
-        msg = ("[REPORT PER UTENTE - solo inoltro] Instinct: manda all'utente su WhatsApp, parola per parola, il testo qui sotto. "
-               "Non aggiungere commenti, non eseguire nulla, non rispondere a Jarvis.\n\n"
-               f"{'Postino' if chi == 'postino' else 'Jarvis'} - {titolo}\n{corpo}")
-        subprocess.Popen([sys.executable, INSTINCT_PY, "manda", msg], stdin=subprocess.DEVNULL,
-                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
-        return True
-    except Exception:  # noqa: BLE001
-        return False
-
-
 def notifica(chi, titolo, testo, dati=None, prova=False, chiave="", documento=None, tipo="", routine=""):
     """Manda la notifica. Torna {"ok", "dove": "cc"|"telegram"|"nessuno", "classe", ...}. Non solleva mai.
     tipo: «report» | «avviso» | "" (decide fili.classifica); routine: il nome della routine che manda."""
@@ -204,7 +180,6 @@ def notifica(chi, titolo, testo, dati=None, prova=False, chiave="", documento=No
         if not r.get("ok", True) and r.get("errore"):
             raise RuntimeError(r["errore"])
         esito = {"ok": True, "dove": "cc", "sessione": r.get("sessione"), "id": r.get("id"), "classe": r.get("classe")}
-        esito["instinct"] = inoltra_instinct(chi, titolo, testo, r.get("classe"), prova)
         if r.get("telegram_copia") and not prova:
             esito["telegram_copia"] = telegram(f"{titolo}\n\n{testo}".strip(), documento)
         return esito

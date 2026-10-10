@@ -59,7 +59,7 @@ CASI = [
     ("SendMessage", "", None),
     ("mcp__claude_ai_Gmail__send_message", "", "servizio esterno"),
     ("mcp__claude_ai_Gmail__search_threads", "", None),
-    ("mcp__claude_ai_Pienissimo_Ma__get-revenue-summary", "", None),
+    ("mcp__claude_ai_Esempio__leggi-dati", "", None),
     ("AskUserQuestion", "", "strumento non previsto"),
     # 27/09/2026: corpi degli heredoc di dati e testo fra virgolette non sono comandi
     (B, "cat > /tmp/android-collaudo.md << 'EOF'\n# Collaudo\nadb shell input tap 1 2\nscrcpy\nEOF", None),

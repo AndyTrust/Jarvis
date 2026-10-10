@@ -390,7 +390,7 @@ function disegnaBattito(b) {
 const TIPI_GUASTO = ["FANTASMA", "ABUSIVO"], TIPI_ATTENZIONE = ["MUTO", "SCADUTA", "LUNGA"];
 // Richiesta dell'utente (26/09/2026): una shell ssh sulla VPS senza chiave non è un «abusivo» da allarme,
 // è un terminale VPS aperto; le note del pannello stesso (del_pannello) si mostrano in grigio e non contano.
-function vpsShell(n) { return String(n.tipo || "").toUpperCase() === "ABUSIVO" && (n.chiavi || []).includes("vps-shell"); }
+function vpsShell(n) { return String(n.tipo || "").toUpperCase() === "ABUSIVO" && (n.chiavi || []).includes("shell-remota"); }
 function gravita(n) {
   if (n.del_pannello) return "";
   if (vpsShell(n)) return "attenzione";

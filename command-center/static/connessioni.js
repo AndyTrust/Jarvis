@@ -101,7 +101,7 @@
     for (const s of d.servizi) N.lista.append(riga(s));
     N.errore.textContent = S.errore;
     N.errore.hidden = !S.errore;
-    N.nota.textContent = d.creato ? "" : "Il file delle connessioni non c'è ancora: valgono le impostazioni di partenza (tutto «Chiedi prima» tranne Pienissimo). Si crea al primo cambio.";
+    N.nota.textContent = d.creato ? "" : "Il file delle connessioni non c'è ancora: valgono le impostazioni di partenza (tutto «Chiedi prima»). Si crea al primo cambio.";
     N.nota.hidden = !!d.creato;
   }
 

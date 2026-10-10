@@ -1578,7 +1578,7 @@ def raccogli_vps():
 # Jarvis su Telegram, sul Mac (@tuo_bot) e sulla VPS (@tuo_bot_vps). Lo tiene su il guardiano
 # strumenti/telegram_guardia.py, lanciato ogni minuto da launchd (Mac) e da systemd (VPS).
 GUARDIA = AGENTE / "strumenti" / "telegram_guardia.py"
-GUARDIA_VPS = "/opt/jarvis-vps/strumenti/telegram_guardia.py"
+GUARDIA_VPS = CFG.get("guardia_telegram_vps") or "telegram_guardia.py"   # percorso sulla VPS, solo se la configuri
 BOT_TELEGRAM = {"mac": "@tuo_bot", "vps": "@tuo_bot_vps"}
 
 
@@ -3661,7 +3661,7 @@ def raccogli_portiere():
                 "cosa": presa.get("cosa") or "", "nome": "", "cwd": "", "comando": ""}
         # Decisione dell'utente del 2026-09-26: la shell sulla VPS senza chiave non si chiama «abusivo».
         # Il tipo resta quello del portiere; etichetta e testo sono quelli da mostrare.
-        if nota["tipo"] == "ABUSIVO" and "vps-shell" in nota["chiavi"]:
+        if nota["tipo"] == "ABUSIVO" and "shell-remota" in nota["chiavi"]:
             nota.update(etichetta="VPS", testo="terminale VPS aperto senza chiave")
         note.append(nota)
     vivi = leggi_processi(n["pid"] for n in note if n["pid"])
@@ -6347,7 +6347,7 @@ def _ssh_vps_orfani():
     """Le `ssh -t … <VPS>` del terminale VPS rimaste senza il loro ttyd.
 
     🔴 Il 2026-09-26 otto di queste erano vive da ore con padre 1 (launchd), ognuna con una bash
-    aperta sulla VPS: il portiere le vedeva come «ABUSIVO vps-shell». Il ttyd era morto e loro no.
+    aperta sulla VPS: il portiere le vedeva come «ABUSIVO shell-remota». Il ttyd era morto e loro no.
     Si prendono SOLO i processi con il comando identico a quello di _term_comando("vps") e con
     padre 1: un terminale acceso ha per padre il suo ttyd, e i tunnel (`ssh -L … -N`) o le altre
     ssh dell'utente hanno un comando diverso, quindi restano fuori."""
@@ -6384,7 +6384,7 @@ def _term_uccidi_orfani(modo):
             evento(f"terminale VPS: chiuse {len(orfani)} ssh rimaste senza ttyd ({', '.join(map(str, orfani))})")
 
 
-# Il terminale VPS tiene aperta una shell sulla VPS: per il portiere è la risorsa «vps-shell».
+# Il terminale VPS tiene aperta una shell sulla VPS: per il portiere è la risorsa «shell-remota».
 # Dal 2026-09-26 la chiave si prende all'accensione e si rende allo spegnimento, così non risulta
 # più «ABUSIVO». Stesso registro di tutti (strumenti/lavori.py), agente fisso del pannello.
 AGENTE_TERMINALE = "command-center-terminale"
@@ -6404,14 +6404,14 @@ def _lavori(*argomenti):
 def chiave_vps_shell(prendi):
     if prendi:
         base = ["prendo", "Jarvis", "terminale VPS dal Command Center", "--agente", AGENTE_TERMINALE,
-                "--risorse", "vps-shell", "--max-min", "480"]
+                "--risorse", "shell-remota", "--max-min", "480"]
         codice, out = _lavori(*base)
         if codice == 3 and "chiavi sono già in mano" not in out:
             codice, out = _lavori(*base, "--insisto")    # c'è qualcuno su «Jarvis»: è un pezzo diverso
     else:
         codice, out = _lavori("finito", "terminale VPS chiuso", "--agente", AGENTE_TERMINALE)
     if codice != 0:
-        evento(f"terminale VPS: chiave vps-shell {'non presa' if prendi else 'non resa'}: {out.strip()[-160:]}")
+        evento(f"terminale VPS: chiave shell-remota {'non presa' if prendi else 'non resa'}: {out.strip()[-160:]}")
     return codice == 0
 
 
@@ -7225,7 +7225,7 @@ def _incarichi():
 _INCARICHI_POOL = {"p": None}
 _INCARICHI_LOCK = threading.Lock()
 INCARICHI_DA = "jarvis-utente"
-INCARICHI_FASE2 = {"jarvis-giuseppe"}          # Fase 2: serve il sì di l'amministratore
+INCARICHI_FASE2 = set(CFG.get("incarichi_bloccati") or [])   # nomi a cui non si scrive dal pannello (facoltativo)
 
 
 def _incarichi_chiama(nome, *args, **kw):
@@ -8165,7 +8165,7 @@ class Gestore(BaseHTTPRequestHandler):
                     testo = corpo.get("testo")
                     tipo = str(corpo.get("tipo") or "domanda")
                     if a in INCARICHI_FASE2:
-                        return self._invia(400, {"errore": "Fase 2: serve il sì di l'amministratore"})
+                        return self._invia(400, {"errore": "a questo destinatario non si scrive dal pannello (incarichi_bloccati in configurazione.json)"})
                     if not re.fullmatch(r"[a-z0-9-]{1,40}", a):
                         return self._invia(400, {"errore": "a: il nome di un agente (minuscole, cifre, trattini)"})
                     if not isinstance(testo, str) or not testo.strip():

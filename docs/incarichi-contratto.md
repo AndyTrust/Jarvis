@@ -1,7 +1,7 @@
 # Coda degli incarichi: contratto della Fase 1 (2026-10-04)
 
-Decisione dell'utente: una coda di incarichi sulla VPS fra Jarvis dell'utente, gli agenti del CRM e (Fase 2, dopo il sì di l'amministratore) il suo Jarvis.
-Fase 1 = solo VPS e Mac. NIENTE porte nuove su internet, NIENTE modifiche al Caddyfile, NIENTE codice sul PC di l'amministratore.
+Decisione dell'utente: una coda di incarichi sulla VPS fra Jarvis e gli agenti dei progetti.
+Fase 1 = solo VPS e Mac. NIENTE porte nuove su internet, NIENTE modifiche al Caddyfile, NIENTE codice su altri computer.
 
 ## Dati (sulla VPS)
 Cartella `INCARICHI_DIR` (variabile d'ambiente, default `/var/lib/jarvis-incarichi`), permessi 0700 root. Dentro:

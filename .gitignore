@@ -25,7 +25,6 @@ id_ed25519*
 *service-account*.json
 secrets/
 segreti/
-passbolt-config*.js
 
 # ===== Claude Code: impostazioni locali e memoria =====
 .claude/settings.local.json

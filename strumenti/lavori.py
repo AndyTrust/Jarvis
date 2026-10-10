@@ -128,7 +128,7 @@ SCADE_DOPO_MIN = 120
 #
 RISORSE = {
     'db-produzione': 'scritture su un database di produzione',
-    'vps-shell': 'una sessione ssh sulla VPS che modifica qualcosa',
+    'shell-remota': 'una sessione ssh sulla VPS che modifica qualcosa',
     'n8n': 'i flussi di n8n',
     'chrome-debug': 'il Chrome dell’utente con la porta di debug 9222',
     'sito-pubblicazione': 'pubblicare su un sito (plugin, pagine, cache): vince sempre l’ultimo',

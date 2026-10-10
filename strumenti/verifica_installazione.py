@@ -42,7 +42,7 @@ def controlla_python():
     for c in ("git", "curl"):
         esito("OK" if shutil.which(c) else "ERRORE", c)
     esito("OK" if shutil.which("claude") else "AVVISO", "Claude Code", "" if shutil.which("claude") else "npm i -g @anthropic-ai/claude-code, poi «claude» per il login")
-    for c, perche in (("node", "controllo del JavaScript e Passbolt"), ("uv", "ambiente della voce"), ("espeak-ng", "voce italiana"),
+    for c, perche in (("node", "controllo del JavaScript"), ("uv", "ambiente della voce"), ("espeak-ng", "voce italiana"),
                       ("ffmpeg", "audio dei vocali"), ("tmux", "Telegram"), ("ttyd", "terminale nel pannello"), ("cliclick", "mani sul Mac"), ("gh", "GitHub")):
         esito("OK" if shutil.which(c) else "AVVISO", c, "" if shutil.which(c) else f"facoltativo ({perche}): brew bundle --file=Brewfile")
 
@@ -85,7 +85,7 @@ def controlla_config():
         else:
             esito("AVVISO", f"{f}.json e il suo esempio mancano")
     esito("OK" if (QUI / ".env.jarvis").exists() or (HOME / ".env.jarvis").exists() else "AVVISO", "credenziali (.env.jarvis)",
-          "" if (QUI / ".env.jarvis").exists() or (HOME / ".env.jarvis").exists() else "facoltative: servono a Telegram, Gemini, Passbolt...")
+          "" if (QUI / ".env.jarvis").exists() or (HOME / ".env.jarvis").exists() else "facoltative: servono a Telegram, Gemini e ai servizi che colleghi")
 
 
 def controlla_ambienti():

@@ -36,7 +36,7 @@ def trascrizione(nome, compito, resoconto):
 
 
 comp = "Controlla le chiusure di ieri in sola lettura. Registro: lavori.py prendo ... --agente analista-prova"
-reso = "Chiusure al 2026-10-04 complete, 2 per giorno.\nDA SALVARE: g140_chiusura ha sede_id, non sede\nERRORE DA SALVARE: non usare ssh dalla VPS"
+reso = "Chiusure al 2026-10-04 complete, 2 per giorno.\nDA SALVARE: tabella_chiusure ha sede_id, non sede\nERRORE DA SALVARE: non usare ssh dalla VPS"
 ev = {"hook_event_name": "SubagentStop", "agent_type": "general-purpose",
       "agent_transcript_path": trascrizione("a", comp, reso)}
 

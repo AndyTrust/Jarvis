@@ -53,8 +53,6 @@ PREDEFINITE = [
     {"id": "canva", "nome": "Canva", "stato": "chiedi", "corr": {"mcp": ["mcp__claude_ai_Canva__"]}},
     {"id": "calendario", "nome": "Google Calendar", "stato": "chiedi",
      "corr": {"mcp": ["mcp__claude_ai_Google_Calendar__"]}},
-    {"id": "pienissimo", "nome": "Pienissimo (dati dei locali)", "stato": "consentito",
-     "corr": {"mcp": ["mcp__claude_ai_Pienissimo_"]}},
 ]
 
 
@@ -286,7 +284,6 @@ def prova():
     v("git status", "passa", "Bash", {"command": "git status"}, "bypassPermissions")
     v("gh con variabile davanti", "blocca", "Bash", {"command": "GH_TOKEN=x gh pr list"}, "bypassPermissions")
     v("Gmail", "blocca", "mcp__claude_ai_Gmail__send_message", {}, "bypassPermissions")
-    v("Pienissimo consentito", "passa", "mcp__claude_ai_Pienissimo_Ma__get-products", {}, "bypassPermissions")
     v("Read qualunque", "passa", "Read", {"file_path": "/etc/hosts"}, "bypassPermissions")
     d["via"]["vps"] = time.time() + 60
     v("VPS con finestra aperta", "passa", "Bash", {"command": "ssh vps-tuo uptime"}, "bypassPermissions")

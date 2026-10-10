@@ -12,7 +12,7 @@ dipende da pacchetti Python di sistema.
   python3 strumenti/agenda.py aggiungi "testo" [--quando 2026-09-25] [--lista Lavoro]
   python3 strumenti/agenda.py evento "titolo" --da "2026-09-25 15:00" [--a "16:00"] [--dove "…"]
   python3 strumenti/agenda.py fatto "pezzo di testo del task"
-  python3 strumenti/agenda.py scrivi [--cartella /opt/jarvis-vps/agenda]
+  python3 strumenti/agenda.py scrivi [--cartella ~/.jarvis/agenda]
 
 Le credenziali del client OAuth stanno in ~/.env.jarvis
 (GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET) o nelle variabili d'ambiente.
@@ -443,7 +443,7 @@ def main():
         q.add_argument("--giorni", type=int, default=1)
         q.add_argument("--tutti", action="store_true", help="anche i calendari pubblici e in sola lettura")
         if nome == "scrivi":
-            q.add_argument("--cartella", default="/opt/jarvis-vps/agenda")
+            q.add_argument("--cartella", default=str(Path.home() / ".jarvis" / "agenda"))
     s.add_parser("task")
     q = s.add_parser("aggiungi")
     q.add_argument("testo")

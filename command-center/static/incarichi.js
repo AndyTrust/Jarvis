@@ -7,7 +7,6 @@
   const S = { dati: null, errore: "", avviso: "", occupato: false, timer: null, attivo: false, aperti: new Set(), bozza: { a: "", tipo: "domanda", testo: "" } };
   const N = {};
   const MAX = 4000;
-  const FASE2 = "jarvis-giuseppe";
   const token = () => window.CC_TOKEN || "";
   function el(tag, attrs, ...figli) {
     const n = document.createElement(tag);
@@ -134,12 +133,11 @@
     return el("li", { class: "in-scheda in-s-" + x.stato }, testa, ...corpo);
   }
   function opzioniA() {
-    const nomi = [...new Set(((S.dati && S.dati.battiti) || []).map((b) => b.agente).filter((n) => n && n !== FASE2 && n !== "jarvis-utente"))].sort();
+    const nomi = [...new Set(((S.dati && S.dati.battiti) || []).map((b) => b.agente).filter((n) => n && n !== "jarvis-utente"))].sort();
     const scelto = S.bozza.a || N.a.value;
     N.a.textContent = "";
     N.a.append(el("option", { value: "" }, "Scegli l'agente…"));
     for (const n of nomi) N.a.append(el("option", { value: n }, n));
-    N.a.append(el("option", { value: FASE2, disabled: "" }, FASE2 + " — Fase 2: serve il sì di l'amministratore"));
     N.a.value = nomi.includes(scelto) ? scelto : "";
   }
 

@@ -76,7 +76,7 @@ RUMORE = {".git", "node_modules", ".obsidian", "_to_delete", ".venv", "venv", "_
           "worktrees", ".codegraph", "graphify-out", "memoria",
           "lavori", "missioni", "chiamate", "asterisk", "state", "registri",
           # file che cambiano da soli, a orologio o perché un programma è aperto: non sono lavoro
-          "chrome-profile-passbolt"}  # profilo di Chrome per Passbolt: cambia finché Chrome è aperto
+          "chrome-profile"}           # profilo di Chrome di un'automazione: cambia finché Chrome è aperto
 # copie degli strumenti della memoria che la skill mette in ogni progetto: non sono lavoro
 STRUMENTI_BRAIN = {"mappa.py", "stato_obsidian.py", "salva_brain.py", "handoff.py", "brain.py",
                    "impianta.py", "costo.py", "stato.py", "pdf_testo.py", "scompatta_sorgenti.py",

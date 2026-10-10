@@ -214,7 +214,7 @@ def avvia():
 
 def prova():
     global AGENTI_PROVA
-    AGENTI_PROVA = {n: "progetto-a" for n in ("progetto-a-ceo", "commercialista", "garante-dati")}
+    AGENTI_PROVA = {n: "progetto-a" for n in ("progetto-a-ceo", "revisore", "verificatore")}
     import json
     import shutil
     import tempfile
@@ -247,7 +247,7 @@ def prova():
     log = []
     p = Ponte(finta, attivita.registra, adesso=lambda: ora[0], log=log.append)
 
-    def inc(id_, stato, creato, a="garante-dati", **k):
+    def inc(id_, stato, creato, a="verificatore", **k):
         d = {"id": id_, "da": "jarvis-utente", "a": a, "tipo": "domanda", "testo": f"prova {id_}", "creato": creato,
              "scade": creato + 86400, "stato": stato, "preso_da": None, "preso_il": None, "risposta": None}
         d.update(k)
@@ -257,18 +257,18 @@ def prova():
         # storico: uno vecchio fatto, uno vecchio preso, uno nato 30 s fa
         coda["incarichi"] = [inc("in_00000001", "fatto", ora[0] - 3600, preso_il=ora[0] - 3500,
                                  risposta={"testo": "ok", "esito": "ok", "il": ora[0] - 3400}),
-                             inc("in_00000002", "preso", ora[0] - 900, preso_da="garante-dati", preso_il=ora[0] - 800),
-                             inc("in_00000003", "nuovo", ora[0] - 30, a="commercialista")]
+                             inc("in_00000002", "preso", ora[0] - 900, preso_da="verificatore", preso_il=ora[0] - 800),
+                             inc("in_00000003", "nuovo", ora[0] - 30, a="revisore")]
         n = p.giro()
         r = righe()
         v("primo giro: lo storico non si rigioca, il nato da 30 s sì (1 evento)", n == 1 and len(r) == 1)
-        v("richiesta: id inc:, da jarvis, a progetto-a:commercialista, fonte incarichi",
+        v("richiesta: id inc:, da jarvis, a progetto-a:revisore, fonte incarichi",
           r and r[0]["ev"] == "richiesta" and r[0]["id"] == "inc:in_00000003" and r[0]["da"] == "jarvis"
-          and r[0]["a"] == "progetto-a:commercialista" and r[0]["fonte"] == "incarichi")
+          and r[0]["a"] == "progetto-a:revisore" and r[0]["fonte"] == "incarichi")
         v("secondo giro senza cambi: nessun evento", p.giro() == 0 and len(righe()) == 1)
         # avanzano: 3 preso, 2 fatto (vecchio ma cambiato dopo l'avvio: si racconta)
         ora[0] += 8
-        coda["incarichi"][2].update(stato="preso", preso_da="commercialista", preso_il=ora[0] - 2)
+        coda["incarichi"][2].update(stato="preso", preso_da="revisore", preso_il=ora[0] - 2)
         coda["incarichi"][1].update(stato="fatto", risposta={"testo": "fatto bene", "esito": "ok", "il": ora[0] - 1,
                                                              "token_stimati": 12})
         p.giro()
@@ -281,7 +281,7 @@ def prova():
         ora[0] += 8
         coda["incarichi"].append(inc("in_00000004", "fatto", ora[0] - 6, a="progetto-a-ceo", preso_da="progetto-a-ceo", preso_il=ora[0] - 5,
                                      risposta={"testo": "sì", "esito": "ok", "il": ora[0] - 1}))
-        coda["incarichi"].append(inc("in_00000005", "fallito", ora[0] - 6, preso_da="garante-dati", preso_il=ora[0] - 5,
+        coda["incarichi"].append(inc("in_00000005", "fallito", ora[0] - 6, preso_da="verificatore", preso_il=ora[0] - 5,
                                      risposta={"testo": "timeout di 600 s", "esito": "fallito", "il": ora[0] - 1}))
         coda["incarichi"].append(inc("in_00000006", "annullato", ora[0] - 6, annullato_da="jarvis-utente", annullato_il=ora[0] - 2))
         coda["incarichi"].append(inc("in_00000007", "scaduto", ora[0] - 7))
@@ -328,8 +328,8 @@ def prova():
         nuove = righe()[prima:]
         v("dopo un riavvio: solo l'incarico nuovo, niente doppioni dei recenti",
           [(x["id"], x["ev"]) for x in nuove] == [("inc:in_00000009", "richiesta")])
-        v("le chiavi: jarvis-utente→jarvis, garante-dati→progetto-a:garante-dati, altro invariato",
-          chiave("jarvis-utente") == "jarvis" and chiave("garante-dati") == "progetto-a:garante-dati" and chiave("jarvis-giuseppe") == "jarvis-giuseppe")
+        v("le chiavi: jarvis-utente→jarvis, verificatore→progetto-a:verificatore, altro invariato",
+          chiave("jarvis-utente") == "jarvis" and chiave("verificatore") == "progetto-a:verificatore" and chiave("jarvis-ospite") == "jarvis-ospite")
         # avvia(): un thread solo
         global _THREAD
         _THREAD = None

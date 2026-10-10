@@ -478,17 +478,17 @@ def prova():
         v("elenco per destinatario e stato", [d["id"] for d in elenco(stato="nuovo", a="progetto-a-ceo")] == [i["id"]])
         p = prendi(i["id"], "progetto-a-ceo")
         v("preso da progetto-a-ceo", p["stato"] == "preso" and p["preso_da"] == "progetto-a-ceo" and p["preso_il"])
-        solleva("non si prende due volte", GiaPreso, prendi, i["id"], "commercialista")
-        solleva("risposta da chi non ha preso rifiutata", IncaricoNonValido, rispondi, i["id"], "commercialista", "io")
+        solleva("non si prende due volte", GiaPreso, prendi, i["id"], "revisore")
+        solleva("risposta da chi non ha preso rifiutata", IncaricoNonValido, rispondi, i["id"], "revisore", "io")
         r = rispondi(i["id"], "progetto-a-ceo", "Ieri 1.234 euro (prova)", token_stimati=1200)
         v("fatto con risposta", r["stato"] == "fatto" and r["risposta"]["esito"] == "ok"
           and r["risposta"]["token_stimati"] == 1200 and r["risposta"]["da"] == "progetto-a-ceo")
         solleva("non si risponde due volte", IncaricoNonValido, rispondi, i["id"], "progetto-a-ceo", "ancora")
         solleva("un fatto non si annulla", IncaricoNonValido, annulla, i["id"], "jarvis-utente")
-        f2 = rispondi(prendi(nuovo("jarvis-utente", "cambusa", "lavoro", tipo="lavoro")["id"], "cambusa")["id"],
-                      "cambusa", "", esito="fallito")
+        f2 = rispondi(prendi(nuovo("jarvis-utente", "magazzino", "lavoro", tipo="lavoro")["id"], "magazzino")["id"],
+                      "magazzino", "", esito="fallito")
         v("esito fallito -> stato fallito", f2["stato"] == "fallito")
-        a = nuovo("jarvis-utente", "legale-societario", "da annullare", tipo="messaggio")
+        a = nuovo("jarvis-utente", "consulente", "da annullare", tipo="messaggio")
         solleva("annulla da un estraneo rifiutato", IncaricoNonValido, annulla, a["id"], "commerciale")
         v("annulla dal mittente", annulla(a["id"], "jarvis-utente")["stato"] == "annullato")
         # un incarico non si sovrascrive mai
@@ -539,9 +539,9 @@ def prova():
         else:
             v("un solo vincitore con 6 processi insieme (3 giri)", True)
         # scadenza
-        s1 = nuovo("jarvis-utente", "cruscotto-bi", "scadrà")
-        s2 = prendi(nuovo("jarvis-utente", "cruscotto-bi", "scadrà presa")["id"], "cruscotto-bi")
-        s3 = nuovo("jarvis-utente", "cruscotto-bi", "non scade")
+        s1 = nuovo("jarvis-utente", "cruscotto", "scadrà")
+        s2 = prendi(nuovo("jarvis-utente", "cruscotto", "scadrà presa")["id"], "cruscotto")
+        s3 = nuovo("jarvis-utente", "cruscotto", "non scade")
         for s in (s1, s2):
             d = leggi(s["id"])
             d["scade"] = int(time.time()) - 10
@@ -550,23 +550,23 @@ def prova():
         v("scadi segna nuovi e presi oltre la scadenza", scaduti == {s1["id"], s2["id"]})
         v("gli altri restano", leggi(s3["id"])["stato"] == "nuovo" and leggi(i["id"])["stato"] == "fatto")
         v("scadi idempotente", scadi() == [])
-        solleva("uno scaduto non si prende", GiaPreso, prendi, s1["id"], "cruscotto-bi")
+        solleva("uno scaduto non si prende", GiaPreso, prendi, s1["id"], "cruscotto")
         # battiti
         battito("progetto-a-ceo", "vps", "giro delle 10")
-        battito("commercialista", "vps")
-        d = json.loads((base / "dati" / "battiti" / "commercialista.json").read_text())
+        battito("revisore", "vps")
+        d = json.loads((base / "dati" / "battiti" / "revisore.json").read_text())
         d["il"] = int(time.time()) - 301
-        _scrivi(base / "dati" / "battiti" / "commercialista.json", d)
+        _scrivi(base / "dati" / "battiti" / "revisore.json", d)
         st = stato_pubblico()
         b = {x["agente"]: x for x in st["battiti"]}
         v("battito recente: vivo", b["progetto-a-ceo"]["vivo"] is True and b["progetto-a-ceo"]["nota"] == "giro delle 10")
-        v("battito di 301 s fa: non vivo", b["commercialista"]["vivo"] is False)
+        v("battito di 301 s fa: non vivo", b["revisore"]["vivo"] is False)
         v("stato_pubblico: chiavi e contatori", set(st) == {"incarichi", "battiti", "contatori"}
           and st["contatori"]["fatto"] == 1 and st["contatori"]["scaduto"] == 2
           and st["contatori"]["totale"] == len(_tutti()) and st["contatori"]["agenti_vivi"] == 1
           and len(st["incarichi"]) <= 50)
         for n in range(55):
-            nuovo("jarvis-utente", "garante-dati", f"riempio {n}")
+            nuovo("jarvis-utente", "verificatore", f"riempio {n}")
         st = stato_pubblico()
         v("stato_pubblico: al massimo 50, i più recenti", len(st["incarichi"]) == 50
           and st["incarichi"][0]["creato"] >= st["incarichi"][-1]["creato"])

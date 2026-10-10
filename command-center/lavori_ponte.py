@@ -205,7 +205,7 @@ def prova():
                                                                 "macchina": "Mac"}))
         os.utime(att / "mac__s__senzats__x.json", (ora[0] - 86400 * 15,) * 2)
         presa("mac__s__nuovo__x.json", "gb-gestionale", "Gruppo B", "riunione: posizione", ora[0] - 5)
-        presa("pc__s__altro__x.json", "commercialista", "Gruppo A", "altro", ora[0] - 5, macchina="PC")
+        presa("pc__s__altro__x.json", "revisore", "Gruppo A", "altro", ora[0] - 5, macchina="PC")
         p.giro()
         v("primo giro: solo la presa recente di questa macchina (richiesta+partito)",
           [(e["ev"], e["id"]) for e in eventi] == [("richiesta", f"lav:mac__s__nuovo__x:{int(ora[0] - 5)}"),

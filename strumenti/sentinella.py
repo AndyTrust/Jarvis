@@ -56,7 +56,7 @@ import portiere  # noqa: E402
 
 VPS = "vps-tuo"
 GUARDIA = QUI / "telegram_guardia.py"
-GUARDIA_VPS = "/opt/jarvis-vps/strumenti/telegram_guardia.py"
+GUARDIA_VPS = "telegram_guardia.py"   # sulla VPS, solo se configurata
 # Il bot della VPS gira come utente jarvis (tmux -L jarvis-telegram): root non vede quel tmux,
 # leggeva «sessione: false» e a ogni giro riavviava una sessione sua (2026-10-04).
 GUARDIA_VPS_CMD = f"sudo -n -u jarvis env HOME=/home/jarvis python3 {GUARDIA_VPS}"
@@ -352,7 +352,7 @@ def voce_tabella(a):
     tipo, chiave, testo = a.get("tipo"), a.get("chiave") or "", a.get("testo") or ""
     if tipo == "portiere":
         sotto = chiave.split(":")[1] if chiave.count(":") >= 1 else ""
-        if sotto == "ABUSIVO" and "vps-shell" in chiave:
+        if sotto == "ABUSIVO" and "shell-remota" in chiave:
             sotto = "VPS"
         return (sotto if sotto in TABELLA else "ABUSIVO"), testo
     if tipo == "carico":
