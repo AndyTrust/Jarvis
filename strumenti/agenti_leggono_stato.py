@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Mette nel profilo di ogni agente di progetto il blocco «Prima di lavorare: leggi lo Stato e la Guida» (2026-10-02).
 
-Idempotente (marcatori HTML). Copia degli originali in ~/.locale-onedrive/backup-vault-20261002/profili/.
+Idempotente (marcatori HTML). Copia degli originali in ~/.jarvis/backup-profili/.
     python3 agenti_leggono_stato.py [--applica]
 """
 import shutil, sys
@@ -9,13 +9,16 @@ from pathlib import Path
 QUI = Path(__file__).resolve().parents[1] / "command-center"
 sys.path.insert(0, str(QUI))
 import spazi
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import crea_progetto as _cp  # noqa: E402
+MEM = _cp.memoria()
 
 I, F = "<!-- stato-vault:inizio (scritto da strumenti/agenti_leggono_stato.py) -->", "<!-- stato-vault:fine -->"
-BACKUP = Path.home() / ".locale-onedrive/backup-vault-20261002/profili"
+BACKUP = Path.home() / ".jarvis" / "backup-profili"
 
 
 def blocco(sezioni):
-    righe = "\n".join(f"- Stato: `Memoria/{s}/Stato.md` · Guida: `Memoria/{s}/Guida agenti.md`" for s in sezioni)
+    righe = "\n".join(f"- Stato: `{_cp.corto(MEM / s.split('/')[0] / 'Stato.md')}`" for s in sezioni)
     return (f"{I}\n## Prima di lavorare: stato e guida\n\nLeggi lo Stato del progetto (generato dalle note: cosa è aperto, ultime decisioni, "
             f"errori da non ripetere) e la Guida agenti (come si lavora qui). Dopo il lavoro scrivi la nota col cartellino "
             f"(spazio, progetto, tipo, stato, aggiornato) e spunta il «Da fare».\n{righe}\n{F}\n")
@@ -26,7 +29,7 @@ def main(applica):
     for s in spazi.carica():
         viste = set()
         for p in s["progetti"]:
-            sez = [x for x in (p.get("sezioni_memoria") or []) if x.count("/") == 1 and (spazi.OD / "Jarvis Brain/Memoria" / x / "Stato.md").exists()]
+            sez = [x for x in (p.get("sezioni_memoria") or []) if (MEM / x.split("/")[0] / "Stato.md").exists()]
             if not sez or not p["esiste"] or p["cartella"] in viste:
                 continue
             viste.add(p["cartella"])

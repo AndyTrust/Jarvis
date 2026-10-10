@@ -12,7 +12,7 @@ Uso: jarvis_status.py <evento>, con l'evento hook di Claude Code su stdin.
   post        PostToolUse, tutti i tool — cosa sta facendo adesso
 
 Ogni agente ha `stato` (attivo / finito) e `nodo`: il nome dell'agente nella
-catena (vice-ceo-ai e, sotto di lui, ceo-ai, garante-dati, azd-seo…), ricavato dal tipo o dal
+catena (il capogruppo <progetto>-ceo e, sotto di lui, gli specialisti), ricavato dal tipo o dal
 profilo citato nel prompt, per accenderlo nel pannello del Command Center.
 
 Un file solo, letto-modificato-riscritto sotto un lucchetto (fcntl), e scritto
@@ -140,19 +140,19 @@ def nodo_di(ti):
     # 2026-10-02: prima il segnaposto esplicito «[AGENTE progetto:nome]» (o «[AGENTE nome]») in testa al
     # compito, poi «[INIZIO PROFILO nome]». Il percorso «agents/<nome>.md» vale solo nelle prime 400 lettere:
     # cercato in tutto il testo prendeva il primo file citato (02/10: «Ripulisce regole obsolete» → postino).
-    # 2026-10-05 (lavagna viva): anche «Agente: marketing (gruppo Azienda Due)» e «(agente: nome)», la forma
+    # 2026-10-05 (lavagna viva): anche «Agente: marketing (gruppo <spazio>)» e «(agente: nome)», la forma
     # che la chat master usa davvero per riunioni e programmatori. Senza, 66 lanci su 66 del 05/10 finivano
     # su «general-purpose», che la lavagna non sa dove mettere («?:general-purpose»): niente si muoveva.
     m = (re.search(r"\[\s*AGENTE\s+([\w-]+(?::[\w-]+)?)\s*\]", testo, re.I)
          or re.search(r"\[\s*INIZIO\s+PROFILO\s+([\w-]+)\s*\]", testo, re.I)
          or re.search(r"\bagente\s*:\s*`?([\w-]+(?::[\w-]+)?)", testo[:400], re.I)
-         or re.search(r"agents[\\/]([\w-]+)\.md", testo[:400]) or re.search(r"skills[\\/](azd-[\w-]+)", testo[:400]))
+         or re.search(r"agents[\\/]([\w-]+)\.md", testo[:400]) )
     if not m:
         return tipo
     nome = m.group(1)
     gruppo, _ = gruppo_di(testo)
     # il gruppo (spazio o progetto) davanti al nome: il server sceglie l'agente giusto fra omonimi
-    # («revisore» del gruppo Azienda Due = azd:revisore-Azienda Due)
+    # («revisore» del gruppo <spazio> = <spazio>:revisore)
     return f"{gruppo}:{nome}" if gruppo and ":" not in nome else nome
 
 
@@ -162,7 +162,7 @@ def _slug(t):
 
 def gruppo_di(testo):
     """(gruppo, riunione): il gruppo dal percorso della riunione (…/riunioni/<gruppo>/AAAA-MM-GG/) o da
-    «(gruppo Azienda Due» nelle prime righe; riunione=True se viene dal percorso."""
+    «(gruppo <spazio>» nelle prime righe; riunione=True se viene dal percorso."""
     testo = str(testo or "")
     m = re.search(r"riunioni[\\/]([\w-]+)[\\/]\d{4}-\d\d-\d\d", testo[:1500])
     if m:

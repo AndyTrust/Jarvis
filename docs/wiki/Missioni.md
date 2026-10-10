@@ -1,6 +1,6 @@
 # Missioni
 
-Una missione è un obiettivo affidato a uno spazio (Azienda Uno, Azienda Due, Vita personale…) e a uno o più dei suoi progetti. Dal 23/09/2026 una missione è un solo processo: dentro gira un orchestratore che lancia gli esperti dei progetti scelti come sottoagenti dello stesso processo, in parallelo fino a un tetto scelto, e poi il capogruppo verifica il lavoro fatto.
+Una missione è un obiettivo affidato a uno spazio (uno di quelli creati con i tuoi progetti) e a uno o più dei suoi progetti. Dal 23/09/2026 una missione è un solo processo: dentro gira un orchestratore che lancia gli esperti dei progetti scelti come sottoagenti dello stesso processo, in parallelo fino a un tetto scelto, e poi il capogruppo verifica il lavoro fatto.
 
 
 ## Prima era diverso

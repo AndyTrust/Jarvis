@@ -102,6 +102,7 @@ def main():
     copia_albero(CONF / "hooks", HOME / ".claude" / "hooks")
     copia_albero(CONF / "agents", HOME / ".claude" / "agents")
     copia_albero(CONF / "skills", HOME / ".claude" / "skills")
+    copia_albero(CONF / "commands", HOME / ".claude" / "commands")     # /nuovo-progetto e /nuovo-agente ovunque
     unisci_ganci()
     # «Agenti di Jarvis» sulla lavagna è una cartella vera (agenti-casa) con un collegamento a ~/.claude/agents:
     # gli agenti di casa restano un file solo (spazi.json punta a ~/…/agenti-casa)

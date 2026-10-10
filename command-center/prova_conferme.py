@@ -13,20 +13,20 @@ from conferme import motivo, motivo_lettura, radici
 
 QUI = Path(__file__).resolve().parent
 R = radici(Path.home() / "my-agent")
-PSQL = "ssh vps-tuo \"docker exec -i crm1-odoo-db sh -c 'psql -U \\$POSTGRES_USER -d db1 -At'\" <<'SQL' 2>&1\n"
+PSQL = "ssh vps-tuo \"docker exec -i app-db sh -c 'psql -U \\$POSTGRES_USER -d dati -At'\" <<'SQL' 2>&1\n"
 B = "Bash"
 
 CASI = [
     (B, "rm -rf vault/x", "cancella"),
     (B, "git push origin main", "git"),
     (B, "git status && git diff --stat", None),
-    (B, 'ssh vps-tuo "docker restart crm1-odoo"', "scrive sulla VPS"),
+    (B, 'ssh vps-tuo "docker restart app"', "scrive sulla VPS"),
     (B, PSQL + "SELECT count(*) FROM res_users;\nSQL", None),
     (B, PSQL + "UPDATE res_users SET active=false;\nSQL", "scrive sulla VPS"),
-    (B, 'ssh vps-tuo "docker exec -i crm1-odoo odoo shell -d db1" <<\'PY\'', "scrive sulla VPS"),
-    (B, "ssh vps-tuo 'docker ps; df -h; docker logs --tail 50 crm1-odoo 2>&1'", None),
+    (B, 'ssh vps-tuo "docker exec -i app odoo shell -d dati" <<\'PY\'', "scrive sulla VPS"),
+    (B, "ssh vps-tuo 'docker ps; df -h; docker logs --tail 50 app 2>&1'", None),
     (B, 'cd ~/my-agent && python3 strumenti/task.py add "x" 2>&1 | tail', None),
-    (B, 'python3 strumenti/report_pdf.py "vault/Jarvis Brain/04 Report/X/X - Report.md" && open x.pdf', None),
+    (B, 'python3 strumenti/report_pdf.py "vault/Memoria condivisa/Report/X/X - Report.md" && open x.pdf', None),
     (B, "cd /tmp && pdftoppm -r 60 -png -f 1 -l 2 x.pdf /tmp/rp/p", None),
     (B, "echo ciao > /etc/hosts", "fuori dal progetto"),
     (B, "echo ciao > note.txt", None),
@@ -37,7 +37,7 @@ CASI = [
     (B, "echo x | tee -a '" + str(Path.home()) + "/Desktop/y.txt'", "fuori dal progetto"),
     (B, "vercel deploy --prod", "pubblica"),
     (B, "security dump-keychain | grep gmail", "segreti"),
-    (B, "grep -i smtp ~/.env.Azienda Uno", "segreti"),
+    (B, "grep -i smtp ~/.env.progetto", "segreti"),
     (B, "./telefono/chiama.sh 070123", "messaggi"),
     (B, "osascript -e 'tell app \"Finder\" to delete x'", "messaggi"),
     (B, "curl -s -X POST https://api.x.com -d a=1", "web in scrittura"),
@@ -48,8 +48,8 @@ CASI = [
     (B, "pip install requests", "installa"),
     (B, "mv a b", "sposta"),
     (B, "kill 123", "sistema"),
-    ("Edit", "~/my-agent/vault/Jarvis Brain/04 Report/Azienda Uno/x.md", None),
-    ("Edit", "~/Library/CloudStorage/OneDrive/Jarvis Brain/Memoria/Vita personale/Jarvis/Fatti/x.md", None),
+    ("Edit", "~/my-agent/vault/Memoria condivisa/Report/Progetto/x.md", None),
+    ("Edit", "~/Jarvis-Memoria/Spazio/Fatti/x.md", None),
     ("Write", "~/my-agent/.env", "file delicato"),
     ("Edit", "~/my-agent/CLAUDE.md", "file delicato"),
     ("Edit", "~/my-agent/.claude/settings.json", "file delicato"),
@@ -63,7 +63,7 @@ CASI = [
     ("AskUserQuestion", "", "strumento non previsto"),
     # 27/09/2026: corpi degli heredoc di dati e testo fra virgolette non sono comandi
     (B, "cat > /tmp/android-collaudo.md << 'EOF'\n# Collaudo\nadb shell input tap 1 2\nscrcpy\nEOF", None),
-    (B, "cat > /tmp/nota.md <<EOF\ngit push origin main\nrm -rf x\nssh vps-tuo docker restart db1\n"
+    (B, "cat > /tmp/nota.md <<EOF\ngit push origin main\nrm -rf x\nssh vps-tuo docker restart dati\n"
         "> citazione\nvercel deploy --prod\nEOF", None),
     (B, "cat > /tmp/x.md << 'EOF'\nadb shell\nEOF\nadb shell ls", "messaggi"),      # adb vero dopo la chiusura
     (B, "python3 << 'EOF'\nimport subprocess\nsubprocess.run(['git', 'push'])\nEOF", "git"),
@@ -129,18 +129,18 @@ for tool, testo, atteso in LETTURA:
 print(f"casi lettura: {len(LETTURA)}, sbagliati totali: {sbagli}")
 
 # missione catena (27/09/2026): i profili .claude/agents/*.md dentro le radici si correggono senza chiedere
-AB = str(Path.home() / "Library/CloudStorage/OneDrive/Jarvis Brain")   # la stessa radice di radici()
-PROF = f"{AB}/Progetti/Vita personale/.claude/agents"
+AB = str(Path.home() / "Jarvis-Memoria")   # la stessa radice di radici()
+PROF = f"{AB}/Progetti/Spazio di prova/.claude/agents"
 CATENA = [
     ("Write", f"{PROF}/revisore-utente.md", None),
     ("Edit", f"{PROF}/revisore-utente.md", None),
     (B, f"cat > {PROF.replace(' ', chr(92) + ' ')}/revisore-utente.md << 'EOF'\n---\nnome: x\n---\nusa adb e git push\nEOF",
      None),
-    (B, f'cd "{AB}/Progetti/Vita personale" && sed -i \'\' \'s/aggiornato-il: 2026-09-26/aggiornato-il: 2026-09-27/\' '
+    (B, f'cd "{AB}/Progetti/Spazio di prova" && sed -i \'\' \'s/aggiornato-il: 2026-09-26/aggiornato-il: 2026-09-27/\' '
         f'./.claude/agents/revisore-utente.md', None),
     (B, f'sed -i "" "s/a/b/g" "{PROF}/x.md" "{PROF}/y.md"', None),
     # fuori dai profili, o sed che scrive altri file o esegue: chiede come prima
-    (B, f'cd "{AB}/Memoria/Vita personale" && sed -i \'\' \'s/a/b/\' ./l’utente\\ Personale.md', "modifica sul posto"),
+    (B, f'cd "{AB}/Memoria/Spazio di prova" && sed -i \'\' \'s/a/b/\' ./l’utente\\ Personale.md', "modifica sul posto"),
     (B, f"sed -i '' 's/a/b/w /etc/x' '{PROF}/x.md'", "modifica sul posto"),
     (B, f"sed -i '' 's/a/b/' '{PROF}/x.md' && git push", "git"),
     (B, "sed -i '' 's/a/b/' /etc/.claude/agents/x.md", "modifica sul posto"),

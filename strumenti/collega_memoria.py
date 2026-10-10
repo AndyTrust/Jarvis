@@ -9,8 +9,8 @@ Opzioni: --memoria DIR (dove tenerla), --risposte FILE (default ~/.jarvis/rispos
          --senza-cache. La casa è $HOME: per provarlo su una casa finta, HOME=/tmp/casa python3 ...
 
 Cosa fa con --applica. Non cancella mai niente: chi c'è già viene unito o spostato in <nome>.bak-AAAAMMGG.
-  1. crea <memoria>/ con Comune/, Diario/, Report/, Sessioni/, Claude/projects/ e una cartella per spazio
-     (dalle risposte di avvio), ognuna con il suo Stato.md;
+  1. crea <memoria>/ con Comune/, Diario/, Report/, Sessioni/, Claude/projects/ (le cartelle degli spazi le crea
+     crea_progetto.py quando nasce un progetto);
   2. ~/.claude/projects/<progetto>/memory → <memoria>/Claude/projects/<progetto>/memory (collegamento simbolico).
      Se nella memoria c'è già una cartella con lo stesso nome, i file si UNISCONO: quelli uguali si saltano,
      quelli diversi si copiano accanto con il suffisso .da-questo-mac-AAAAMMGG e si dichiarano;
@@ -25,7 +25,7 @@ Cosa fa con --applica. Non cancella mai niente: chi c'è già viene unito o spos
   5. per gli altri harness scelti scrive i file di ingresso che rimandano alla stessa memoria:
      ~/.codex/AGENTS.md (Codex), ~/.gemini/GEMINI.md (Gemini CLI), <memoria>/Comune/ISTRUZIONI-HARNESS.md
      (da incollare in Cursor, Grok o altri che non leggono un file globale). Blocco tra marcatori, file con backup;
-  6. scrive ~/.jarvis/percorsi.json (memoria, repo, spazi, collegamenti): lo leggono i ganci, la skill
+  6. scrive ~/.jarvis/percorsi.json (memoria, repo, progetti, collegamenti): lo leggono i ganci, la skill
      aggiorna-memoria e il Command Center.
 Uscita: 0 tutto a posto, 1 qualcosa da guardare (righe 🔴).
 """
@@ -134,7 +134,7 @@ Porta d'ingresso della memoria condivisa. Ogni harness (Claude Code, Codex, Gemi
 
 - Profilo e preferenze: [[Profilo]] (il nome con cui chiamarti sta anche in `profilo-jarvis.md` di Jarvis)
 - Regole di lavoro: [[Regole]]
-- Spazi: {spazi}
+- Progetti: ogni spazio ha `<spazio>/Stato.md` (elenco: `python3 strumenti/crea_progetto.py --elenco`). {spazi}
 - Diario: `Diario/` · Report: `Report/` · Sessioni: `Sessioni/`
 - Memoria automatica di Claude Code: `Claude/projects/`
 
@@ -165,7 +165,7 @@ def crea_struttura(mem, spazi, profilo):
         fa(f"scrivo la porta d'ingresso {porta}")
         if APPLICA:
             porta.write_text(PORTA.format(ora=ADESSO, assistente=profilo.get("nome_assistente") or "Jarvis",
-                                          spazi=", ".join(f"[[{s}/Stato|{s}]]" for s in spazi) or "(nessuno ancora)"),
+                                          spazi=", ".join(f"[[{s}/Stato|{s}]]" for s in spazi) or "Nessun progetto ancora: nascono quando li nomini."),
                              encoding="utf-8")
     for nome, testo in (("Profilo.md", profilo_md(profilo)), ("Regole.md", REGOLE)):
         f = mem / "Comune" / nome
@@ -368,8 +368,9 @@ def main():
     file_percorsi = HOME / ".jarvis" / "percorsi.json"
     percorsi = leggi_json(file_percorsi)
     mem = scegli_memoria(risposte, percorsi)
-    spazi_r = risposte.get("spazi") or percorsi.get("spazi") or []
-    spazi = [s["nome"] for s in spazi_r if isinstance(s, dict) and s.get("nome")]
+    # i progetti non stanno più qui: la fonte unica è command-center/spazi.json (crea_progetto.py), che crea da sé
+    # la cartella <memoria>/<spazio>/ con Stato.md. Qui solo la struttura comune.
+    spazi = []
     di("🟢", f"memoria condivisa: {mem}" + ("" if mem.exists() else " (da creare)"))
     if not "--solo-progetti" in sys.argv:
         crea_struttura(mem, spazi, risposte)
@@ -380,9 +381,10 @@ def main():
         if "--senza-claude-md" not in sys.argv:
             claude_md_unico(mem, risposte)
         ingresso_harness(mem, risposte.get("harness") or [])
-    nuovi = dict(percorsi)
+    nuovi = {k: v for k, v in percorsi.items() if k != "spazi"}
     nuovi.update({"aggiornato": ADESSO, "memoria": str(mem), "vault": str(mem), "repo": str(QUI),
-                  "spazi": spazi_r, "claude_progetti_collegati": collegati,
+                  "progetti": percorsi.get("progetti") or str(HOME / "Progetti"),
+                  "claude_progetti_collegati": collegati,
                   "claude_md": str(mem / "Comune" / "CLAUDE.md")})
     if {k: v for k, v in nuovi.items() if k != "aggiornato"} != {k: v for k, v in percorsi.items() if k != "aggiornato"}:
         fa(f"scrivo {file_percorsi}")

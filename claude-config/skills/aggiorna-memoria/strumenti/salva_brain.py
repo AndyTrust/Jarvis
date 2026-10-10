@@ -113,7 +113,7 @@ def main():
             riga = f"{adesso} · {riga}"
         lg.write_text(testo + "\n\n" + riga + "\n", encoding="utf-8")
         print(f"✅ riga aggiunta in fondo a WIKI/log.md")
-        lint = base / "AZD-AZD/strumenti/lint_wiki.py"
+        lint = base / "strumenti/lint_wiki.py"
         if lint.is_file():
             import subprocess as sp
             r = sp.run([sys.executable, str(lint)], capture_output=True, text=True, timeout=60)

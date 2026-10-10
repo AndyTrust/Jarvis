@@ -5,8 +5,8 @@ La scheda che dice se la memoria dei progetti è aggiornata davvero, non solo se
 
 ## I tre numeri
 
-- **Note nel vault**: quante note ci sono in totale in `Jarvis Brain/Memoria/`.
-- **Sessioni di Jarvis**: quante sessioni registrate in `Jarvis Brain/Sessioni/`.
+- **Note nel vault**: quante note ci sono in totale nella memoria condivisa (`~/Jarvis-Memoria`, o quella scelta all'installazione).
+- **Sessioni di Jarvis**: quante sessioni registrate in `<memoria>/Sessioni/`.
 - **Diario di oggi**: se la nota del giorno in `01 Diario/` esiste ed è stata toccata.
 
 ## Sincronia
@@ -29,8 +29,8 @@ Il bottone **Verifica ora** rilancia subito `controlla.py` invece di aspettare i
 
 ## Da fare
 
-Le caselle aperte lette da tutti i `Da fare.md` dei progetti, in un elenco unico.
+Le voci DA FARE lette dallo `Stato.md` di ogni spazio, in un elenco unico.
 
 ## Cosa non fa questa pagina
 
-`controlla.py` è di sola lettura, tranne quando gira con `--scrivi` (lo fa da solo a fine di ogni risposta di Jarvis): in quel caso scrive solo `Memoria/00 Comune/Report/Stato aggiornamenti.md`, mai dentro una memoria di progetto. Le verifiche e gli agenti del CRM Azienda Uno non stanno più qui: sono stati spostati nella scheda [Squadra](Squadra) il 26/09/2026, perché sono lavoro, non un dato di sincronia.
+`controlla.py` è di sola lettura, tranne quando gira con `--scrivi` (lo fa da solo a fine di ogni risposta di Jarvis): in quel caso scrive solo `<memoria>/Comune/Report/Stato aggiornamenti.md`, mai dentro una memoria di progetto. Le verifiche e gli agenti dei progetti stanno nella scheda [Squadra](Squadra): sono lavoro, non un dato di sincronia.

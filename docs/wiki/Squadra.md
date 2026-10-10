@@ -27,13 +27,13 @@ La lista dei lavori lanciati dal pannello — chat, verifiche, agenti, missioni 
 
 ## Agenti per spazio
 
-Una tendina per spazio (Azienda Uno, Azienda Due, Vita personale…), una card per progetto dentro, con il capogruppo in cima alla sua squadra. Se uno spazio ha un solo progetto con lo stesso nome (per esempio «Sito Azienda Uno» → «Sito Azienda Uno») il titolo compare una volta sola, non due.
+Una tendina per spazio, una card per progetto dentro, con il capogruppo in cima alla sua squadra. Se uno spazio ha un solo progetto con lo stesso nome il titolo compare una volta sola, non due. Con zero progetti la sezione dice «Nessun progetto ancora: di' a Jarvis di crearne uno». Ogni card ha «📎 Progetto e file»: nome, descrizione, file caricati in `File/`, indice e archivio del progetto.
 
 Un clic su un agente apre la chat con lui; un doppio clic apre la sua scheda (descrizione, modello, strumenti, con chi comunica). La casella di ricerca filtra per nome o compito. «Apri tutti» / «Chiudi tutti» aprono o chiudono tutte le tendine insieme.
 
-## Verifiche e agenti del CRM
+## Verifiche e agenti dei progetti
 
-Gli script di controllo pronti (per esempio l'autocontrollo di Jarvis, che scrive `prove/RAPPORTO.md`) e un modulo per lanciare un agente del CRM Azienda Uno con una richiesta a piacere, o vuota per la sua verifica di routine. Questi agenti lavorano sempre in sola lettura, qualunque sia il modo scelto in Chat.
+Gli script di controllo pronti (per esempio l'autocontrollo di Jarvis, che scrive `prove/RAPPORTO.md`) e un modulo per lanciare un agente di progetto con una richiesta a piacere, o vuota per la sua verifica di routine. Questi agenti lavorano sempre in sola lettura, qualunque sia il modo scelto in Chat.
 
 ## Sessioni Claude aperte adesso
 

@@ -17,9 +17,9 @@
 	<key>RunAtLoad</key>
 	<true/>
 	<key>StandardErrorPath</key>
-	<string>@@HOME@@/.locale-onedrive/log/ogni30-launchd.log</string>
+	<string>@@HOME@@/.jarvis/log/ogni30-launchd.log</string>
 	<key>StandardOutPath</key>
-	<string>@@HOME@@/.locale-onedrive/log/ogni30-launchd.log</string>
+	<string>@@HOME@@/.jarvis/log/ogni30-launchd.log</string>
 	<key>StartInterval</key>
 	<integer>900</integer>
 	<key>WorkingDirectory</key>

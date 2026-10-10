@@ -582,6 +582,32 @@ LAVORI_DIR = QUI / "lavori"
 LAVORI_DIR.mkdir(exist_ok=True)
 CRM = _percorso(CFG.get("progetto_agenti"), AGENTE)
 VAULT = _percorso(CFG.get("vault"), AGENTE / "vault")
+# 2026-10-10 (Jarvis da zero): progetti e agenti nascono da strumenti/crea_progetto.py e crea_agente.py, la stessa
+# logica per la riga di comando, la chat e la lavagna. La memoria è quella di ~/.jarvis/percorsi.json.
+sys.path.insert(0, str(QUI.parent / "strumenti"))
+import crea_progetto as progetti_mod  # noqa: E402
+import crea_agente as agenti_crea  # noqa: E402
+
+
+def radice_memoria():
+    """La memoria condivisa (chiave «memoria» di ~/.jarvis/percorsi.json; predefinita ~/Jarvis-Memoria)."""
+    return progetti_mod.memoria()
+
+
+def _carica_stato_avanzamento():
+    """Il gancio che scrive Stato.md (claude-config/hooks/stato_avanzamento.py): il server lo riusa per ricalcolare
+    lo Stato.md di uno spazio quando cambiano progetti, schede, diari o file. Una sola logica."""
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("stato_avanzamento", QUI.parent / "claude-config" / "hooks" / "stato_avanzamento.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+    except Exception:  # noqa: BLE001
+        return None
+
+
+_stato_mod = _carica_stato_avanzamento()
 BACKTALK_JSON = AGENTE / "backtalk" / "backtalk.json"
 SETTINGS_LOCALI = AGENTE / ".claude" / "settings.local.json"
 PATH_ENV = f"{HOME}/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
@@ -1170,6 +1196,19 @@ def raccogli_agenti():
     except Exception as e:
         evento(f"agenti: {e}")
         return
+    # 2026-10-10: solo le sessioni di questo Jarvis: quelle che lavorano nella casa di chi lo usa (o nelle cartelle
+    # dei progetti di spazi.json). Su un Mac con più utenti o con una casa di prova, le sessioni altrui restano fuori.
+    radici = [str(HOME.resolve())] + [str(Path(p["cartella"]).resolve()) for s_ in spazi.carica() for p in s_["progetti"]]
+    def _di_questo_jarvis(r):
+        dove = str(r.get("dove") or "")
+        if not dove:
+            return False
+        try:
+            dove = str(Path(dove).resolve())
+        except OSError:
+            pass
+        return any(dove == x or dove.startswith(x.rstrip("/") + "/") for x in radici)
+    righe = [r for r in righe if _di_questo_jarvis(r)]
     nomi = nomi_sessioni()
     AGENTI_CACHE["ts"] = time.time()
     AGENTI_CACHE["righe"] = [
@@ -1389,6 +1428,13 @@ for _c in CFG.get("comandi") or []:
 APRI_RAPIDO = {"guida_telefono": None,
                # ex Avvia Cloud (claude --cloud Jarvis) → un'app esterna (l'utente 23/09/2026)
                "avvia_cloud": str(AGENTE / "avvio" / "Apri un'app esterna.command")}
+# 2026-10-10 (prodotto pubblico): si mostrano solo i comandi che hanno qualcosa dietro su questo Mac
+if not (AGENTE / "telefono" / "chiamate").is_dir():
+    for _k in ("domande_telefono", "migliorati"):
+        COMANDI_RAPIDI.pop(_k, None)
+    APRI_RAPIDO.pop("guida_telefono", None)
+if not Path(APRI_RAPIDO.get("avvia_cloud") or "").is_file():
+    APRI_RAPIDO.pop("avvia_cloud", None)
 APRI_RAPIDO.update(CFG.get("collegamenti") or {})
 
 
@@ -1408,8 +1454,8 @@ def claude_ora():
 
 
 def _nodo_bus(nodo):
-    """2026-10-05: il gancio scrive «gruppo:nome» (Azienda Due:revisore); la pagina cerca gli agenti per nome
-    (trovaAgente): qui il nome vero dell'agente risolto (revisore-Azienda Due), o il nome com'era."""
+    """2026-10-05: il gancio scrive «gruppo:nome» (<gruppo>:revisore); la pagina cerca gli agenti per nome
+    (trovaAgente): qui il nome vero dell'agente risolto, o il nome com'era."""
     n = str(nodo or "")
     if ":" not in n:
         return nodo
@@ -1550,8 +1596,9 @@ def guardia(dove, comando):
 
 
 def guardia_mac():
-    """Finché il Command Center è acceso tiene su TuoBot (decisione dell'utente del 19/09/2026 22:00)."""
-    guardia("mac", "controlla")
+    """Finché il Command Center è acceso tiene su il bot Telegram del Mac, se è configurato."""
+    if Path(GUARDIA).is_file():
+        guardia("mac", "controlla")
 
 
 def raccogli_telegram():
@@ -1561,6 +1608,11 @@ def raccogli_telegram():
         return
     t = {}
     for dove in ("mac", "vps"):
+        # 2026-10-10 (prodotto pubblico): senza lo script di guardia (Mac) o senza VPS, Telegram «non configurato»:
+        # niente righe nel pannello, niente segnalazioni, niente anomalie della sentinella
+        if (dove == "mac" and not Path(GUARDIA).is_file()) or (dove == "vps" and not VPS):
+            t[dove] = {"non_configurato": True, "spento": True, "bot": BOT_TELEGRAM[dove]}
+            continue
         c, out = guardia(dove, "stato")
         try:
             t[dove] = json.loads(out.strip().splitlines()[-1])
@@ -1580,7 +1632,7 @@ def battito():
     """
     d = leggi_json(AGENTE / "sincro/ultimo.json", {})
     if not d:
-        return {"acceso": False, "perche": "il battito non è mai passato"}
+        return {"acceso": False, "mai": True, "perche": "il battito non è mai passato (giro della sincronia non acceso)"}
     if sys.platform == "win32" and "progetti" in d:
         # 28/09/2026 (ramo windows): ultimo.json può arrivare dal Mac col repository; qui solo i progetti di spazi.json
         nomi_qui = {p["nome"] for s in spazi.carica() for p in s["progetti"]}
@@ -1597,23 +1649,13 @@ def battito():
 
 
 def raccogli_memoria():
-    note = sum(1 for p in VAULT.rglob("*.md") if ".obsidian" not in p.parts) if VAULT.exists() else 0
+    mem = radice_memoria()
+    note = sum(1 for p in mem.rglob("*.md") if ".obsidian" not in p.parts) if mem.exists() else 0
     oggi = date.today().isoformat()
-    diario = any(VAULT.glob(f"Memoria/00 Comune/Diario/**/{oggi}*.md")) if VAULT.exists() else False
+    diario = any(mem.glob(f"Diario/**/{oggi}*.md")) if mem.exists() else False
     cartella_sessioni = HOME / ".claude/projects" / str(AGENTE).replace("/", "-")
     sessioni = len(list(cartella_sessioni.glob("*.jsonl"))) if cartella_sessioni.is_dir() else 0
-    sviluppi = []
-    indice = VAULT / "Memoria" / "Vita personale" / "Jarvis" / "Sviluppi" / "Sviluppi.md"
-    if indice.exists():
-        for riga in indice.read_text().splitlines():
-            m = re.match(r"\|\s*\[\[(.+?)\]\]\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|", riga)
-            if not m:
-                continue
-            scheda = VAULT / "Memoria" / "Vita personale" / "Jarvis" / "Sviluppi" / f"{m.group(1)}.md"
-            aperti = []
-            if scheda.exists():
-                aperti = [t.strip()[6:] for t in scheda.read_text().splitlines() if t.strip().startswith("- [ ]")]
-            sviluppi.append({"nome": m.group(1), "progetto": m.group(2), "stato": m.group(3), "task": aperti})
+    sviluppi = []      # i lavori aperti stanno nello Stato.md di ogni spazio (ganci e crea_progetto.py)
     STATO.set("memoria", {"note": note, "diario_oggi": diario, "sessioni": sessioni,
                           "sviluppi": sviluppi, "battito": battito()})
 
@@ -1629,7 +1671,7 @@ def _genera_nota(script, tetto):
 
 
 def aggiorna_cruscotto():
-    """«Jarvis Brain/00 Cruscotto.md», ogni 120 s (strumenti/cruscotto.py)."""
+    """La nota «00 Cruscotto.md» della memoria, ogni 120 s (strumenti/cruscotto.py, se c'è)."""
     _genera_nota("cruscotto.py", 60)
 
 
@@ -1845,20 +1887,18 @@ def scrivi_nota_di_casa(nome, dati):
 
 def _radice_spazio(sp, base=""):
     """Dove stanno le cartelle dei progetti di uno spazio: la cartella di riferimento scelta dall'utente (base,
-    percorso assoluto già esistente, ovunque sul Mac) oppure, come prima, Progetti/<spazio>/ in Jarvis Brain."""
+    percorso assoluto già esistente, ovunque sul Mac) oppure la cartella dei progetti (chiave «progetti» di
+    ~/.jarvis/percorsi.json, predefinita ~/Progetti)."""
     if base:
         b = Path(base).expanduser()
         if not b.is_absolute() or not b.is_dir():
             raise ValueError("la cartella di riferimento deve essere un percorso assoluto già esistente")
         return b
-    if sys.platform == "win32":
-        # ramo windows: Jarvis Brain non c'è; si parte dalla cartella che contiene i progetti già nello spazio
-        for p in sp.get("progetti") or []:
-            c = spazi.percorso(p.get("cartella"))
-            if c and c.is_dir():
-                return c.parent
-        return spazi.OD
-    return spazi.percorso(f"OD/Jarvis Brain/Progetti/{_cartella_spazio(sp)}")
+    for p in sp.get("progetti") or []:          # la cartella che contiene i progetti già nello spazio
+        c = spazi.percorso(p.get("cartella"))
+        if c and c.is_dir():
+            return c.parent
+    return progetti_mod.radice_progetti()
 
 
 def cartelle_progetto(spazio_id, base=""):
@@ -1969,146 +2009,77 @@ def rinomina_spazio(spazio_id, nome):
 
 
 def crea_gruppo(dati):
-    """Un progetto nuovo dalla lavagna (contratto, punto 14): cartella, capogruppo dal modello, sezione di
-    memoria con «Da fare.md», voce in spazi.json. Niente si sovrascrive: se c'è già, si rifiuta.
+    """Un progetto nuovo dalla lavagna: la stessa logica di strumenti/crea_progetto.py (voce in spazi.json, memoria
+    dello spazio con Stato.md, cartella con File/ e Indice-file.md, .claude/memoria/ e il capogruppo <id>-ceo dal
+    modello unico). Poi la scheda della cartella e del capogruppo compaiono sulla lavagna.
 
-    27/09/2026 (l'utente): la cartella può essere una già esistente (dentro Progetti/<spazio>/, scelta
-    dall'elenco di cartelle_progetto) invece di nascerne sempre una nuova dal nome."""
-    pid = str(dati.get("id") or "").strip()
+    La cartella: scelta con Sfoglia (`cartella`, percorso intero), una già esistente dentro la cartella di
+    riferimento (`cartella_esistente`, «@base» = la cartella di riferimento stessa) oppure una nuova col nome del
+    progetto (dentro `cartella_base` o, senza, nella cartella dei progetti di ~/.jarvis/percorsi.json)."""
     nome = " ".join(str(dati.get("nome") or "").split())[:60]
-    if not NOME_AGENTE.fullmatch(pid):
-        raise ValueError("id del gruppo: minuscole, cifre e trattini")
-    if not nome or "/" in nome or nome.startswith("."):
+    if not nome or "/" in nome or "\\" in nome or nome.startswith("."):
         raise ValueError("nome del gruppo non valido")
-    # 30/09/2026 (l'utente): «Nuovo gruppo» parte dalla cartella. Senza `spazio` nasce uno spazio nuovo (come
-    # Azienda Due) con la cartella dentro; il capogruppo si crea solo se `crea_capogruppo` è vero, gli agenti
-    # si aggiungono dopo dalla lavagna.
-    nuovo_spazio = not dati.get("spazio")
-    if nuovo_spazio:
-        if any(x["id"] == pid for x in spazi.carica()):
-            raise ValueError(f"l'id {pid} è già usato da uno spazio")
-        sp = {"id": pid, "nome": nome}
-    else:
+    d0 = progetti_mod.carica_spazi()
+    if progetti_mod.trova_progetto(d0, nome)[1]:
+        raise ValueError(f"esiste già un progetto «{nome}»")
+    sp = None
+    if dati.get("spazio"):
         sp = next((x for x in spazi.carica() if x["id"] == dati.get("spazio")), None)
         if not sp:
             raise ValueError("spazio sconosciuto")
-    if any(p["id"] == pid for x in spazi.carica() for p in x["progetti"]):
-        raise ValueError(f"l'id {pid} è già usato")
-    # 02/10/2026 (l'utente): ogni gruppo nasce con il suo CEO, col nome del progetto; il CEO legge la cartella e crea la squadra
-    crea_capo = True
-    capo = str(dati.get("capogruppo") or f"ceo-{pid}").strip()
-    if crea_capo and not NOME_AGENTE.fullmatch(capo):
-        raise ValueError("nome del capogruppo: minuscole, cifre e trattini")
-    cartella_esistente = str(dati.get("cartella_esistente") or "").strip()
+    scelta = str(dati.get("cartella") or "").strip()
     base = str(dati.get("cartella_base") or "").strip()
-    scelta = str(dati.get("cartella") or "").strip()     # ramo windows (29/09/2026): percorso intero scelto con Sfoglia
-    if scelta:
-        radice = None
-    elif sys.platform == "win32" and not base and nuovo_spazio:
-        raise ValueError("scegli la cartella del progetto (Sfoglia): il gruppo si collega a una cartella già sul PC")
-    else:
-        radice = _radice_spazio(sp, base) if (base or not nuovo_spazio) else spazi.percorso("OD/Jarvis Brain/Progetti")
+    esistente = str(dati.get("cartella_esistente") or "").strip()
+    cartella = None
     if scelta:
         cartella = Path(scelta).expanduser()
         if not cartella.is_absolute() or not cartella.is_dir():
             raise ValueError("la cartella del progetto deve essere un percorso assoluto già esistente")
-        cartella = cartella.resolve()
-        for x in spazi.carica():               # una cartella non si collega due volte
-            for p in x["progetti"]:
-                if _stessa_cartella(p, cartella):
-                    raise ValueError(f"questa cartella è già collegata a «{p.get('nome') or p['id']}» (spazio {x['nome']})")
-    elif cartella_esistente == "@base":          # il gruppo è la cartella di riferimento stessa
-        cartella = radice
-    elif cartella_esistente:
-        if "/" in cartella_esistente or "\\" in cartella_esistente or cartella_esistente.startswith("."):
-            raise ValueError("cartella non valida")
-        cartella = radice / cartella_esistente
-        if not cartella.is_dir():
-            raise ValueError(f"la cartella «{cartella_esistente}» non esiste in {radice}")
-    else:
-        cartella = radice / nome
-    if cartella.exists() and not cartella.is_dir():
-        raise ValueError(f"{cartella} esiste ed è un file")
-    try:                                        # dentro OneDrive si scrive «OD/…», altrove il percorso intero
-        cartella_rel = "OD/" + cartella.resolve().relative_to(spazi.OD.resolve()).as_posix()
-    except ValueError:
-        cartella_rel = str(cartella)
-    if sys.platform == "win32":     # ramo windows: Jarvis Brain è la memoria dell'utente, qui mai; la memoria sta nel progetto
-        memoria = cartella / ".claude" / "memoria"
-    else:
-        memoria = spazi.OD / "Jarvis Brain" / "Memoria" / _cartella_spazio(sp) / nome
-    agenti_dir = cartella / ".claude" / "agents"
-    if crea_capo and ((agenti_dir / f"{capo}.md").exists() or (agenti_dir / "_archivio" / f"{capo}.md").exists()):
-        raise ValueError(f"{capo} esiste già in {cartella}")
-    # 27/09/2026: modello e umorismo si controllano PRIMA di scrivere spazi.json; prima un valore
-    # sbagliato lasciava la voce del gruppo senza capogruppo
-    if (dati.get("model") or "sonnet") not in spazi.MODELLI:
+    elif esistente:
+        radice = _radice_spazio(sp or {}, base)
+        if esistente == "@base":
+            cartella = radice
+        else:
+            if "/" in esistente or "\\" in esistente or esistente.startswith("."):
+                raise ValueError("cartella non valida")
+            cartella = radice / esistente
+            if not cartella.is_dir():
+                raise ValueError(f"la cartella «{esistente}» non esiste in {radice}")
+    elif base:
+        cartella = _radice_spazio(sp or {}, base) / nome
+    modello = dati.get("model") or "sonnet"
+    if modello not in spazi.MODELLI:
         raise ValueError("modello: haiku, sonnet o opus")
     campi_come_parla({"umorismo": dati.get("umorismo"), "serieta": dati.get("serieta")})
     with AGENTI_LOCK:
-        agenti_dir.mkdir(parents=True, exist_ok=True)
-        memoria.mkdir(parents=True, exist_ok=True)
-        if nuovo_spazio and sys.platform != "win32":
-            ora = datetime.now().strftime("%Y-%m-%d %H:%M")
-            pagina = spazi.OD / "Jarvis Brain" / "Memoria" / nome / f"{nome}.md"
-            if not pagina.exists():
-                pagina.write_text(f"---\ntitolo: {nome}\ntipo: spazio\naggiornato: {ora}\n---\n\n# {nome}\n\n"
-                                  f"Spazio creato dalla lavagna del Command Center il {ora}. Cartella: `{cartella}`. "
-                                  f"Da fare: [[Da fare]].\n", encoding="utf-8")
-            (spazi.OD / "Jarvis Brain" / "Memoria" / nome / "Report").mkdir(parents=True, exist_ok=True)
-        if not (memoria / "Da fare.md").exists():
-            ora = datetime.now().strftime("%Y-%m-%d %H:%M")
-            (memoria / "Da fare.md").write_text(f"---\ntitolo: Da fare · {nome}\ntipo: da-fare\naggiornato: {ora}\n---\n\n"
-                                                f"# Da fare · {nome}\n\nCreato dalla lavagna del Command Center il {ora}. "
-                                                f"Collegato a [[{sp['nome']}]].\n", encoding="utf-8")
-        d = json.loads(spazi.FILE.read_text(encoding="utf-8"))
-        voce = {"id": pid, "nome": nome, "cartella": cartella_rel, "sezioni_memoria": [f"{_cartella_spazio(sp)}/{nome}"]}
-        if sys.platform == "win32":     # ramo windows: niente sezioni in Jarvis Brain, la memoria propria è nel progetto
-            voce["sezioni_memoria"] = []
-            voce["memoria_propria"] = [str(memoria)]
-        if crea_capo:
-            voce["capogruppo"] = capo
-        if nuovo_spazio and sys.platform == "win32":
-            d["spazi"].append({"id": pid, "nome": nome, "memoria": str(memoria / "Da fare.md"),
-                               "report": str(memoria / "Report"), "progetti": [voce]})
-        elif nuovo_spazio:
-            d["spazi"].append({"id": pid, "nome": nome, "memoria": f"OD/Jarvis Brain/Memoria/{nome}/{nome}.md",
-                               "report": f"OD/Jarvis Brain/Memoria/{nome}/Report", "progetti": [voce]})
-        else:
-            next(x for x in d["spazi"] if x["id"] == sp["id"])["progetti"].append(voce)
-        spazi.salva(d)
-    # il capogruppo (se richiesto) nasce dal modello, come ogni agente, senza nessuno sopra
-    try:
-        if crea_capo: azione_agente({"cosa": "crea", "progetto": pid, "nome": capo, "capogruppo": "",
-                       "description": dati.get("description") or f"Capogruppo di {nome}: distribuisce il lavoro ai "
-                                                                   "suoi specialisti, lo verifica e riferisce a Jarvis.",
-                       "model": dati.get("model") or "sonnet", "tono": dati.get("tono"),
-                       "umorismo": dati.get("umorismo"), "serieta": dati.get("serieta"), "ceo": True})
-    except Exception:
-        # 27/09/2026: capogruppo non creato → la voce esce da spazi.json (cartelle e «Da fare» restano)
+        try:
+            r = progetti_mod.crea(nome, spazio=sp["nome"] if sp else None, cartella=str(cartella) if cartella else None,
+                                  descrizione=str(dati.get("description") or ""), modello=modello)
+        except SystemExit as e:
+            raise ValueError(str(e))
+    pid, capo = r["id"], r["capogruppo"]
+    ritocchi = {k: dati.get(k) for k in ("tono", "umorismo", "serieta") if dati.get(k) is not None}
+    if ritocchi:
+        f = Path(r["cartella"]) / ".claude" / "agents" / f"{capo}.md"
         with AGENTI_LOCK:
-            d = json.loads(spazi.FILE.read_text(encoding="utf-8"))
-            for x in d["spazi"]:
-                x["progetti"] = [p for p in x["progetti"] if p["id"] != pid]
-            if nuovo_spazio:
-                d["spazi"] = [x for x in d["spazi"] if x["id"] != pid]
-            spazi.salva(d)
-        tocca("spazi")
-        raise
+            nuovo, cambiate = spazi.aggiorna_frontmatter(f.read_text(encoding="utf-8"), ritocchi)
+            if cambiate:
+                scrivi_atomico(f, nuovo)
+    tocca("spazi")
     registra_modifica("gruppo", pid, capo)
     try:
         _pannello_gruppo_nasce(pid)
     except Exception as e:  # noqa: BLE001
         evento(f"gruppo {nome}: la lavagna non si è aggiornata da sola ({e})")
-    if crea_capo and dati.get("squadra_ceo", True):
+    if dati.get("squadra_ceo"):          # facoltativo: il capogruppo propone subito una squadra leggendo la cartella
         try:
             crea_squadra(pid)
         except ValueError as e:
             evento(f"squadra di {nome} non avviata: {e}")
-    evento(f"gruppo nuovo: {nome} in {sp['nome']}, " + (f"capogruppo {capo}" if crea_capo else "cartella collegata, senza agenti"))
-    tocca("spazi")
+    aggiorna_stati_spazi()
+    evento(f"progetto nuovo: {nome} nello spazio {r['spazio']}, capogruppo {capo}")
     progetto = next(p for x in elenco_spazi() for p in x["progetti"] if p["id"] == pid)
-    return {"messaggio": f"gruppo {nome} creato", "progetto": progetto}
+    return {"messaggio": f"progetto {nome} creato", "progetto": progetto}
 
 
 # ---------------------------------------------------------------- tombe e squadra del CEO (2026-10-02)
@@ -2349,8 +2320,9 @@ def lavagna_verifica():
                     if c not in tutti:
                         p("avviso", f"{dove} › {a['nome']}", f"«comunica con» {c}, che non esiste", "profilo/lavagna", "togli il filo o ricrea l'agente; «Allinea» sistema i fili")
             for sez in pr.get("sezioni_memoria") or []:
-                if sez.count("/") == 1 and not (spazi.OD / "Jarvis Brain" / "Memoria" / sez / "Stato.md").exists():
-                    p("avviso", dove, f"manca lo Stato in Memoria/{sez}", "Jarvis (memoria)", "parte da solo ogni 30 minuti, oppure `python3 ~/Jarvis/strumenti/stato_vault.py`")
+                if sez.count("/") <= 1 and not (radice_memoria() / sez.split("/")[0] / "Stato.md").exists():
+                    p("avviso", dove, f"manca lo Stato in {sez.split('/')[0]}/Stato.md della memoria", "Jarvis (memoria)",
+                      f"rilancia `python3 strumenti/crea_progetto.py \"{pr['nome']}\"` (ricrea solo quello che manca)")
     # schede della lavagna che puntano ad agenti spariti
     chiavi = {f"{pid}:{a['nome']}" for pid, ag in per_progetto.items() for a in ag}
     pannello = leggi_pannello()
@@ -2430,8 +2402,8 @@ def togli_gruppo(pid):
             raise ValueError("questa è la cartella di Jarvis stesso (o sta dentro): i suoi agenti non si archiviano da qui")
         agenti_dir = cartella / ".claude" / "agents"
         archivio = cartella / f"_archivio-{datetime.now():%Y%m%d-%H%M%S}"
-        # 27/09/2026: più progetti possono condividere la cartella (utente, azioni, app-github in
-        # Patrimonio). Se un altro la usa ancora, esce solo la voce: gli agenti restano dove sono.
+        # 27/09/2026: più progetti possono condividere la cartella. Se un altro la usa ancora, esce solo la voce:
+        # gli agenti restano dove sono.
         condivisa = any(p["id"] != pid and _stessa_cartella(p, cartella) for x in d["spazi"] for p in x["progetti"])
         if agenti_dir.is_dir() and not condivisa:
             archivio.mkdir()
@@ -2533,7 +2505,7 @@ def _pannello_gruppo_nasce(pid):
             y, x = 220, 0
         nota = {"id": "n" + secrets.token_hex(5), "tipo": "nota", "agente": "", "testo": etichetta, "x": x, "y": y}
         nodi.append(nota)
-        jarvis = next((n for n in nodi if isinstance(n, dict) and n.get("tipo") == "nota" and str(n.get("testo", "")).lower().startswith("jarvis")), None)
+        jarvis = next((n for n in nodi if isinstance(n, dict) and n.get("tipo") == "nota" and e_nota_orchestratore(n.get("testo"))), None)
         fili = L.setdefault("fili", [])
         if jarvis:
             fili.append({"da": jarvis["id"], "a": nota["id"]})
@@ -2740,7 +2712,7 @@ def ripristina_gruppo(pid):
         if not sp:
             raise ValueError("lo spazio del gruppo non c'è più e nessun gruppo archiviato ne ha la voce: ricrealo con «＋ Nuovo gruppo»")
         # 27/09/2026: se nel frattempo un altro progetto usa la stessa cartella (es. «metatrader» su
-        # Progetto B) non si sovrappone niente, salvo che il gruppo fosse già in condivisione quando è uscito
+        # più progetti) non si sovrappone niente, salvo che il gruppo fosse già in condivisione quando è uscito
         cartella = spazi.percorso(a["voce"]["cartella"]).resolve()
         altro = next(((x, p) for x in d["spazi"] for p in x["progetti"] if _stessa_cartella(p, cartella)), None)
         if altro and not a.get("condivisa"):
@@ -2798,13 +2770,19 @@ def azione_agente(dati):
     if cosa == "rinomina_spazio":
         return rinomina_spazio(dati.get("spazio"), dati.get("nome"))
     if cosa == "togli_gruppo":
+        # 2026-10-10: come «Archivia progetto», una riga nello Stato.md e nel diario (prima, finché è in spazi.json)
+        progetti_mod.registra_azione(dati.get("progetto") or "", "gruppo tolto dalla pagina (agenti in _archivio, cartella e memoria restano)")
         return togli_gruppo(dati.get("progetto"))
     if cosa == "ripristina_gruppo":
-        return ripristina_gruppo(dati.get("progetto"))
+        r = ripristina_gruppo(dati.get("progetto"))
+        progetti_mod.registra_azione(dati.get("progetto") or "", "gruppo ripristinato dalla pagina")
+        return r
     if cosa == "anteprima_elimina_gruppo":
         return anteprima_elimina_gruppo(dati.get("progetto"))
     if cosa == "elimina_gruppo":
-        return elimina_gruppo(dati.get("progetto"), dati.get("conferma"))
+        r = elimina_gruppo(dati.get("progetto"), dati.get("conferma"))
+        progetti_mod.registra_azione(dati.get("progetto") or "", "gruppo eliminato dalla pagina")   # se è ancora in spazi.json
+        return r
     if cosa == "aggiorna_catena":
         return aggiorna_catena(dati.get("spazio") or "tutti", dati.get("ambito"))
     if cosa == "allinea":
@@ -2835,17 +2813,10 @@ def azione_agente(dati):
             if capo == nome:
                 capo = ""
             strumenti = " ".join(str(dati.get("tools") or "").split())
-            testo = MODELLO_AGENTE.read_text(encoding="utf-8").format(
-                name=nome, description=descrizione, description_yaml=spazi.valore_yaml(descrizione), model=modello,
-                tools=f" {strumenti}" if strumenti else "", tono=come["tono"], tono_yaml=spazi.valore_yaml(come["tono"]),
-                umorismo=come["umorismo"], serieta=come["serieta"], capogruppo=capo or "nessuno", progetto=p["nome"],
-                memoria=spazio["memoria"].replace(str(HOME), "~"), creato=datetime.now().strftime("%Y-%m-%d %H:%M"))
-            testo = spazi.con_come_parla(testo)      # il blocco «Come parli» (serietà, umorismo, tono) dai campi del profilo
-            if dati.get("ceo"):                      # il capogruppo di un gruppo nuovo: orchestratore con goal, squadra e verifica
-                sez = (QUI / "modelli" / "ceo-sezione.md").read_text(encoding="utf-8").format(
-                    progetto=p["nome"], cartella=p["cartella"].replace(str(HOME), "~"))
-                marcatore = "<!-- comunica-con:inizio"
-                testo = testo.replace(marcatore, sez.lstrip("\n") + "\n" + marcatore, 1) if marcatore in testo else testo + sez
+            # il modello unico, lo stesso di strumenti/crea_agente.py (una sola fonte per il testo delle schede)
+            testo = agenti_crea.componi(nome, descrizione, modello, p, spazio, capogruppo=capo, strumenti=strumenti,
+                                        limiti=str(dati.get("limiti") or ""), ceo=bool(dati.get("ceo")),
+                                        tono=come["tono"], umorismo=come["umorismo"], serieta=come["serieta"])
             if not capo:
                 testo = aggiorna_comunica_con(testo, [])
                 testo, _ = spazi.aggiorna_frontmatter(testo, {"comunica": "", "riporta_a": ""})
@@ -2853,6 +2824,10 @@ def azione_agente(dati):
                 raise ValueError(f"{capo} non è un agente di {p['nome']}")
             cartella.mkdir(parents=True, exist_ok=True)
             file.write_text(testo, encoding="utf-8")
+            diario = Path(p["cartella"]) / ".claude" / "memoria" / "agenti" / f"{nome}.md"
+            if not diario.exists():          # ogni agente nasce col suo diario (FATTO, DA FARE, ERRORI COMMESSI)
+                diario.parent.mkdir(parents=True, exist_ok=True)
+                diario.write_text(agenti_crea.testo_quaderno(nome), encoding="utf-8")
             togli_tomba(p["id"], nome)       # l'utente lo ha chiesto a mano: la tomba non vale più
             if capo:
                 capo_file = cartella / f"{capo}.md"
@@ -2933,6 +2908,8 @@ def azione_agente(dati):
             _pannello_agente_esce(p["id"], nome)
     except Exception as e:  # noqa: BLE001
         evento(f"agente {nome}: la lavagna non si è aggiornata da sola ({e})")
+    if cosa in ("crea", "togli", "elimina", "ripristina", "attivo"):
+        _registra(p["id"], f"agente {nome}: {msg}")
     registra_modifica(cosa, p["id"], nome, con=[capo] if cosa == "crea" else [],
                       da=dati.get("da") if dati.get("da") in ("lavagna", "scheda", "catena") else "lavagna")
     evento(msg)
@@ -2956,7 +2933,7 @@ def allineamento(lavagna):
     Un filo vale nei due versi (la pagina scrive il nome a tutte e due le schede). Una coppia
     conta una volta sola anche se il problema si vede da tutti e due i lati: 30/09/2026, l'utente ha
     trovato «18 differenze» sempre uguali e sembravano troppe — erano 13 coppie reali, 5 contate
-    due volte (una per ogni profilo che nomina l'altro senza filo, es. azd-gestionale↔azd-partner)."""
+    due volte (una per ogni profilo che nomina l'altro senza filo, es. gestionale↔partner)."""
     _, nodi, fili = _fili_agenti(lavagna)
     profili = dict(_tutti_profili())
     chiavi = {n["agente"] for n in nodi.values()} & set(profili)
@@ -3171,20 +3148,16 @@ def fine_catena():
 # ---------------------------------------------------------------- scadenze (2026-09-26)
 # La pagina «Scadenze» (contratto, punto 9): tre fonti, solo le voci APERTE (l'utente: «tutto il
 # vecchio chiuso va eliminato»). Nessun doppione: ogni voce vive nel suo file e si chiude lì.
-#   azienda    = il registro di direzione del CRM (stessa selezione di sincro/controlla.py:
+#   azienda    = un registro JSON di decisioni e domande, solo se configurato («registro_scadenze»; stessa selezione di sincro/controlla.py:
 #               decisioni «proposta»/«in_corso», domande «aperta»), tutte, non solo entro 7 giorni;
-#   personali = Memoria/Patrimonio/Scadenze personali.md, una casella per riga;
+#   personali = <memoria>/Comune/Scadenze personali.md, una casella per riga;
 #   task      = le caselle di strumenti/task.py (oggi e i 3 giorni prima, come «task.py lista»).
 OD = HOME / "OneDrive" if sys.platform == "win32" else HOME / "Library" / "CloudStorage" / "OneDrive"
 # 2026-09-26: i due file si possono spostare da configurazione.json («registro_scadenze»,
 # «scadenze_personali»), così il template su un'altra macchina non crea cartelle OneDrive finte.
-# Senza le due chiavi restano i percorsi dell'utente di sempre; «registro_scadenze»: "" spegne la fonte.
-REGISTRO_140 = _percorso(CFG.get("registro_scadenze", str(OD / "CRM Azienda Uno/Reports/Direzione/registro.json")),
-                         QUI / "registro-scadenze-non-configurato.json")
-SCADENZE_PERSONALI = _percorso(CFG.get("scadenze_personali", str(AGENTE / "Scadenze personali.md") if sys.platform == "win32"
-                                       else "~/Library/CloudStorage/OneDrive/"
-                                       "Jarvis Brain/Memoria/Patrimonio/Scadenze personali.md"),
-                               AGENTE / "Scadenze personali.md")
+# Senza «registro_scadenze» la fonte «azienda» è spenta; le personali stanno nella memoria condivisa.
+REGISTRO_SCADENZE = _percorso(CFG.get("registro_scadenze") or "", QUI / "registro-scadenze-non-configurato.json")
+SCADENZE_PERSONALI = _percorso(CFG.get("scadenze_personali") or "", radice_memoria() / "Comune" / "Scadenze personali.md")
 TASK_PY = AGENTE / "strumenti" / "task.py"
 SCADENZE_LOCK = threading.Lock()
 # chiudere dal pannello: la decisione diventa «fatta», la domanda «superata» (stati già previsti dal
@@ -3226,10 +3199,12 @@ def _in_ordine(voci):
 
 
 def scadenze_azienda():
-    if not REGISTRO_140.exists():
-        raise FileNotFoundError(f"registro delle scadenze assente: {REGISTRO_140} "
+    if not CFG.get("registro_scadenze"):          # 2026-10-10: fonte facoltativa, spenta di base: niente errore
+        return []
+    if not REGISTRO_SCADENZE.exists():
+        raise FileNotFoundError(f"registro delle scadenze assente: {REGISTRO_SCADENZE} "
                                 "(chiave «registro_scadenze» di configurazione.json)")
-    r = json.loads(REGISTRO_140.read_text(encoding="utf-8"))
+    r = json.loads(REGISTRO_SCADENZE.read_text(encoding="utf-8"))
     voci = [_voce("azienda", d["id"], d.get("entro"), d.get("titolo", ""), "DEC", d.get("responsabile", ""),
                   d.get("beneficio_eur"), d.get("stato", ""))
             for d in r.get("decisioni", []) if d.get("stato") in APERTA_REGISTRO["decisioni"]]
@@ -3289,7 +3264,7 @@ def scadenze():
     return fuori
 
 
-# Chi ha chiuso e perché (2026-09-26 sera, contratto punto 12). Il registro Azienda Uno lo tiene nella voce;
+# Chi ha chiuso e perché (2026-09-26 sera, contratto punto 12). Il registro delle scadenze lo tiene nella voce;
 # le righe del diario e delle scadenze personali non hanno posto per il «perché», e cambiarne il formato
 # cambierebbe gli id. Si tiene qui a parte: (fonte, id) -> {chiusa_da, perche, ts}. Solo per le chiuse dal pannello.
 CHIUSE_FILE = QUI / "scadenze-chiuse.json"
@@ -3328,7 +3303,7 @@ def scadenze_chiuse(giorni):
         v.update(chiusa_ts=ts, chiusa_da=n.get("chiusa_da") or chi_default, perche=n.get("perche", ""))
         fuori.append(v)
 
-    r = json.loads(REGISTRO_140.read_text(encoding="utf-8"))
+    r = json.loads(REGISTRO_SCADENZE.read_text(encoding="utf-8"))
     for sezione, tipo, campo, chi in (("decisioni", "DEC", "titolo", "responsabile"), ("domande", "DOM", "domanda", "chi_chiede")):
         for d in r.get(sezione, []):
             try:
@@ -3374,7 +3349,7 @@ def chiudi_molte(voci, perche):
     azienda = [v for v in voci if isinstance(v, dict) and v.get("fonte") == "azienda"]
     with SCADENZE_LOCK:
         if azienda:
-            r = json.loads(REGISTRO_140.read_text(encoding="utf-8"))
+            r = json.loads(REGISTRO_SCADENZE.read_text(encoding="utf-8"))
             indice = {d.get("id"): (sez, d) for sez in ("decisioni", "domande") for d in r.get(sez, [])}
             cambiate = 0
             ora = datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -3389,10 +3364,10 @@ def chiudi_molte(voci, perche):
                              perche_chiusa=perche)
                     cambiate += 1
             if cambiate:
-                copia = REGISTRO_140.parent / f"registro.json.bak-{datetime.now():%Y%m%d-%H%M}"
+                copia = REGISTRO_SCADENZE.parent / f"registro.json.bak-{datetime.now():%Y%m%d-%H%M}"
                 if not copia.exists():
-                    shutil.copy2(REGISTRO_140, copia)
-                scrivi_atomico(REGISTRO_140, json.dumps(r, ensure_ascii=False, indent=1))
+                    shutil.copy2(REGISTRO_SCADENZE, copia)
+                scrivi_atomico(REGISTRO_SCADENZE, json.dumps(r, ensure_ascii=False, indent=1))
                 chiuse += cambiate
         for v in voci:
             if not isinstance(v, dict) or v.get("fonte") == "azienda":
@@ -3416,9 +3391,9 @@ def chiudi_molte(voci, perche):
 
 CONTROLLO_TETTO = 12000
 CONTROLLO_TESTO = (
-    "Controlla quali di queste scadenze aperte sono GIÀ FATTE o superate. Per il registro Azienda Uno usa il "
-    "capogruppo ceo-ai e i suoi specialisti (report in Reports/Direzione/, dati in Odoo, note in Memoria/<spazio>/)"
-    ", per le personali la posta (strumenti/posta.py) e Memoria/Patrimonio/, per le caselle il diario. "
+    "Controlla quali di queste scadenze aperte sono GIÀ FATTE o superate. Per il registro usa il capogruppo del "
+    "progetto a cui appartiene e i suoi specialisti (note in <memoria>/<spazio>/Stato.md), per le personali la "
+    "memoria condivisa, per le caselle il diario. "
     "Rispondi SOLO con un blocco ```json``` con [{\"fonte\":\"...\",\"id\":\"...\",\"perche\":\"<una riga con "
     "la prova>\"}] delle voci da chiudere, poi una riga per quelle su cui non sei sicuro.")
 
@@ -3469,12 +3444,12 @@ def controllo_scadenze(fonte):
 def _copia_registro_del_giorno():
     """Prima scrittura del giorno sul registro: copia di sicurezza accanto, registro.json.bak-AAAAMMGG-HHMM."""
     oggi = datetime.now().strftime("%Y%m%d")
-    if not list(REGISTRO_140.parent.glob(f"registro.json.bak-{oggi}-*")):
-        shutil.copy2(REGISTRO_140, REGISTRO_140.parent / f"registro.json.bak-{datetime.now():%Y%m%d-%H%M}")
+    if not list(REGISTRO_SCADENZE.parent.glob(f"registro.json.bak-{oggi}-*")):
+        shutil.copy2(REGISTRO_SCADENZE, REGISTRO_SCADENZE.parent / f"registro.json.bak-{datetime.now():%Y%m%d-%H%M}")
 
 
 def _registro_cambia(id_, chiudi):
-    testo = REGISTRO_140.read_text(encoding="utf-8")
+    testo = REGISTRO_SCADENZE.read_text(encoding="utf-8")
     r = json.loads(testo)
     for sezione in ("decisioni", "domande"):
         for d in r.get(sezione, []):
@@ -3495,7 +3470,7 @@ def _registro_cambia(id_, chiudi):
                 d["riaperta"] = datetime.now().strftime("%Y-%m-%d %H:%M") + " · l'utente dal Command Center"
             _copia_registro_del_giorno()
             # stesso formato del file (indent 1, accenti in chiaro, niente a capo finale): il diff resta piccolo
-            scrivi_atomico(REGISTRO_140, json.dumps(r, ensure_ascii=False, indent=1))
+            scrivi_atomico(REGISTRO_SCADENZE, json.dumps(r, ensure_ascii=False, indent=1))
             return d.get("titolo") or d.get("domanda") or id_
     raise ValueError(f"voce {id_} non trovata nel registro")
 
@@ -3578,9 +3553,9 @@ def azione_scadenze(dati):
     with SCADENZE_LOCK:
         if fonte == "azienda":
             if cosa == "aggiungi":
-                raise ValueError("il registro di direzione si scrive dalla skill report-direzione, non da qui")
+                raise ValueError("il registro si scrive nel suo file (registro_scadenze), non da qui")
             nome = _registro_cambia(id_, cosa == "chiudi")
-            msg = f"Azienda Uno: {id_} {'chiusa' if cosa == 'chiudi' else 'riaperta'}"
+            msg = f"registro: {id_} {'chiusa' if cosa == 'chiudi' else 'riaperta'}"
         elif fonte == "personali":
             _personali_cambia(cosa, id_, dati.get("testo"), dati.get("entro"))
             nome = (dati.get("testo") or id_ or "")[:80]
@@ -3663,6 +3638,10 @@ def leggi_processi(pids):
 
 
 def raccogli_portiere():
+    if not PORTIERE_PY.is_file():          # 2026-10-10: il portiere è facoltativo; senza, nessuna segnalazione
+        STATO.set("portiere", {"quando_ts": time.time(), "chiavi_in_giro": 0, "da_guardare": [], "fantasmi": 0,
+                               "sessioni": None, "lavori_vivi": None, "in_ascolto": [], "attivo": False})
+        return
     r = subprocess.run([sys.executable, str(PORTIERE_PY), "--json"], capture_output=True, text=True,
                        timeout=30, env=ENV, stdin=subprocess.DEVNULL)
     try:
@@ -3730,6 +3709,189 @@ def portiere_ritira_fantasmi():
     return int(m.group(1))
 
 
+# ---------------------------------------------------------------- una sola fonte, tutto il resto si rilegge (2026-10-10)
+# Progetti e agenti possono nascere dalla riga di comando (crea_progetto.py, crea_agente.py), dalla chat o dalla
+# lavagna. sorveglia_file() vede il cambio in 2 s e qui si riallinea il resto: schede della lavagna, Indice-file.md
+# delle cartelle, Stato.md degli spazi (con i diari degli agenti). Nessuna copia da sistemare a mano.
+RIALLINEA_LOCK = threading.Lock()
+
+
+def _campo_profilo(chiave, predefinito=""):
+    try:
+        campi, _ = spazi.frontmatter(PROFILO_JARVIS.read_text(encoding="utf-8"))
+        n = str(campi.get(chiave) or "").strip()
+        return n if n and "{{" not in n else predefinito
+    except OSError:
+        return predefinito
+
+
+def nome_assistente():
+    return _campo_profilo("nome_assistente", "Jarvis")
+
+
+def nome_utente():
+    """Come chiamare il proprietario (campo «chiamami» del profilo); "" se non c'è ancora."""
+    return _campo_profilo("chiamami", "")
+
+
+def e_nota_orchestratore(testo):
+    t = str(testo or "").strip()
+    return "— orchestratore" in t or t.lower().startswith("jarvis")
+
+
+def riallinea_lavagna():
+    """Ogni progetto ha la sua scheda «📁» sulla lavagna generale con sotto il capogruppo e gli specialisti; ogni
+    agente sparito dalla cartella esce dalla lavagna. Torna quante schede ha aggiunto o tolto."""
+    with RIALLINEA_LOCK:
+        elenco = [s_ for s_ in spazi.carica() if not s_.get("sistema")]
+        if not elenco and not PANNELLO_FILE.exists():
+            return 0
+        with PANNELLO_LOCK:
+            attuale = leggi_pannello()
+            d = json.loads(json.dumps(attuale))
+            lav_g = (d.setdefault("lavagne", {})).get("generale")
+            if not isinstance(lav_g, dict) or not any(isinstance(n, dict) and n.get("tipo") == "nota"
+                                                       and e_nota_orchestratore(n.get("testo"))
+                                                       for n in lav_g.get("nodi") or []):
+                lav_g = lav_g if isinstance(lav_g, dict) else {"nodi": [], "fili": [], "vista": {"x": 0, "y": 0, "zoom": 1}}
+                lav_g.setdefault("nodi", []).append({"id": "n" + secrets.token_hex(5), "tipo": "nota", "agente": "",
+                                                     "testo": f"{nome_assistente()} — orchestratore", "x": 0, "y": 60})
+                d["lavagne"]["generale"] = lav_g
+                _scrivi_pannello_sotto_lock(pulisci_pannello(d), attuale)
+        cambi = 0
+        noti = {}
+        for s_ in elenco:
+            for p in s_["progetti"]:
+                if not p.get("esiste"):
+                    continue
+                profili = spazi.profili(p["cartella"], p.get("capogruppo"))
+                noti[p["id"]] = {a["nome"] for a in profili}
+                try:
+                    cambi += bool(_pannello_gruppo_nasce(p["id"]))
+                except Exception as e:  # noqa: BLE001
+                    evento(f"lavagna: {p['nome']} non aggiunto ({e})")
+                for a in profili:
+                    capo = "" if a["capogruppo"] else (a.get("riporta_a") or p.get("capogruppo") or "")
+                    try:
+                        cambi += bool(_pannello_agente_nasce(p["id"], a["nome"], capo, p["nome"], s_["nome"]))
+                    except Exception as e:  # noqa: BLE001
+                        evento(f"lavagna: {a['nome']} non aggiunto ({e})")
+        sulla = {str(n.get("agente")) for L in (leggi_pannello().get("lavagne") or {}).values() if isinstance(L, dict)
+                 for n in L.get("nodi") or [] if isinstance(n, dict) and n.get("tipo") == "agente"}
+        archiviati = {a.get("id") for a in (progetti_mod.carica_spazi().get("archiviati") or [])}
+        for chiave in sulla:
+            pid, _, nome = chiave.partition(":")
+            if (pid in noti and nome and nome not in noti[pid]) or (pid in archiviati and pid not in noti):
+                cambi += bool(_pannello_agente_esce(pid, nome))
+        cambi += _pannello_cartelle_orfane(elenco)
+        return cambi
+
+
+def _pannello_cartelle_orfane(elenco):
+    """Le schede «📁 …» dei progetti che non ci sono più (archiviati o tolti) escono dalla lavagna con i loro fili;
+    tornano da sole se il progetto viene ripristinato (riallinea_lavagna le ricrea)."""
+    valide = set()
+    for s_ in elenco:
+        molti = len(s_["progetti"]) > 1
+        for p in s_["progetti"]:
+            valide |= {f"📁 {p['nome']}", f"📁 {s_['nome']} · {p['nome']}", f"📁 {p['nome']} · nessun agente ancora"}
+    with PANNELLO_LOCK:
+        if not PANNELLO_FILE.exists():
+            return 0
+        attuale = leggi_pannello()
+        d = json.loads(json.dumps(attuale))
+        tolte = 0
+        for k, L in (d.get("lavagne") or {}).items():
+            if str(k).startswith("demo") or not isinstance(L, dict):
+                continue
+            via = {n["id"] for n in L.get("nodi") or [] if isinstance(n, dict) and n.get("tipo") == "nota"
+                   and str(n.get("testo", "")).startswith("📁 ") and n.get("testo") not in valide}
+            if via:
+                L["nodi"] = [n for n in L["nodi"] if not (isinstance(n, dict) and n.get("id") in via)]
+                L["fili"] = [f for f in L.get("fili") or [] if f.get("da") not in via and f.get("a") not in via]
+                tolte += len(via)
+        if tolte:
+            _scrivi_pannello_sotto_lock(pulisci_pannello(d), attuale)
+    if tolte:
+        tocca("pannello")
+    return tolte
+
+
+def _registra(pid, testo):
+    """Una riga nello Stato.md del progetto e nel diario del giorno (crea_progetto.registra_azione), in sottofondo."""
+    threading.Thread(target=progetti_mod.registra_azione, args=(pid, testo), daemon=True).start()
+
+
+def aggiorna_indici_file():
+    """Indice-file.md di ogni progetto dai file in <cartella>/File/ (crea_progetto.aggiorna_indice). Quanti cambiati.
+    I file arrivati, cambiati o tolti a mano finiscono anche nello Stato.md e nel diario del giorno."""
+    n = 0
+    for s_ in spazi.carica():
+        for p in s_["progetti"]:
+            if p.get("esiste") and (Path(p["cartella"]) / "File").is_dir():
+                try:
+                    cambi = progetti_mod.aggiorna_indice(Path(p["cartella"]))
+                except OSError as e:
+                    evento(f"indice dei file di {p['nome']}: {e}")
+                    continue
+                if cambi:
+                    n += 1
+                    progetti_mod.registra_azione(p["id"], "file nella cartella: " + "; ".join(cambi[:10]), aggiorna_stato=False)
+    return n
+
+
+def aggiorna_stati_spazi():
+    """Lo Stato.md di ogni spazio (stessa funzione del gancio stato_avanzamento.py). Quanti cambiati."""
+    if not _stato_mod:
+        return 0
+    percorsi = {"memoria": str(radice_memoria()), "repo": str(QUI.parent)}
+    n = 0
+    for s_ in _stato_mod.spazi_json(percorsi):
+        try:
+            n += bool(_stato_mod.aggiorna_spazio(percorsi, s_, "Command Center"))
+        except Exception as e:  # noqa: BLE001
+            evento(f"Stato.md di {s_['nome']}: {e}")
+    return n
+
+
+def _riallinea_tutto(perche):
+    t0 = time.time()
+    try:
+        lav = riallinea_lavagna()
+        ind = aggiorna_indici_file()
+        st = aggiorna_stati_spazi()
+    except Exception as e:  # noqa: BLE001
+        evento(f"riallineamento dopo {perche}: {type(e).__name__}: {e}")
+        return
+    if ind or perche == "file_progetti":
+        tocca("file_progetti", "diari")
+    if lav or ind or st:
+        tocca("spazi")
+    ULTIMO_RIALLINEO.update({"perche": perche, "ts": time.time(), "ms": int((time.time() - t0) * 1000),
+                             "lavagna": lav, "indici": ind, "stati": st})
+
+
+ULTIMO_RIALLINEO = {}
+
+
+def _file_dei_progetti():
+    """File caricati (<cartella>/File/**) e diari degli agenti di tutti i progetti: le loro date dicono «è cambiato»."""
+    out = []
+    for s_ in spazi.carica():
+        for p in s_["progetti"]:
+            c = Path(p["cartella"])
+            if not p.get("esiste"):
+                continue
+            fd = c / "File"
+            if fd.is_dir():
+                out.append(fd)
+                out += [x for x in fd.rglob("*") if x.is_file()][:2000]
+            dd = c / ".claude" / "memoria" / "agenti"
+            if dd.is_dir():
+                out += list(dd.glob("*.md"))
+    return out
+
+
 # ---------------------------------------------------------------- file che cambiano
 # Ogni 2 s si guardano le date dei file che dicono «è cambiato qualcosa» fuori dal server.
 # Solo stat(): nessun file si apre. Se una firma cambia, la versione sale; per sincronia e
@@ -3764,10 +3926,10 @@ def sorveglia_file():
              "memoria": _firma([AGENTE / "sincro" / "ultimo.json"]), "portiere": _firma([LAVORI_ATTIVI_DIR, *attivi])}
     # 02/10/2026: se task.py non si carica, salta solo la firma delle scadenze (prima saltavano tutte le altre)
     try:
-        firme["scadenze"] = _firma([REGISTRO_140, SCADENZE_PERSONALI,
+        firme["scadenze"] = _firma([REGISTRO_SCADENZE, SCADENZE_PERSONALI,
                                     *(_task_mod().nota(date.today() - timedelta(days=i)) for i in range(4))])
     except Exception:  # noqa: BLE001
-        firme["scadenze"] = _firma([REGISTRO_140, SCADENZE_PERSONALI])
+        firme["scadenze"] = _firma([REGISTRO_SCADENZE, SCADENZE_PERSONALI])
     # 02/10/2026 (audit menu, P8): anche .claude/agents/_archivio, così la riga grigia «Ripristina» compare subito
     firme["spazi"] = _firma([f for c in _cartelle_agenti()
                              for f in (c, *c.glob("*.md"), c / "_archivio", *(c / "_archivio").glob("*.md"))])
@@ -3775,6 +3937,8 @@ def sorveglia_file():
     # o da uno script. Le scritture del server stesso hanno già il loro tocca(): vedi _scritto_da_noi() sotto.
     firme["spazi_file"] = _firma([spazi.FILE, GRUPPI_ARCHIVIO, TOMBE_FILE])
     firme["pannello"] = _firma([PANNELLO_FILE])
+    # 2026-10-10: file caricati nei progetti e diari degli agenti (Indice-file.md e Stato.md si riscrivono da soli)
+    firme["file_progetti"] = _firma(_file_dei_progetti())
     # 2026-10-05 (fonte unica): i fili arrivati dall'altra macchina (fonte_vps.py) svegliano la chat
     _fr = fili.cartella().parent / "fili-remoti"
     firme["fili_remoti"] = _firma([f for _o, c in fili.cartelle_remote() for f in c.glob("*.json")]) if _fr.is_dir() else ()
@@ -3797,6 +3961,8 @@ def sorveglia_file():
     for chiave, firma in firme.items():
         prima = _FIRME.get(chiave)
         _FIRME[chiave] = firma
+        if prima is None and chiave == "spazi_file":
+            threading.Thread(target=_riallinea_tutto, args=("avvio",), daemon=True).start()
         if prima is None or prima == firma:
             continue          # il primo giro prende le misure e basta
         if chiave == "missioni":
@@ -3805,10 +3971,15 @@ def sorveglia_file():
             tocca(chiave)
         elif chiave == "fili_remoti":
             emetti_flusso("fili", {"remoti": True})
-        elif chiave in ("spazi_file", "pannello"):
-            evento_sse = "spazi" if chiave == "spazi_file" else "pannello"
-            if not _scritto_da_noi(firma, evento_sse):
-                tocca(evento_sse)
+        elif chiave == "spazi_file":
+            # 2026-10-10: spazi.json cambiato da fuori (crea_progetto.py, l'assistente) o da noi: le pagine rileggono
+            # sempre. Prima un tocco recente del server faceva scambiare una scrittura esterna per nostra.
+            tocca("spazi")
+        elif chiave == "pannello":
+            if not _scritto_da_noi(firma, "pannello"):
+                tocca("pannello")
+        if chiave in ("spazi", "spazi_file", "file_progetti"):
+            threading.Thread(target=_riallinea_tutto, args=(chiave,), daemon=True).start()
         if chiave == "missioni":
             threading.Thread(target=fine_catena, daemon=True).start()
         elif chiave == "memoria":
@@ -3855,7 +4026,8 @@ def quadro_anomalie():
                  else f"{n.get('tipo')}{nome}: {n.get('perche')}")
         metti("portiere", f"portiere:{n.get('tipo')}:{chi}", testo)
     b = battito()
-    if not b.get("acceso", True):
+    # 2026-10-10: «mai passato» con il giro della sincronia non installato (o zero progetti) non è un guasto
+    if not b.get("acceso", True) and not b.get("mai"):
         metti("sincronia", "sincronia:battito", f"battito della memoria fermo: {b.get('perche')}")
     for p in b.get("progetti") or []:
         if p.get("semaforo") in ("🟡", "🔴"):
@@ -4044,7 +4216,7 @@ def _com_missione(d):
     conf = leggi_json(d / "missione.json", {})
     st = leggi_json(d / "stato.json", {}).get("stato")
     # missione finita o col processo morto: niente resta «in corso» (l'utente, 27/09/2026: le bolle
-    # «orchestratore · App Android → ceo-risto» restavano accese per ore a missione chiusa)
+    # «orchestratore · <progetto> → <capogruppo>» restavano accese per ore a missione chiusa)
     finita = st in ("chiusa", "errore") or not (conf.get("pid") and _missione_viva(conf["pid"], d))
     chiave = (mtime, finita)
     vecchio = _REGISTRI_CACHE.get(str(registro))
@@ -4083,7 +4255,7 @@ def _com_missione(d):
         if lancio and rimandi.get(lancio.group(1).strip()) and ts - rimandi[lancio.group(1).strip()][0] <= 5:
             rimandi[lancio.group(1).strip()].pop(0)     # il tetto l'aveva già negato (gancio scritto prima)
         elif lancio:
-            # «[ceo-my140] …»: l'orchestratore lancia per conto di un capogruppo (missione «aggiorna catena»)
+            # «[<capogruppo>] …»: l'orchestratore lancia per conto di un capogruppo (missione «aggiorna catena»)
             mitt = re.match(r"\[([\w.-]+)\]\s*(.*)", lancio.group(2))
             da = capo if not mitt or mitt.group(1) == "orchestratore" else f"{prog}:{mitt.group(1)}"
             c = _com(ts, da, f"{prog}:{lancio.group(1).strip()}", mitt.group(2) if mitt else lancio.group(2),
@@ -4191,8 +4363,8 @@ def _indice_agenti():
         per_nome = {}
         for k in agenti:
             per_nome.setdefault(k.split(":", 1)[1], []).append(k)
-        # 2026-10-05 (lavagna viva): i nomi dei gruppi come li scrivono gancio e lavori.py («Azienda Due»,
-        # «Patrimonio», «Azienda Uno») → i progetti; e il capogruppo di ogni progetto, in ordine
+        # 2026-10-05 (lavagna viva): i nomi dei gruppi come li scrivono gancio e lavori.py (il nome dello spazio)
+        # → i progetti; e il capogruppo di ogni progetto, in ordine
         gruppi, capi = {}, []
         try:
             for s_ in spazi.carica():
@@ -4218,7 +4390,7 @@ def _slug_gruppo(t):
 
 def _progetti_del_gruppo(prefisso):
     """I progetti che un prefisso indica: un id di progetto, uno spazio o un nome di gruppo, anche in parte
-    («azienda-uno» → crm e sito; «jarvis» → casa). Vuoto se non indica niente."""
+    (lo slug di uno spazio → i suoi progetti; «jarvis» → casa). Vuoto se non indica niente."""
     g = _slug_gruppo(prefisso)
     gruppi = _ATT_INDICE.get("gruppi") or {}
     if g in gruppi:
@@ -4242,15 +4414,15 @@ def risolvi_chiave(k):
     nome = k.split(":", 1)[-1]
     trovati = per_nome.get(nome) or []
     if ":" in k and not k.startswith("?:"):
-        # 2026-10-05: il prefisso può essere un progetto, uno spazio o un gruppo («Azienda Due:marketing»)
+        # 2026-10-05: il prefisso può essere un progetto, uno spazio o un gruppo («<spazio>:marketing»)
         progetti = _progetti_del_gruppo(k.split(":", 1)[0])
         if nome.lower() == "capogruppo":       # «<gruppo>:capogruppo» (riunioni): il capogruppo, o Jarvis
             capo = next((f"{p}:{c}" for p, c in _ATT_INDICE.get("capi") or [] if p in progetti and f"{p}:{c}" in agenti), None)
             return capo or "jarvis"
         trovati = [x for x in trovati if x.split(":", 1)[0] in progetti] or trovati
         if not trovati:
-            # stesso primo pezzo del nome nello stesso gruppo: «revisore» e «revisore-pj» del gruppo Azienda Due
-            # sono azd:revisore-Azienda Due (le riunioni li chiamano così)
+            # stesso primo pezzo del nome nello stesso gruppo: «revisore» e «revisore-x» dello stesso gruppo
+            # sono lo stesso agente (le riunioni li chiamano così)
             radice = nome.split("-")[0].lower()
             simili = [x for x in agenti if x.split(":", 1)[0] in progetti and x.split(":", 1)[1].split("-")[0].lower() == radice]
             if len(simili) == 1:
@@ -4710,7 +4882,7 @@ def elenco_spazi():
     """Gli spazi per la pagina: spazio → progetto → capogruppo in cima → esperti col modello.
 
     Fino al 23/09/2026 le missioni prendevano i progetti da projects-index.md e il
-    caposquadra con un glob `ceo*.md` (che prendeva anche `vice-ceo-*`). Oggi la
+    caposquadra con un glob sul nome del file. Oggi la
     fonte è spazi.json: il capogruppo è scritto lì, non indovinato dal nome."""
     out = []
     for s in spazi.carica():
@@ -4733,10 +4905,155 @@ def elenco_spazi():
                 viste.add(pr["cartella"])
             progetti.append({"id": pr["id"], "nome": pr["nome"], "cartella": pr["cartella"].replace(str(HOME), "~"),
                              "capogruppo": pr.get("capogruppo"), "esiste": pr["esiste"], "agenti": agenti,
-                             "sezioni_memoria": pr.get("sezioni_memoria") or [], "archiviati": archiviati})
+                             "sezioni_memoria": pr.get("sezioni_memoria") or [], "archiviati": archiviati,
+                             "descrizione": pr.get("descrizione") or ""})
         out.append({"id": s["id"], "nome": s["nome"], "sistema": bool(s.get("sistema")), "progetti": progetti,
                     "memoria": s.get("memoria", "").replace(str(HOME), "~"), "report": s.get("report", "").replace(str(HOME), "~")})
     return out
+
+
+def _copia_bak(f):
+    """Copia <file>.bak-AAAAMMGG-HHMMSS prima di riscrivere un file vero del proprietario (scheda, diario)."""
+    try:
+        shutil.copy2(f, Path(f).with_name(f"{Path(f).name}.bak-{datetime.now():%Y%m%d-%H%M%S}"))
+    except OSError:
+        pass
+
+
+def _corpo_segue_frontmatter(testo, corpo):
+    """Missione e limiti stanno anche nel corpo della scheda (## Missione, ## Limiti): li si tiene uguali."""
+    if corpo.get("description"):
+        m = " ".join(str(corpo["description"]).split())
+        testo = re.sub(r"(## (?:Missione|Compito)\n\n).*?(\n\n)", lambda x: x.group(1) + m + x.group(2), testo, count=1, flags=re.S)
+    if corpo.get("limiti") is not None:
+        lim = " ".join(str(corpo["limiti"]).split())[:400] or "nessun limite in più oltre a quelli qui sotto"
+        testo = re.sub(r"(## Limiti\n\n)- .*?(\n)", lambda x: x.group(1) + f"- {lim}" + x.group(2), testo, count=1)
+    return testo
+
+
+def progetto_per_id(pid):
+    for s_ in spazi.carica():
+        for p in s_["progetti"]:
+            if p["id"] == pid:
+                return s_, p
+    raise ValueError("progetto sconosciuto")
+
+
+def file_del_progetto(pid):
+    """I file caricati nel progetto (<cartella>/File/) e l'indice."""
+    _, p = progetto_per_id(pid)
+    c = Path(p["cartella"])
+    fd = c / "File"
+    out = []
+    if fd.is_dir():
+        for x in sorted(fd.rglob("*")):
+            if x.is_file() and not any(y.startswith(".") for y in x.relative_to(fd).parts):
+                st = x.stat()
+                out.append({"nome": x.relative_to(fd).as_posix(), "byte": st.st_size,
+                            "data": datetime.fromtimestamp(st.st_mtime).strftime("%Y-%m-%d %H:%M")})
+    indice = c / "Indice-file.md"
+    return {"progetto": p["nome"], "cartella": str(fd), "file": out,
+            "indice": indice.read_text(encoding="utf-8") if indice.is_file() else ""}
+
+
+def carica_file(pid, nome, contenuto_b64):
+    """Un file caricato dalla pagina del progetto finisce in <cartella>/File/ (mai sopra uno esistente)."""
+    import base64
+    _, p = progetto_per_id(pid)
+    nome = Path(str(nome or "")).name.strip()
+    if not nome or nome.startswith(".") or nome in progetti_mod.ESCLUSI_INDICE:
+        raise ValueError("nome del file non valido")
+    try:
+        dati = base64.b64decode(str(contenuto_b64 or ""), validate=True)
+    except ValueError:
+        raise ValueError("contenuto non valido (base64)") from None
+    fd = Path(p["cartella"]) / "File"
+    fd.mkdir(parents=True, exist_ok=True)
+    dst = fd / nome
+    n = 2
+    while dst.exists():
+        dst = fd / f"{Path(nome).stem} ({n}){Path(nome).suffix}"
+        n += 1
+    dst.write_bytes(dati)
+    progetti_mod.aggiorna_indice(Path(p["cartella"]))
+    _registra(pid, f"file caricato dalla pagina: {dst.name} ({len(dati)} byte)")
+    evento(f"file caricato in {p['nome']}: {dst.name} ({len(dati)} byte)")
+    tocca("file_progetti", "spazi")
+    threading.Thread(target=aggiorna_stati_spazi, daemon=True).start()
+    return {"messaggio": f"{dst.name} caricato in {p['nome']}", "file": dst.name}
+
+
+def diario_agente(pid, nome):
+    """Il diario (quaderno) di un agente: testo intero e le tre sezioni fisse."""
+    _, p = progetto_per_id(pid)
+    if not NOME_AGENTE.fullmatch(str(nome or "")):
+        raise ValueError("nome dell'agente non valido")
+    f = Path(p["cartella"]) / ".claude" / "memoria" / "agenti" / f"{nome}.md"
+    testo = f.read_text(encoding="utf-8") if f.is_file() else agenti_crea.testo_quaderno(nome)
+    sez, ripetuti = {"fatto": [], "da_fare": [], "errore": []}, []
+    if _stato_mod:
+        sez = _stato_mod._righe_diario(testo, _stato_mod.TITOLI_DIARIO)
+        for a, _s, rr in _stato_mod.diari(Path(p["cartella"])):
+            if a == nome:
+                ripetuti = rr
+    return {"agente": nome, "progetto": p["nome"], "file": str(f), "testo": testo,
+            "fatto": sez.get("fatto", []), "da_fare": sez.get("da_fare", []), "errori": sez.get("errore", []),
+            "errori_ripetuti": ripetuti}
+
+
+def salva_diario(pid, nome, testo):
+    _, p = progetto_per_id(pid)
+    if not NOME_AGENTE.fullmatch(str(nome or "")):
+        raise ValueError("nome dell'agente non valido")
+    if not (Path(p["cartella"]) / ".claude" / "agents" / f"{nome}.md").is_file():
+        raise ValueError(f"{nome} non è un agente di {p['nome']}")
+    testo = str(testo or "")
+    if len(testo) > 200_000:
+        raise ValueError("diario troppo lungo")
+    f = Path(p["cartella"]) / ".claude" / "memoria" / "agenti" / f"{nome}.md"
+    f.parent.mkdir(parents=True, exist_ok=True)
+    if f.is_file():
+        if f.read_text(encoding="utf-8") == testo:
+            return {"messaggio": "niente da salvare"}
+        _copia_bak(f)
+    scrivi_atomico(f, testo if testo.endswith("\n") else testo + "\n")
+    evento(f"diario di {nome} ({p['nome']}) modificato dalla pagina")
+    _registra(pid, f"diario di {nome} modificato dalla pagina")
+    tocca("diari", "spazi")
+    threading.Thread(target=aggiorna_stati_spazi, daemon=True).start()
+    return {"messaggio": f"diario di {nome} salvato (copia .bak accanto)"}
+
+
+def modifica_progetto(dati):
+    """Rinomina, descrizione, sposta, archivia, ripristina: crea_progetto.py fa il lavoro (backup di spazi.json)."""
+    cosa, pid, valore = dati.get("cosa"), str(dati.get("progetto") or ""), dati.get("valore")
+    with AGENTI_LOCK:
+        try:
+            if cosa == "rinomina":
+                progetti_mod.rinomina(pid, valore)
+            elif cosa == "sposta":
+                progetti_mod.sposta(pid, valore)
+            elif cosa == "archivia":
+                progetti_mod.archivia(pid)
+            elif cosa == "ripristina":
+                progetti_mod.ripristina(pid)
+            elif cosa == "descrizione":
+                L = progetti_mod.Lavoro(False)
+                d = progetti_mod.carica_spazi()
+                _, p = progetti_mod.trova_progetto(d, pid)
+                if not p:
+                    raise ValueError("progetto sconosciuto")
+                p["descrizione"] = " ".join(str(valore or "").split())[:400]
+                L.salva_spazi(d, "descrizione")
+                progetti_mod.registra_azione(p["id"], f"descrizione cambiata: «{p['descrizione'][:120]}»")
+            else:
+                raise ValueError("cosa: rinomina, descrizione, sposta, archivia o ripristina")
+        except SystemExit as e:
+            raise ValueError(str(e)) from None
+    tocca("spazi")
+    threading.Thread(target=_riallinea_tutto, args=("modifica progetto",), daemon=True).start()
+    evento(f"progetto {pid}: {cosa}")
+    return {"messaggio": f"{cosa}: fatto", "spazi": elenco_spazi()}
 
 
 def _file_agente_lecito(percorso):
@@ -5705,9 +6022,8 @@ def contesto_notifiche(sessione, speciale):
     if not ultime:
         parti.append("(nessuna notifica nel filo)")
     parti.append("(Regole: «la 1», «il 3» sono i numeri dell'ultimo report qui sopra; usa il codice casella·uid della voce. "
-                 "La posta si tocca con python3 strumenti/posta.py: azione, bozza, invia-bozza … --si, rispondi. "
-                 "Si spedisce SOLO con un «invia» esplicito dell'utente su quella bozza o su quel numero; dopo l'invio la "
-                 "bozza va nel Cestino (invia-bozza lo fa da solo). Rispondi breve e dì cosa hai fatto davvero.)")
+                 "Si spedisce o si pubblica SOLO con un sì esplicito dell'utente su quella voce. "
+                 "Rispondi breve e dì cosa hai fatto davvero.)")
     return "\n".join(parti)
 
 
@@ -6472,18 +6788,6 @@ def _azione(dati):
             raise ValueError("azione tecnica sconosciuta")
         evento(f"tecnico: {msg}")
         return {"messaggio": msg, "ok": ok}
-    if tipo == "portfolio_carica_giornata":
-        if sys.platform == "win32":
-            raise ValueError("Portfolio è dell'utente e vive sul Mac: su questo PC non c'è")
-        cartella_portfolio = (HOME / "Library" / "CloudStorage" / "OneDrive" /
-                               "Jarvis Brain" / "Progetti" / "Vita personale" / "portfolio")
-        venv_python = HOME / ".locale-onedrive" / "portfolio-venv" / "bin" / "python3"
-        script = cartella_portfolio / "dati" / "scripts" / "carica_giornata.py"
-        if not venv_python.exists() or not script.exists():
-            raise ValueError("manca il venv o lo script di Portfolio: cartella spostata?")
-        return {"lavoro": nuovo_lavoro("Portfolio: carica Daily Confirmation",
-                                       [str(venv_python), str(script)], cartella_portfolio,
-                                       info={"chi": "portfolio", "tipo": "script", "rilanciabile": True})}
     if tipo == "verifica":
         v = VERIFICHE.get(dati.get("id"))
         if not v:
@@ -6774,8 +7078,7 @@ def _azione(dati):
         return {"messaggio": "memoria riletta · " + (
             "da salvare: " + ", ".join(indietro) if indietro else "tutti i progetti in pari")}
     if tipo == "sincronia_comando":
-        # 🔴 Il salvataggio NON parte da qui. In memoria del CRM Azienda Uno c'è
-        # l'errore: MEMORIA.md scritta dal Mac e dal PC Windows nello stesso
+        # 🔴 Il salvataggio NON parte da qui. Errore già successo: MEMORIA.md scritta dal Mac e dal PC Windows nello stesso
         # quarto d'ora, via OneDrive, fa sparire un salvataggio; e «--salva» col
         # solo «--stato» ha già cancellato Fatto, Da fare e tre errori su
         # quattro. Il pannello prepara il comando e si ferma: lo lancia l'utente.
@@ -7368,6 +7671,10 @@ class Gestore(BaseHTTPRequestHandler):
         if not self._host_ok():
             return self._invia(403, {"errore": "host non ammesso"})
         percorso = self.path.split("?")[0]
+        if percorso == "/_ponte/stato":
+            # 2026-10-10: sul Mac il ponte (il sito sulla VPS) non c'è: 200 con «ponte: false», così la pagina non
+            # mostra un 403/404 in console. ponte.js e computer.js accendono il ponte solo con «ponte: true».
+            return self._invia(200, {"ponte": False})
         m = re.match(r"/term/(mac|vps)(/|$)", percorso)
         if m:
             return self._proxy_terminale(m.group(1))
@@ -7477,7 +7784,10 @@ class Gestore(BaseHTTPRequestHandler):
             except Exception as e:  # noqa: BLE001
                 return self._invia(500, {"errore": f"piani non letti: {type(e).__name__}: {str(e)[:120]}"})
         if percorso == "/api/incarichi":
-            # 2026-10-04: la coda degli incarichi sulla VPS (strumenti/incarichi.py, via ssh dal Mac)
+            # 2026-10-04: la coda degli incarichi sulla VPS (strumenti/incarichi.py, via ssh dal Mac).
+            # 2026-10-10 (prodotto pubblico): senza VPS configurata è «non attivo», 200 e nessun errore in console
+            if not VPS and not os.environ.get("INCARICHI_DIR") and sys.platform == "darwin":
+                return self._invia(200, {"attivo": False, "motivo": "nessuna VPS configurata", "incarichi": [], "agenti": {}})
             return self._invia(*_incarichi_chiama("stato_pubblico"))
         if percorso in ("/api/routine", "/api/routine/log"):
             # 2026-10-05 (l'utente): le routine di VPS (systemd e cron) e Mac (launchd), routine.py; cache di 45 s
@@ -7538,7 +7848,7 @@ class Gestore(BaseHTTPRequestHandler):
             # lato tecnico (2026-09-29): solo con la chiave privata su questo Mac e solo da 127.0.0.1
             T = assistenza_tecnico()
             if not T or not self._da_locale():
-                return self._invia(404, {"errore": "non trovato"})
+                return self._invia(200, {"disponibile": False})      # 2026-10-10: «non attivo», non un 404 in console
             # «tunnel»: c'è la chiave ssh del tecnico (2026-10-02), quindi si può aprire un tunnel sulla VPS
             return self._invia(200, {"disponibile": True, "emessi": T.emessi(20),
                                      "tunnel": bool(getattr(T, "f_chiave_tecnico", None) and T.f_chiave_tecnico().is_file())})
@@ -7559,7 +7869,7 @@ class Gestore(BaseHTTPRequestHandler):
                     dati["errori"]["chiuse"] = f"{type(e).__name__}: {e}"[:300]
             return self._invia(200, dati)
         if percorso in ("/api/agente-attivita", "/api/agenti-attivita"):
-            # attività per agente (2026-10-02): ?agente=crm:ceo-ai&lavagna=generale&limite=200&errori=1
+            # attività per agente (2026-10-02): ?agente=<progetto>:<agente>&lavagna=generale&limite=200&errori=1
             q = parse_qs(urlsplit(self.path).query)
             lavagna = (q.get("lavagna") or ["generale"])[0]
             if not attivita:
@@ -7582,8 +7892,9 @@ class Gestore(BaseHTTPRequestHandler):
             lavagna = (parse_qs(urlsplit(self.path).query).get("lavagna") or ["generale"])[0]
             try:
                 return self._invia(200, allineamento(lavagna))
-            except ValueError as e:          # 27/09/2026: lavagna inesistente = 404, non 500
-                return self._invia(404, {"errore": str(e)})
+            except ValueError as e:          # 2026-10-10: lavagna non ancora creata = niente da allineare, 200
+                return self._invia(200, {"lavagna": lavagna, "differenze": [], "allineata": True, "assente": True,
+                                         "motivo": str(e)})
         if percorso == "/api/spazi":
             # 27/09/2026: anche i gruppi tolti, per il «ripristina» della pagina
             arch = leggi_json(GRUPPI_ARCHIVIO, {})
@@ -7594,6 +7905,10 @@ class Gestore(BaseHTTPRequestHandler):
                                  for k, v in (arch.items() if isinstance(arch, dict) else []) if isinstance(v, dict)),
                                 key=lambda g: -(g["ts"] or 0))
             return self._invia(200, {"spazi": elenco_spazi(), "gruppi_archiviati": archiviati,
+                                     "memoria_radice": str(radice_memoria()).replace(str(HOME), "~"),
+                                     "assistente": nome_assistente(), "utente": nome_utente(),
+                                     "progetti_archiviati": [{k: x.get(k) for k in ("id", "nome", "cartella", "archiviato")}
+                                                             for x in progetti_mod.carica_spazi().get("archiviati") or []],
                                      "squadre": {k: dict(v) for k, v in SQUADRA_STATO.items()}})
         if percorso == "/api/nota-di-casa":
             nome = (parse_qs(urlsplit(self.path).query).get("nome") or [""])[0]
@@ -7612,13 +7927,23 @@ class Gestore(BaseHTTPRequestHandler):
                 return self._invia(200, {"cartella": scegli_cartella()})
             except ValueError as e:
                 return self._invia(501, {"errore": str(e)})
+        if percorso in ("/api/progetto/file", "/api/diario"):
+            q = parse_qs(urlsplit(self.path).query)
+            try:
+                if percorso == "/api/progetto/file":
+                    return self._invia(200, file_del_progetto((q.get("progetto") or [""])[0]))
+                return self._invia(200, diario_agente((q.get("progetto") or [""])[0], (q.get("agente") or [""])[0]))
+            except ValueError as e:
+                return self._invia(404, {"errore": str(e)})
+        if percorso == "/api/riallineo":
+            return self._invia(200, dict(ULTIMO_RIALLINEO))
         if percorso == "/api/agente-profilo":
             f = _file_agente_lecito((parse_qs(urlsplit(self.path).query).get("file") or [""])[0])
             if not f:
                 return self._invia(404, {"errore": "agente non trovato"})
             campi, corpo = spazi.frontmatter(f.read_text(encoding="utf-8"))
             return self._invia(200, {"description": campi.get("description", ""), "model": campi.get("model", ""),
-                                     "tools": campi.get("tools", ""), "corpo": corpo})
+                                     "tools": campi.get("tools", ""), "limiti": campi.get("limiti", ""), "corpo": corpo})
         m = re.fullmatch(r"/api/missione/([\w-]+)/agente/(\w+)", percorso)
         if m:
             try:
@@ -7698,7 +8023,7 @@ class Gestore(BaseHTTPRequestHandler):
             return self._invia(403, {"errore": "token scaduto: il Command Center è ripartito", "token_scaduto": True})
         try:
             lunghezza = int(self.headers.get("Content-Length", 0))
-            if lunghezza > 400_000:
+            if lunghezza > (40_000_000 if self.path == "/api/progetto/carica" else 400_000):
                 return self._invia(413, {"errore": "richiesta troppo grande"})
             corpo = json.loads(self.rfile.read(lunghezza) or b"{}")
             if self.path == "/api/pannello":
@@ -7859,19 +8184,33 @@ class Gestore(BaseHTTPRequestHandler):
             if self.path == "/api/motore":
                 risposta, codice = imposta_motore((corpo.get("motore") or "").strip())
                 return self._invia(codice, risposta)
+            if self.path in ("/api/progetto/carica", "/api/diario", "/api/progetto/modifica"):
+                try:
+                    if self.path == "/api/progetto/carica":
+                        return self._invia(200, carica_file(corpo.get("progetto"), corpo.get("nome"), corpo.get("base64")))
+                    if self.path == "/api/diario":
+                        return self._invia(200, salva_diario(corpo.get("progetto"), corpo.get("agente"), corpo.get("testo")))
+                    return self._invia(200, modifica_progetto(corpo))
+                except ValueError as e:
+                    return self._invia(400, {"errore": str(e)})
             if self.path == "/api/agente-profilo":
                 # 2026-10-05 (l'utente): dal sito si scrive come dal Mac, il blocco «X-CC-Ponte» è tolto
                 f = _file_agente_lecito(corpo.get("file", ""))
                 if not f:
                     return self._invia(404, {"errore": "agente non trovato"})
                 prima = f.read_text(encoding="utf-8")
+                limiti = corpo.get("limiti")
                 nuovo, cambiate = riscrivi_frontmatter(prima, {
                     "description": corpo.get("description"), "model": corpo.get("model"), "tools": corpo.get("tools"),
+                    "limiti": " ".join(str(limiti).split())[:400] if limiti is not None else None,
                     **campi_come_parla(corpo)})
                 if not cambiate or nuovo == prima:
                     return self._invia(200, {"messaggio": "niente da salvare: il profilo è già così", "cambiate": []})
+                nuovo = _corpo_segue_frontmatter(nuovo, corpo)
+                _copia_bak(f)
                 scrivi_atomico(f, nuovo)
                 evento(f"profilo aggiornato: {f.stem} ({', '.join(cambiate)})")
+                _registra(_progetto_di_file(f), f"scheda di {f.stem} modificata dalla pagina: {', '.join(cambiate)}")
                 registra_modifica("attivo" if cambiate == ["attivo"] else "profilo", _progetto_di_file(f), f.stem,
                                   da="scheda")
                 tocca("spazi")              # menu laterale di tutte le schede subito, senza aspettare il sorvegliante
@@ -8107,8 +8446,15 @@ def main():
              (raccogli_vps, 60), (raccogli_telegram, 20), (guardia_mac, 60), (raccogli_memoria, 120),
              (raccogli_catena, 120), (raccogli_claude, 300), (raccogli_agenti, 20),
              (aggiorna_cruscotto, 120), (aggiorna_mappa_agenti, 1800),
-             (raccogli_portiere, 20), (sorveglia_file, 2), (sentinella, 60), (raccogli_comunicazioni, 2),
+             (raccogli_portiere, 20), (sorveglia_file, 1), (sentinella, 60), (raccogli_comunicazioni, 2),
              (assistenza_tick, 20), (sorveglia_approvazioni, 1)]
+    # 2026-10-10 (prodotto pubblico): i giri che dipendono da strumenti facoltativi partono solo se lo strumento c'è
+    facoltativi = {aggiorna_cruscotto: QUI.parent / "strumenti" / "cruscotto.py",
+                   aggiorna_mappa_agenti: QUI.parent / "strumenti" / "mappa_agenti.py",
+                   guardia_mac: GUARDIA}
+    cicli = [(f, o) for f, o in cicli if f not in facoltativi or Path(facoltativi[f]).is_file()]
+    if _assistenza_mod is None:
+        cicli = [(f, o) for f, o in cicli if f is not assistenza_tick]
     if PROVA:
         # la copia di prova legge e basta: niente note nel vault, niente missioni spostate, niente Telegram
         via = {archivia_missioni_vecchie, guardia_mac, aggiorna_cruscotto, aggiorna_mappa_agenti}

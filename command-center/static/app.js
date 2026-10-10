@@ -4,6 +4,12 @@ const HDR = { "X-Token": window.CC_TOKEN, "Content-Type": "application/json" };
 const VOCE = { idle: "in attesa", listening: "ascolto", thinking: "sto pensando", speaking: "parlo" };
 let lavoroScelto = null;
 let agenti = [];
+// 2026-10-10 (Jarvis da zero): i nomi vengono dal profilo (profilo-jarvis.md: nome_assistente, chiamami), via /api/spazi
+let ASSISTENTE = "Jarvis", UTENTE = "";
+const nomeUtente = () => UTENTE || "Tu";
+const etichettaOrchestratore = () => `${ASSISTENTE} — orchestratore`;
+const eNotaOrchestratore = (t) => /—\s*orchestratore/i.test(String(t || "")) || /^jarvis(\s|—|-|$)/i.test(String(t || "").trim());
+const eNotaUtente = (t) => t === "L'utente" || (UTENTE && t === UTENTE) || t === "Tu";
 
 function el(tag, attrs = {}, ...figli) {
   const n = document.createElement(tag);
@@ -266,7 +272,10 @@ function disegnaVociAndroid(l) {
 function disegnaTelegram(t) {
   for (const riga of document.querySelectorAll("[data-tg]")) {
     const s = (t || {})[riga.dataset.tg];
-    if (!s) continue;
+    // 2026-10-10: Telegram si vede solo se è configurato su questa macchina (prodotto pubblico: di base non c'è)
+    const via = !s || !!s.non_configurato || /non configurat|manca il token|nessun bot/i.test(String(s.errore || ""));
+    riga.classList.toggle("nascosto", via);
+    if (via) continue;
     riga.querySelector(".switch").classList.toggle("on", !s.errore && !s.spento);
     let colore, testo;
     if (s.errore) { colore = "rosso"; testo = "non risponde: " + s.errore; }
@@ -280,7 +289,7 @@ function disegnaTelegram(t) {
 }
 
 // n8n Jarvis si spegne apposta: non conta come «giù» né nello stato generale né nella spia di Server
-const SITI_IGNORATI = ["n8n Jarvis"];
+const SITI_IGNORATI = [];          // nomi di siti da non contare come «giù» (di base nessuno)
 
 function disegnaVps(v) {
   if (!v || !("siti" in v)) return;
@@ -538,7 +547,7 @@ function disegnaLavori(lavori) {
   lista.replaceChildren();
   if (!tutti.length) {
     lista.append(el("li", { class: "vuoto-lavori" }, el("small", {},
-      "Nessun lavoro avviato. Un lavoro parte da qui: una verifica del CRM qui sotto, un comando rapido in ", el("a", { href: "#home" }, "Stato"),
+      "Nessun lavoro avviato. Un lavoro parte da qui: un comando rapido in ", el("a", { href: "#home" }, "Stato"),
       ", una domanda in ", el("a", { href: "#chat" }, "Chat"), ". Quando parte, lo vedi qui con lo stato in tempo reale.")));
   } else if (!visti.length) {
     lista.append(el("li", { class: "vuoto-lavori" }, el("small", {}, "Nessun lavoro con questo filtro.")));
@@ -671,7 +680,7 @@ function continuaInChat(d) {
   const t = filo(k);
   if (t.sessione !== d.sessione) {
     if (t.attesa) { toast("Quella chat sta aspettando una risposta: riprova tra poco", true); return; }
-    const nome = k === "jarvis" ? "Jarvis" : nomeDi(AGENTI.get(k));
+    const nome = k === "jarvis" ? ASSISTENTE : nomeDi(AGENTI.get(k));
     if (t.messaggi.length && !confirm(`La chat con ${nome} ha già un'altra conversazione.\n\nLa sostituisco con il filo di questo lavoro? La vecchia resta in Claude Code, qui non si vede più.`)) return;
     THREADS[k] = { sessione: d.sessione, avviata: true, messaggi: [
       { chi: "io", testo: d.richiesta || d.titolo, ora: (d.inizio || "").slice(0, 5) },
@@ -1000,9 +1009,12 @@ async function catalogo() {
   const c = await api("/api/catalogo");
   CAT = c;
   const box = $("verifiche");
+  // 2026-10-10: la sezione «Verifiche e agenti» si vede solo se ci sono verifiche (configurazione.json) o agenti da lanciare
+  box.closest(".verifiche")?.classList.toggle("nascosto", !(c.verifiche || []).length && !(c.agenti || []).length);
   box.replaceChildren(...c.verifiche.map((v) =>
     el("button", { "data-solo-mac": "verifica", onclick: (ev) => azione({ tipo: "verifica", id: v.id }, ev.currentTarget) }, v.nome, el("small", {}, v.descrizione))));
   agenti = c.agenti;
+  if (Array.isArray(c.spazi)) SPAZI_LETTI = true;          // anche il catalogo porta gli spazi: la pagina non resta «in lettura»
   disegnaSpazi(c.spazi);
   api("/api/spazi").then((d) => disegnaGruppiArchiviati(d.gruppi_archiviati)).catch(() => {});
   disegnaComandi(c.comandi);
@@ -1060,6 +1072,8 @@ $("btn-agente")?.addEventListener("click", (ev) =>
 // Un solo processo: l'orchestratore lancia gli esperti in parallelo (al massimo N),
 // poi il capogruppo verifica. L'albero arriva da agenti.json della missione.
 let spaziCat = [];
+let SPAZI_LETTI = false, SPAZI_API_OK = false;
+let PROG_ARCH = [];               // progetti archiviati con «Archivia progetto» (spazi.json «archiviati»): si ripristinano da qui          // /api/spazi è arrivato almeno una volta (per distinguere «vuoto» da «in lettura»)
 const aperte = new Set();        // le missioni con la scheda aperta
 const registriAperti = new Set();
 const schede = new Map();        // id missione -> nodi della scheda, per non perdere quello che scrivi
@@ -1073,10 +1087,12 @@ function disegnaSpazi(elenco) {
   spaziCat = elenco || [];
   const sel = $("missione-spazio");
   const prima = sel.value;
-  sel.replaceChildren(...spaziCat.map((s) => el("option", { value: s.id }, s.nome)));
+  sel.replaceChildren(...(spaziCat.length ? spaziCat.map((s) => el("option", { value: s.id }, s.nome))
+    : [el("option", { value: "" }, "nessun progetto ancora")]));
   if (prima && spaziCat.some((s) => s.id === prima)) sel.value = prima;
   disegnaProgettiSpazio();
   disegnaAgentiSpazi();
+  if (MISSIONI_ULTIME && !MISSIONI_ULTIME.length) disegnaMissioni(MISSIONI_ULTIME);   // lo stato vuoto segue i progetti
   const sc = $("lav-spazio-catena"), primaSc = sc.value;
   sc.replaceChildren(el("option", { value: "tutti" }, "tutti gli spazi"), ...spaziCat.map((s) => el("option", { value: s.id }, s.nome)));
   sc.value = spaziCat.some((s) => s.id === primaSc) ? primaSc : "tutti";
@@ -1086,7 +1102,8 @@ function disegnaSpazi(elenco) {
 function disegnaProgettiSpazio() {
   const s = spaziCat.find((x) => x.id === $("missione-spazio").value) || spaziCat[0];
   const box = $("missione-progetti");
-  box.replaceChildren(...(s ? s.progetti : []).map((p, i) => el("label", { title: p.cartella },
+  if (!s || !(s.progetti || []).length) { box.replaceChildren(el("small", { class: "nota stato-vuoto" }, testoNessunProgetto())); return; }
+  box.replaceChildren(...s.progetti.map((p, i) => el("label", { title: p.cartella },
     el("input", Object.assign({ type: "checkbox", value: p.id }, i === 0 ? { checked: "" } : {}, p.esiste ? {} : { disabled: "" })),
     " " + p.nome)));
 }
@@ -1119,7 +1136,7 @@ function alberoMissione(m) {
     el("span", { class: "modello sonnet" }, "sonnet"),
     el("span", { class: "st" }, `${ICONA[m.stato] || "·"} ${m.stato}`),
     el("small", {}, m.modalita ? `${m.modalita} · max ${m.max_paralleli} in parallelo` : ""));
-  // a missione finita nessuno «lavora» più e nessun capogruppo è «in attesa» (27/09/2026: ceo-android restava
+  // a missione finita nessuno «lavora» più e nessun capogruppo è «in attesa» (27/09/2026: un capogruppo restava
   // «⏳ dopo gli esperti» per sempre in una missione chiusa, e sembrava un'orchestrazione ancora aperta)
   const finita = ["chiusa", "interrotta", "errore"].includes(m.stato);
   const righe = (m.agenti || []).map((a) => (finita && a.stato === "lavora"
@@ -1206,14 +1223,16 @@ function schedaMissione(m) {
 
 let idsMissioni = "";
 const richiesteViste = new Set();
+let MISSIONI_ULTIME = null;
 function disegnaMissioni(missioni) {
+  MISSIONI_ULTIME = missioni || [];
   const lista = $("missioni-lista");
   const tutte = missioni || [];
   // si apre da sola la prima volta la missione più recente e quella che chiede una conferma
   if (tutte.length && !schede.size) aperte.add(tutte[0].id);
   // si apre da sola solo quando arriva una richiesta NUOVA: se l'utente la chiude, resta chiusa (27/09/2026)
   for (const m of tutte) for (const r of m.richieste || []) if (!richiesteViste.has(m.id + ":" + r.id)) { richiesteViste.add(m.id + ":" + r.id); aperte.add(m.id); }
-  if (!tutte.length) { idsMissioni = ""; lista.replaceChildren(el("small", {}, "Nessuna missione. Scegli spazio e progetti, scrivi l'obiettivo e affidala.")); return; }
+  if (!tutte.length) { idsMissioni = ""; lista.replaceChildren(el("small", { class: "stato-vuoto" }, nessunProgettoVero() && SPAZI_LETTI ? testoNessunProgetto() : "Nessuna missione. Scegli spazio e progetti, scrivi l'obiettivo e affidala.")); return; }
   const nodi = tutte.map(schedaMissione);          // aggiorna le schede sul posto
   const ids = tutte.map((m) => m.id).join(",");
   // si rimettono nella lista solo se l'elenco è cambiato: rimetterle ogni volta toglieva il
@@ -1258,7 +1277,7 @@ $("form-missione")?.addEventListener("submit", async (ev) => {
 // Agenti per spazio (ridisegnati il 26/09/2026): uno spazio = una sezione a tendina,
 // un progetto = una card, il capogruppo in cima alla sua squadra. Niente intestazione di
 // tabella ripetuta: ogni riga dice da sola chi è, cosa fa e con che modello. Se lo spazio
-// ha un solo progetto con lo stesso nome («Sito Azienda Uno» → «Sito Azienda Uno») il
+// ha un solo progetto con lo stesso nome («Sito» → «Sito») il
 // titolo compare una volta sola. Si ridisegna solo quando cambia qualcosa: così una
 // tendina chiusa o il puntatore sopra una riga non si perdono ogni 4 secondi.
 let firmaSpazi = "";
@@ -1292,7 +1311,7 @@ function disegnaAgentiSpazi(forza = false) {
   const box = $("agenti-spazi");
   if (!box) return;
   const q = filtroSpazi.toLowerCase();
-  const firma = JSON.stringify([spaziCat, (typeof PAN !== "undefined" && PAN.aspetto) || {}, q]);
+  const firma = JSON.stringify([spaziCat, (typeof PAN !== "undefined" && PAN.aspetto) || {}, q, PROG_ARCH]);
   if (!forza && firma === firmaSpazi) { segnaAttivi(); return; }
   firmaSpazi = firma;
   const passa = (a) => !q || [a.nome, a.descrizione, a.modello].join(" ").toLowerCase().includes(q);
@@ -1315,10 +1334,12 @@ function disegnaAgentiSpazi(forza = false) {
         el("small", {}, p.esiste ? `${p.agenti.length} agenti` : "cartella non trovata"));
       const corpo = agenti.length ? agenti.map((a) => rigaAgenteCatena(s, p, a))
         : [el("p", { class: "nota card-vuota" }, !p.esiste ? "cartella del progetto non trovata" :
-            p.agenti.length ? "nessun agente con questo filtro" : "nessun agente di progetto: lo segue direttamente la chat master")];
+            p.agenti.length ? "nessun agente con questo filtro" : "nessun agente ancora: il capogruppo li crea quando servono")];
       cards.push(el("article", { class: "progetto-card" + (soloUno ? " solo" : "") },
         testa, el("div", { class: "card-righe" }, ...corpo),
-        el("footer", { class: "card-piede", title: p.cartella }, "📁 " + p.cartella)));
+        el("footer", { class: "card-piede", title: p.cartella }, "📁 " + p.cartella + " ",
+          el("button", { class: "piccolo", type: "button", title: "File, nome, descrizione e archivio del progetto",
+            onclick: (ev) => { ev.preventDefault(); ev.stopPropagation(); apriSchedaProgetto(p.id); } }, "📎 Progetto e file"))));
     }
     if (q && !cards.length) continue;
     const aperto = q ? true : !spaziChiusi.has(s.id);
@@ -1343,7 +1364,15 @@ function disegnaAgentiSpazi(forza = false) {
     });
     sezioni.push(det);
   }
-  if (!sezioni.length) sezioni.push(el("p", { class: "nota" }, spaziCat.length ? "Nessun agente con questo filtro." : "lettura degli agenti…"));
+  if (!sezioni.length) sezioni.push(spaziCat.length ? el("p", { class: "nota stato-vuoto" }, "Nessun agente con questo filtro.")
+    : SPAZI_LETTI ? statoVuotoProgetti() : el("p", { class: "nota stato-vuoto" }, "lettura degli agenti…"));
+  if (PROG_ARCH.length) sezioni.push(el("details", { class: "progetti-archiviati" },
+    el("summary", {}, `Progetti archiviati (${PROG_ARCH.length})`),
+    ...PROG_ARCH.map((x) => el("div", { class: "riga-archiviato" },
+      el("b", {}, x.nome), el("small", {}, ` · ${x.cartella}` + (x.archiviato ? ` · archiviato il ${x.archiviato}` : "")), " ",
+      el("button", { type: "button", class: "piccolo", "data-solo-mac": "/api/progetto/modifica", onclick: async (ev) => {
+        try { await api("/api/progetto/modifica", { cosa: "ripristina", progetto: x.id }); toast(`«${x.nome}» ripristinato`); caricaSpazi(); }
+        catch (e) { toast("Non ripristinato: " + e.message, true); } } }, "Ripristina")))));
   box.replaceChildren(...sezioni);
   $("spazi-conta").textContent = spaziCat.length ? (q ? `${visti} di ${totale} agenti` : `${spaziCat.length} spazi · ${totale} agenti`) : "";
   segnaAttivi();
@@ -1676,7 +1705,7 @@ function aggiornaEta() {
 const NOMI_RACCOGLITORI = { locale: "Mac e interruttori", locale_pesante: "Mac, letture lente", vps: "VPS",
   memoria: "Memoria e battito", catena: "Catena e scadenze", claude: "Claude Code", telefono: "Telefono",
   telegram: "Telegram", agenti: "Agenti e sessioni", portiere: "Portiere", sentinella: "Sentinella",
-  aggiorna_cruscotto: "Cruscotto CRM", aggiorna_mappa_agenti: "Mappa degli agenti", archivia_missioni_vecchie: "Archivio delle missioni",
+  aggiorna_cruscotto: "Cruscotto", aggiorna_mappa_agenti: "Mappa degli agenti", archivia_missioni_vecchie: "Archivio delle missioni",
   guardia_mac: "Guardia del Mac", sorveglia_file: "Sorveglianza dei file",
   assistenza_tick: "Assistenza a distanza" };
 function disegnaSalute(x) {
@@ -1799,7 +1828,7 @@ function disegnaClaudeOra(c, catena, missioni) {
         el("span", { class: "cat-riga" }, el("span", { class: "nome" }, nome), mod ? el("span", { class: "modello " + mod }, mod) : ""),
         el("small", {}, testo || "")));
   };
-  const righe = [nodo(0, "Jarvis", "sessione principale", null, c && c.lavorando)];
+  const righe = [nodo(0, ASSISTENTE, "sessione principale", null, c && c.lavorando)];
   for (const n of cat.jarvis) righe.push(nodo(1, n, "fermo", n));
   // i progetti con capogruppo ed esperti stanno sotto, in «Agenti per spazio» (da spazi.json)
   for (const [k, ag] of Object.entries(attivi)) {          // agenti fuori catena
@@ -1854,7 +1883,7 @@ function disegnaAgentiAttivi(attivi) {
 }
 
 function disegnaCollegamenti(collegamenti) {
-  const nomi = { guida_telefono: "Guida telefonate", cruscotto: "Cruscotto CRM", odoo: "Odoo", n8n: "n8n", avvia_cloud: "un'app esterna (apri app)" };
+  const nomi = { guida_telefono: "Guida telefonate", cruscotto: "Cruscotto", odoo: "Odoo", n8n: "n8n", avvia_cloud: "un'app esterna (apri app)" };
   $("collegamenti").replaceChildren(...(collegamenti || []).map((c) =>
     el("button", { "data-apri": c.id }, nomi[c.id] || c.nome)));
 }
@@ -1963,7 +1992,7 @@ function disegnaAttesaVoce() {
   if (!box) return;
   if (voceAspetta && Date.now() - voceAspetta.da > 120000) voceAspetta = null;
   const si = vocePensa || !!voceAspetta;
-  if (si && !box.firstChild) box.append(el("small", {}, "Jarvis"), bollaScrive("Jarvis"));
+  if (si && !box.firstChild) box.append(el("small", {}, ASSISTENTE), bollaScrive(ASSISTENTE));
   box.classList.toggle("nascosto", !si);
 }
 async function aggiornaChatVoce() {
@@ -2008,7 +2037,7 @@ async function aggiornaChatVoce() {
     const tuo = g.chi === "utente";
     const nodo = el("div", { class: "chat-voce", style: "margin:6px 0;display:flex;flex-direction:column;align-items:" + (tuo ? "flex-end" : "flex-start") });
     nodo.append(
-      el("small", { style: "color:var(--tenue);font-size:11px" }, (tuo ? "L'utente" : "Jarvis") + " · " + (g.ts || "").slice(11, 16) +
+      el("small", { style: "color:var(--tenue);font-size:11px" }, (tuo ? nomeUtente() : ASSISTENTE) + " · " + (g.ts || "").slice(11, 16) +
         (ORIGINE_VOCE[g.origine] ? " · " + ORIGINE_VOCE[g.origine] : "")),
       el("div", { style: "max-width:80%;padding:8px 12px;border-radius:12px;white-space:pre-wrap;" +
         (tuo ? "background:var(--rialzo-2);border:1px solid var(--linea-2)" : "background:var(--rialzo);border:1px solid var(--linea)") }, g.testo));
@@ -2312,10 +2341,24 @@ async function caricaPannello() {
 }
 
 // ------------------------------------------------ gli agenti (da spazi.json, via /api/catalogo)
-const COLORE_SPAZIO = { "crm-1": "#d08770", "sito-1": "#e0a458", "Azienda Due": "#599ce7",
-  "vita-personale": "#9386f2", "patrimonio": "#4fb286" };
-const EMOJI_SPAZIO = { "crm-1": "🍝", "sito-1": "🌐", "Azienda Due": "✈️",
-  "vita-personale": "🧩", "patrimonio": "💰" };
+// 2026-10-10 (Jarvis da zero): nessuno spazio è scritto qui. Colore ed emoji di uno spazio nascono dal suo id
+// (stesso spazio, stesso colore ovunque); si cambiano dalla scheda del gruppo («aspetto»).
+const _TAVOLOZZA_SPAZI = ["#d08770", "#e0a458", "#599ce7", "#9386f2", "#4fb286", "#c56b9a", "#5fb3b3", "#b48ead"];
+const _EMOJI_SPAZI = ["📁", "🧩", "🌐", "📊", "🛠️", "📣", "🔬", "💼"];
+const COLORE_SPAZIO = new Proxy({}, { get: (_o, k) => (typeof k === "string" && k ? _TAVOLOZZA_SPAZI[hashCode(k) % _TAVOLOZZA_SPAZI.length] : undefined) });
+const EMOJI_SPAZIO = new Proxy({}, { get: (_o, k) => (typeof k === "string" && k ? _EMOJI_SPAZI[hashCode(k) % _EMOJI_SPAZI.length] : undefined) });
+// lo stato vuoto (nessun progetto): una frase sola, uguale in ogni pagina
+function testoNessunProgetto() {
+  return `Nessun progetto ancora: di' a ${ASSISTENTE} di crearne uno («apri il progetto …», oppure /nuovo-progetto <nome> in Claude Code).`;
+}
+// lo stato vuoto con il pulsante primario «Crea il tuo primo progetto» (stesso modulo di «＋ Nuovo gruppo»)
+function statoVuotoProgetti(piccolo = false) {
+  return el("div", { class: "stato-vuoto-box" + (piccolo ? " piccolo" : "") },
+    el("p", { class: "stato-vuoto" }, testoNessunProgetto()),
+    el("button", { type: "button", class: "primario crea-primo", "data-solo-mac": "agente:crea_gruppo=capogruppo",
+      onclick: () => apriNuovoGruppo() }, "Crea il tuo primo progetto"));
+}
+function nessunProgettoVero() { return !(spaziCat || []).some((s) => !s.sistema && (s.progetti || []).length); }
 // una riga per ruolo: emoji per il vecchio stile, categoria per il seed dell'avatar
 // (stessa faccia per lo stesso ruolo ovunque, il colore cambia solo per spazio)
 const RUOLI = [
@@ -2428,7 +2471,7 @@ function aspettoDi(a) {
 }
 // Nomi e note li decide l'utente dal pannello (aspetto in pannello.json); il nome del profilo
 // resta quello vero e serve solo a chiamare l'agente.
-const nomeDi = (a) => (a && (PAN.aspetto[a.key] || {}).nome) || (a ? a.nome : "Jarvis");
+const nomeDi = (a) => (a && (PAN.aspetto[a.key] || {}).nome) || (a ? a.nome : ASSISTENTE);
 const notaDi = (a) => (a && (PAN.aspetto[a.key] || {}).nota) || "";
 const progettoDi = (a) => (a && (PAN.aspetto["progetto:" + a.progetto] || {}).nome) || (a ? a.progettoNome : "");
 function rinominaProgetto(nodo, pid) {
@@ -2504,7 +2547,11 @@ function disegnaGruppi() {
   if (modificaInCorso() && document.activeElement.closest("#gruppi")) return;   // rinomina in corso: la fine della rinomina ridisegna
   const box = $("gruppi");
   if (!box) return;
-  if (!AGENTI.size) { box.replaceChildren(el("p", { class: "vuoto nota" }, spaziCat.length ? "nessun agente nei progetti" : "lettura degli agenti…")); return; }
+  if (!AGENTI.size) {
+    box.replaceChildren(spaziCat.length ? el("p", { class: "vuoto nota" }, "nessun agente nei progetti")
+      : SPAZI_LETTI ? statoVuotoProgetti(true) : el("p", { class: "vuoto nota" }, "lettura degli agenti…"));
+    return;
+  }
   const f = filtro.toLowerCase();
   box.replaceChildren(...gruppiEffettivi().map((g) => {
     const agenti = g.agenti.map((k) => AGENTI.get(k)).filter((a) => a &&
@@ -2880,8 +2927,8 @@ function nomeChiave(k) {
   const x = String(k || "").toLowerCase();
   const orch = progettoOrchestratore(k);
   if (orch) return `orchestratore · ${orch.nome}`;
-  if (x === "utente") return "L'utente";
-  if (x === "jarvis") return "Jarvis";
+  if (x === "utente") return nomeUtente();
+  if (x === "jarvis") return ASSISTENTE;
   if (x === "sentinella") return "Sentinella";
   if (x === "memoria") return "Memoria";
   const a = agenteDaChiave(k);
@@ -3154,6 +3201,8 @@ async function apriScheda(k) {
   if (dentro) $("sa-gruppo").value = dentro.id;
   disegnaDipendenzeScheda();
   caricaAttivita(k);
+  $("sa-vlimiti").value = "";
+  caricaDiario(k);
   schedaProfilo = null;
   $("scheda-agente").showModal();
   if (a.file) {
@@ -3161,12 +3210,14 @@ async function apriScheda(k) {
       const p = await api("/api/agente-profilo?file=" + encodeURIComponent(a.file));
       if (schedaKey === k) {
         $("sa-vdescr").value = p.description; $("sa-vmodello").value = p.model; $("sa-vstrumenti").value = p.tools;
+        $("sa-vlimiti").value = p.limiti || "";
         // Il confronto per «Salva» si fa con quello che i campi mostrano ADESSO, con la descrizione
         // intera: prima si confrontava con la versione tagliata a 160 caratteri e ogni apertura e
         // chiusura della scheda riscriveva il file .md anche senza nessuna modifica.
         // «comunica con»: dal campo del server nuovo, altrimenti dal blocco scritto nel corpo del profilo
         if (!a.comunica) { SA_COMUNICA = nomiComunica(p.corpo); disegnaComunicaScheda(); }
         schedaProfilo = { k, descr: $("sa-vdescr").value.trim(), modello: $("sa-vmodello").value, strumenti: $("sa-vstrumenti").value.trim(),
+          limiti: $("sa-vlimiti").value.trim(),
           tono: $("sa-vtono").value.trim(), umorismo: +$("sa-vumor").value, serieta: +$("sa-vseri").value, comunica: SA_COMUNICA.join(",") };
       }
     } catch (e) { /* resta la versione troncata già mostrata: il profilo vero in quel caso non si salva */ }
@@ -3315,9 +3366,11 @@ $("form-scheda").addEventListener("submit", async (ev) => {
   }
   if (a.file && !base) {
     toast("Aspetto salvato; il profilo vero non l'ho toccato perché non sono riuscito a leggerlo", true);
-  } else if (a.file && (descr !== base.descr || modello !== base.modello || strumenti !== base.strumenti)) {
+  } else if (a.file && (descr !== base.descr || modello !== base.modello || strumenti !== base.strumenti
+             || $("sa-vlimiti").value.trim() !== (base.limiti || ""))) {
     // si mandano solo i campi cambiati: il server riscrive solo quelle righe del frontmatter
     const corpo = { file: a.file };
+    if ($("sa-vlimiti").value.trim() !== (base.limiti || "")) corpo.limiti = $("sa-vlimiti").value.trim();
     if (descr !== base.descr) corpo.description = descr;
     if (modello !== base.modello) corpo.model = modello;
     if (strumenti !== base.strumenti) corpo.tools = strumenti;
@@ -3326,7 +3379,7 @@ $("form-scheda").addEventListener("submit", async (ev) => {
       if (descr !== base.descr) a.descrizione = descr.split(". ")[0].slice(0, 160);
       if (modello !== base.modello) a.modello = modello;
       if (strumenti !== base.strumenti) a.strumenti = strumenti.split(",").map((t) => t.trim()).filter(Boolean);
-      schedaProfilo = { k: schedaKey, descr, modello, strumenti };
+      schedaProfilo = { k: schedaKey, descr, modello, strumenti, limiti: $("sa-vlimiti").value.trim() };
       toast("Salvato: aspetto e profilo di Claude Code");
     } catch (e) { toast("Aspetto salvato, ma il profilo vero no: " + e.message, true); return; }
   } else toast("Salvato");
@@ -3404,7 +3457,8 @@ function datiAgenti(k) {
 // vecchio (profili senza «attivo») tono, umorismo, attivo, crea, togli e allineamento restano spenti.
 const UMORISMO = ["nessuno", "misurato", "vivace", "sfacciato"];
 const SERIETA = ["leggero", "pacato", "professionale", "rigoroso"];   // serietà e umorismo insieme: due manopole indipendenti (l'utente, 29/09/2026)
-const profiliNuovi = () => [...AGENTI.values()].some((a) => a.nuovo);
+// 2026-10-10: il server del prodotto crea sempre profili veri (anche con zero progetti e zero agenti)
+const profiliNuovi = () => true;
 function archiviatiDi(spazioId) {
   const s = (spaziCat || []).find((x) => x.id === spazioId);
   if (!s) return [];
@@ -3419,17 +3473,26 @@ async function caricaSpazi() {
   spaziInCorso = true;
   try {
     const d = await api("/api/spazi");
+    if (d.memoria_radice) MEMORIA_RADICE = d.memoria_radice;
+    if (d.assistente) ASSISTENTE = d.assistente;
+    UTENTE = d.utente || "";
+    PROG_ARCH = Array.isArray(d.progetti_archiviati) ? d.progetti_archiviati : [];
+    SPAZI_LETTI = true; SPAZI_API_OK = true;
+    applicaNomi();
     GRUPPI_ARCH = Array.isArray(d.gruppi_archiviati) ? d.gruppi_archiviati : [];
     disegnaSpazi(d.spazi || []);
     disegnaGruppiArchiviati(d.gruppi_archiviati);
     pulisciSchedeOrfane();
     seguiSquadre(d.squadre || {});
     disegnaLavagna();
+    requestAnimationFrame(centraSeFuoriVista);
+    const vuoto = $("lav-vuoto");
+    if (vuoto) { vuoto.hidden = !nessunProgettoVero(); if (!vuoto.hidden) vuoto.replaceChildren(statoVuotoProgetti()); }
     posaNuovoAgente();
     posaNuovoGruppo();
     caricaModifiche();
     aggiornaAllineamento();
-  } catch (e) { /* il giro dopo riprova */ }
+  } catch (e) { setTimeout(caricaSpazi, 1500); /* primo caricamento fallito: riprova da solo */ }
   finally { spaziInCorso = false; if (spaziAncora) { spaziAncora = false; caricaSpazi(); } }
 }
 // Un agente tolto (archiviato) o sparito dai profili esce da TUTTE le lavagne, e con lui i suoi fili
@@ -3493,7 +3556,7 @@ const inKebab = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[
 // nascerne sempre una nuova dal nome. L'elenco dipende dallo spazio scelto.
 function notaCartellaGruppo() {
   const base = $("ng-base").value.trim(), modo = $("ng-cartella").value;
-  $("ng-cartella-nota").textContent = !base ? "Nessuna cartella scelta: ne nasce una nuova col nome del gruppo in Jarvis Brain/Progetti."
+  $("ng-cartella-nota").textContent = !base ? "Nessuna cartella scelta: ne nasce una nuova col nome del progetto nella cartella dei progetti (~/Progetti, o quella scelta all'installazione)."
     : modo === "@base" ? "Il gruppo è proprio questa cartella: i suoi file restano dove sono."
     : "Nasce una cartella nuova, col nome del gruppo, dentro quella scelta.";
 }
@@ -3516,7 +3579,7 @@ $("ng-cartella").addEventListener("change", notaCartellaGruppo);
 $("ng-crea-capo").addEventListener("change", () => { $("ng-capo-campi").hidden = !$("ng-crea-capo").checked; });
 function apriNuovoGruppo() {
   if (!profiliNuovi()) { toast("Creare gruppi dal pannello arriva col server nuovo", true); return; }
-  $("ng-spazio").replaceChildren(el("option", { value: "" }, "Nuovo spazio, come Azienda Due"),
+  $("ng-spazio").replaceChildren(el("option", { value: "" }, "Nuovo spazio, col nome del progetto"),
     ...(spaziCat || []).filter((s) => !s.sistema).map((s) => el("option", { value: s.id }, "dentro " + s.nome)));
   for (const id of ["ng-nome", "ng-id", "ng-capo", "ng-descr", "ng-tono", "ng-base"]) $(id).value = "";
   $("ng-umor").value = 1; $("ng-umor-t").textContent = UMORISMO[1]; $("ng-seri").value = 3; $("ng-seri-t").textContent = SERIETA[3];
@@ -3526,8 +3589,8 @@ function apriNuovoGruppo() {
 }
 $("lav-nuovo-progetto").addEventListener("click", apriNuovoGruppo);
 $("btn-nuovo-gruppo").addEventListener("click", apriNuovoGruppo);
-$("ng-nome").addEventListener("input", () => { if (!idToccato) $("ng-id").value = inKebab($("ng-nome").value); $("ng-capo").placeholder = "ceo-" + ($("ng-id").value || "…"); });
-$("ng-id").addEventListener("input", () => { idToccato = true; $("ng-capo").placeholder = "ceo-" + ($("ng-id").value || "…"); });
+$("ng-nome").addEventListener("input", () => { if (!idToccato) $("ng-id").value = inKebab($("ng-nome").value); $("ng-capo").placeholder = ($("ng-id").value || "…") + "-ceo"; });
+$("ng-id").addEventListener("input", () => { idToccato = true; $("ng-capo").placeholder = ($("ng-id").value || "…") + "-ceo"; });
 $("ng-umor").addEventListener("input", (ev) => { $("ng-umor-t").textContent = UMORISMO[+ev.target.value]; });
 $("ng-seri").addEventListener("input", (ev) => { $("ng-seri-t").textContent = SERIETA[+ev.target.value]; });
 $("form-nuovo-gruppo").addEventListener("submit", async (ev) => {
@@ -3535,9 +3598,9 @@ $("form-nuovo-gruppo").addEventListener("submit", async (ev) => {
   ev.preventDefault();
   const nome = $("ng-nome").value.trim(), id = (inKebab(nome) || $("ng-id").value.trim()), creaCapo = $("ng-crea-capo").checked;
   const idGruppo = creaCapo && $("ng-id").value.trim() ? $("ng-id").value.trim() : id;
-  const capo = $("ng-capo").value.trim() || "ceo-" + idGruppo;
+  const capo = $("ng-capo").value.trim() || idGruppo + "-ceo";
   if (!nome || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(idGruppo)) { $("ng-nota").textContent = "Dai un nome al gruppo (lettere e numeri)"; return; }
-  if (creaCapo && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(capo)) { $("ng-nota").textContent = "Capogruppo in minuscolo, con i trattini: ceo-eventi-privati"; return; }
+  if (creaCapo && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(capo)) { $("ng-nota").textContent = "Capogruppo in minuscolo, con i trattini: <progetto>-ceo"; return; }
   if ((spaziCat || []).some((s) => s.id === idGruppo && !$("ng-spazio").value || s.progetti.some((p) => p.id === idGruppo))) { $("ng-nota").textContent = "Questo nome è già di un altro gruppo, scegline un altro"; return; }
   const base = $("ng-base").value.trim();
   const d = await azione({ tipo: "agente", cosa: "crea_gruppo", spazio: $("ng-spazio").value, nome, id: idGruppo, capogruppo: capo, crea_capogruppo: creaCapo, squadra_ceo: creaCapo && $("ng-squadra").checked,
@@ -3644,9 +3707,9 @@ function posaNuovoAgente() {
 }
 // ---- guida e controllo della lavagna (l'utente, 02/10/2026): «una guida dentro ogni operazione, così capiamo se sbaglio io o sbagliate voi»
 const GUIDA_LAVAGNA = [
-  { op: "＋ Nuovo gruppo", fa: "Scegli la cartella del progetto: nasce il gruppo con il suo CEO (ceo-nome-progetto), sempre.",
-    scrive: "spazi.json · profilo del CEO in <cartella>/.claude/agents · Memoria/<spazio>/<progetto>/ · Report/",
-    atteso: "La cartella e il CEO compaiono subito. Il CEO legge la cartella e crea i suoi agenti: arrivano uno a uno sotto di lui (1-3 minuti).",
+  { op: "＋ Nuovo gruppo", fa: "Scegli la cartella del progetto: nasce il progetto con il suo capogruppo (<progetto>-ceo), sempre (stessa logica di crea_progetto.py).",
+    scrive: "spazi.json · scheda del capogruppo in <cartella>/.claude/agents · <memoria>/<spazio>/Stato.md · File/ e Indice-file.md",
+    atteso: "La cartella e il capogruppo compaiono subito. Gli specialisti li crea il capogruppo, uno alla volta, quando servono.",
     verifica: "«Controlla lavagna» non dice niente sul gruppo; il CEO ha sotto 2-8 agenti; poi Jarvis allinea memoria e agenti (Stato e Guida del progetto).",
     sbaglia: "Se il CEO resta solo: il lancio del CEO è fallito (guarda gli eventi). Se la cartella non compare: è un errore della lavagna." },
   { op: "Il CEO compone la squadra", fa: "Rilancia la lettura della cartella da parte del CEO per un gruppo che ha il CEO ma pochi agenti (Scheda gruppo → «Il CEO compone la squadra»).",
@@ -4169,7 +4232,7 @@ function markdown(testo) {
 // dentro una bolla scura, con una scia di luce che corre sotto. Serve alla chat scritta
 // e alla chat a voce della scheda Stato.
 function bollaScrive(chi) {
-  return el("div", { class: "bolla-scrive", role: "status", "aria-label": (chi || "Jarvis") + " sta scrivendo" },
+  return el("div", { class: "bolla-scrive", role: "status", "aria-label": (chi || ASSISTENTE) + " sta scrivendo" },
     el("i"), el("i"), el("i"));
 }
 
@@ -4199,7 +4262,7 @@ function disegnaMessaggi() {
       ...(frequenti.length < 5 ? fissi.map((s) => el("button", { type: "button", onclick: () => manda(s) }, s)) : []),
     ];
     box.replaceChildren(el("div", { class: "benvenuto" },
-      el("b", {}, a ? `${aspettoDi(a).emoji} ${nomeDi(a)}` : "Ciao l'utente, su cosa lavoriamo oggi?"),
+      el("b", {}, a ? `${aspettoDi(a).emoji} ${nomeDi(a)}` : (UTENTE ? `Ciao ${UTENTE}, su cosa lavoriamo oggi?` : "Ciao, su cosa lavoriamo oggi?")),
       el("span", {}, a ? notaDi(a) || a.descrizione : `Scrivi qui: risponde ${nomeMotore(MOTORE.attivo)}, in modo ${modoEffettivo()} (${testoModo(modoEffettivo())}).` + (ponteConsente("comando_diretto") ? " I comandi con / partono subito." : " I comandi con / partono solo dal Mac.")),
       el("div", { class: "spunti" }, ...spunti)));
     return;
@@ -4224,7 +4287,7 @@ function bollaMessaggio(m, i, a) {
     el("button", { class: "icona", title: "Copia", onclick: () => navigator.clipboard.writeText(m.testo).then(() => toast("Copiato")) }, "⧉"),
     mio ? el("button", { class: "icona", title: "Modifica e rimanda", onclick: () => { $("chiedi-testo").value = m.testo; autoAltezza(); $("chiedi-testo").focus(); } }, "✎") : "",
     el("button", { class: "icona", title: "Togli dalla chat", onclick: () => togliMessaggio(m) }, "✕"));
-  const chi = (mio ? "L'utente" : m.tipo === "comando" ? m.titolo || "comando" : m.notifica ? m.mittente || nomeChat(a) : nomeChat(a))
+  const chi = (mio ? nomeUtente() : m.tipo === "comando" ? m.titolo || "comando" : m.notifica ? m.mittente || nomeChat(a) : nomeChat(a))
     + (m.box ? ` · dal box «${m.box}»` : "") + (m.prova ? " · prova" : "")
     + (!mio && m.motore && m.motore !== "claude" ? ` · via ${nomeMotore(m.motore)}` : "");
   // una notifica ha la faccia di chi la manda (il report di Jarvis nella chat Postino, l'avviso del Postino da Jarvis)
@@ -4458,6 +4521,22 @@ function vista() {
   return L.vista || (L.vista = { x: 0, y: 0, zoom: 1 });
 }
 // la prima volta che la lavagna è a schermo con le schede disegnate: «Centra» su questo schermo, senza salvare il pannello
+// 2026-10-10: se nessuna scheda è nel riquadro visibile (telefono a 375 px, vista salvata vecchia, schede nate
+// dopo), la lavagna si centra da sola una volta per caricamento, senza salvare il pannello
+const CENTRATE_DA_SOLE = new Set();
+function centraSeFuoriVista() {
+  const box = $("lavagna"), mondo = $("lav-mondo");
+  if (!box || !mondo || CENTRATE_DA_SOLE.has(lavagnaAttiva)) return;
+  const r = box.getBoundingClientRect();
+  const nodi = [...mondo.querySelectorAll(".nodo")];
+  if (r.width < 40 || r.height < 40 || !nodi.length) return;
+  const dentro = nodi.some((n) => { const q = n.getBoundingClientRect(); return q.right > r.left && q.left < r.right && q.bottom > r.top && q.top < r.bottom; });
+  if (dentro) return;                                   // si vede già qualcosa: non si tocca la vista
+  CENTRATE_DA_SOLE.add(lavagnaAttiva);
+  centraLavagna(false);
+}
+// nei primi 20 s dopo l'apertura (pannello, spazi e vista arrivano in momenti diversi) si controlla a ogni disegno
+var AVVIO_PAGINA = Date.now();   // var: si può leggere anche prima di questa riga (vale undefined)
 function adattaVistaSeServe() {
   if (!VISTE_DA_ADATTARE.has(lavagnaAttiva)) return;
   const r = $("lavagna").getBoundingClientRect();
@@ -4488,14 +4567,15 @@ function disegnaLavagna() {
     if (n.tipo === "agente" && !AGENTI.has(n.agente) && AGENTI.size) continue;   // agente sparito dai profili
     mondo.append(schedaNodo(n));
   }
-  $("lav-vuota").classList.toggle("nascosto", lav().nodi.length > 0);
+  $("lav-vuota").classList.toggle("nascosto", lav().nodi.length > 0 || (SPAZI_API_OK && nessunProgettoVero()));   // con zero progetti parla lo stato vuoto
   applicaVista();
   adattaVistaSeServe();
   disegnaFili();
   segnaAttivi();
   $("lav-togli").disabled = !(LAV.sel || LAV.selFilo != null);   // il filo 0 è un filo vero
+  if (Date.now() - AVVIO_PAGINA < 20000) requestAnimationFrame(centraSeFuoriVista);
 }
-// una nota della lavagna che è anche uno spazio vero (Azienda Due, Patrimonio, ...): il suo gruppo
+// una nota della lavagna che è anche uno spazio vero: il suo gruppo
 // nella colonna a sinistra è sempre "spazio-<id>", trovato per nome (le note non portano l'id).
 function gruppoDiNota(testo) {
   const s = (spaziCat || []).find((x) => x.nome === testo);
@@ -4507,7 +4587,7 @@ function gruppoDiNota(testo) {
 // (agenti veri di Jarvis, fuori da ogni progetto) — 27/09/2026, l'utente: «deve essere certo che sia collegata»
 const NOTE_DI_CASA = new Set(["memoria", "esecutore", "ricercatore-web", "jarvis"]);
 // la nota «Jarvis — orchestratore, risponde all'utente» è Jarvis: nome della nota di casa da un testo di nota
-const nomeNotaDiCasa = (testo) => { const t = String(testo || "").toLowerCase().trim(); return /^jarvis(\s|—|-|$)/.test(t) ? "jarvis" : t; };
+const nomeNotaDiCasa = (testo) => { const t = String(testo || "").toLowerCase().trim(); return eNotaOrchestratore(testo) ? "jarvis" : t; };
 let schedaCasaNome = null;
 async function apriNotaDiCasa(nome) {
   try {
@@ -4828,20 +4908,20 @@ function progettoDiEtichetta(testo) {
 }
 // i link di ogni scheda: cartella, memoria del vault, profilo. Non si salvano nel pannello (il server tiene solo x, y, testo):
 // si ricavano dal nome della scheda ogni volta.
-const OD_REL = "~/Library/CloudStorage/OneDrive";
+let MEMORIA_RADICE = "~/Jarvis-Memoria";      // da /api/spazi (chiave «memoria» di ~/.jarvis/percorsi.json)
 function collegamentiNodo(n) {
   if (n.tipo === "agente") {
     const a = AGENTI.get(n.agente);
     return a && a.file ? [{ icona: "📄", titolo: "Mostra il profilo nel Finder", percorsi: [a.file] }] : [];
   }
   const t = String(n.testo || "");
-  if (/^jarvis(\s|—|-|$)/i.test(t)) return [
+  if (eNotaOrchestratore(t)) return [
     { icona: "📁", titolo: "Apri la cartella di Jarvis", percorsi: ["~/Jarvis"] },
-    { icona: "🧠", titolo: "Apri la memoria (porta d'ingresso)", percorsi: [OD_REL + "/Jarvis Brain/Memoria/00 Comune/Memoria.md"] }];
-  if (t === "L'utente") return [{ icona: "🧠", titolo: "Profilo dell'utente e regole", percorsi: [OD_REL + "/Jarvis Brain/Memoria/00 Comune"] }];
+    { icona: "🧠", titolo: "Apri la memoria (porta d'ingresso)", percorsi: [MEMORIA_RADICE + "/Comune/Memoria.md"] }];
+  if (eNotaUtente(t)) return [{ icona: "🧠", titolo: "Profilo dell'utente e regole", percorsi: [MEMORIA_RADICE + "/Comune"] }];
   const pr = progettoDiEtichetta(t);
   if (pr) {
-    const memo = (pr.p.sezioni_memoria || []).map((x) => OD_REL + "/Jarvis Brain/Memoria/" + x);
+    const memo = (pr.p.sezioni_memoria || []).map((x) => MEMORIA_RADICE + "/" + x + "/Stato.md");
     return [{ icona: "📁", titolo: "Apri la cartella del progetto", percorsi: [pr.p.cartella] },
       { icona: "🧠", titolo: "Apri la memoria del progetto", percorsi: memo.concat([pr.s.memoria]) }];
   }
@@ -4859,7 +4939,7 @@ function progettiCatena() {
     for (const p of s.progetti || []) {
       const ag = (p.agenti || []).map((a) => AGENTI.get(`${p.id}:${a.nome}`)).filter(Boolean);
       if (!p.esiste) continue;
-      // più progetti sulla stessa cartella (Patrimonio: 3 voci, una cartella) = una scheda sola
+      // più progetti sulla stessa cartella (3 voci, una cartella) = una scheda sola
       const chiave = s.id + "|" + p.cartella;
       if (viste.has(chiave)) continue;
       viste.add(chiave);
@@ -4942,12 +5022,12 @@ async function popolaCatenaCompleta() {
   vaiALavagna("generale", "Tutta la catena");
   const C = CATENA, L = lav();
   const rami = progettiCatena();
-  if (!rami.length) { toast("Nessun progetto da mettere in lavagna: il catalogo non è ancora arrivato", true); return; }
+  if (!rami.length) { toast(SPAZI_LETTI ? testoNessunProgetto() : "Nessun progetto da mettere in lavagna: il catalogo non è ancora arrivato", !SPAZI_LETTI); return; }
   {  // le schede di servizio della catena si rifanno ogni volta: via quelle vecchie (spazi, cartelle, etichette) e i loro fili.
      // Le note scritte dall'utente restano.
     const nomiSpazio = new Set((spaziCat || []).map((s) => s.nome));
     const vecchie = new Set(L.nodi.filter((n) => n.tipo === "nota" && (String(n.testo).startsWith("📁 ") || nomiSpazio.has(n.testo) ||
-      String(n.testo).endsWith(" · senza capogruppo") || n.testo === "Memoria" || n.testo === "L'utente" || /^Jarvis\s—/.test(n.testo))).map((n) => n.id));
+      String(n.testo).endsWith(" · senza capogruppo") || n.testo === "Memoria" || eNotaUtente(n.testo) || eNotaOrchestratore(n.testo))).map((n) => n.id));
     if (vecchie.size) { L.nodi = L.nodi.filter((n) => !vecchie.has(n.id)); L.fili = L.fili.filter((f) => !vecchie.has(f.da) && !vecchie.has(f.a)); }
   }
   // via i nodi di agenti che non esistono più, e i loro fili; e tutti i fili fra schede di servizio ricalcolati
@@ -4963,8 +5043,8 @@ async function popolaCatenaCompleta() {
   const principali = rami.filter((r) => !r.spazio.sistema), sistema = rami.filter((r) => r.spazio.sistema);
   const totale = principali.reduce((w, r) => w + largRamo(r), 0) + C.PROGETTO * Math.max(0, principali.length - 1);
   const xCentro = totale / 2 - C.SCHEDA / 2;
-  const nUtente = notaCatena("L'utente", xCentro, C.Y_UTENTE);
-  const nJarvis = notaCatena("Jarvis — orchestratore, risponde all'utente", xCentro, C.Y_JARVIS);
+  const nUtente = notaCatena(nomeUtente(), xCentro, C.Y_UTENTE);
+  const nJarvis = notaCatena(etichettaOrchestratore(), xCentro, C.Y_JARVIS);
   filoSeManca(nUtente, nJarvis);
   const disegnaRamo = (r, x, yCartella) => {
     const yCapi = yCartella + 110, ySquadra = yCartella + 210;
@@ -5612,7 +5692,12 @@ function termDisegna() {
   $("term-sessione").classList.toggle("nascosto", termModo !== "mac");
   $("term-ricarica").disabled = $("term-fuori").disabled = $("term-claude").disabled = !acceso;
 }
+let TERM_CONFERMATO = false;
 async function termAccendi(bottone, modo = termModo) {
+  if (!TERM_CONFERMATO && !confirm(modo === "mac"
+    ? "Accendo una shell vera del Mac dentro il pannello (ttyd, solo su questo Mac, protetta dal token della pagina). Procedo?"
+    : "Apro una sessione ssh verso la VPS dentro il pannello. Procedo?")) return;
+  TERM_CONFERMATO = true;
   $("term-testo").textContent = modo === "mac" ? "accendo la shell del Mac…" : "apro ssh verso la VPS…";
   const d = await azione({ tipo: "terminale", cosa: "avvia", modo }, bottone);
   if (d) await termLeggi();
@@ -5623,15 +5708,14 @@ function termScegli(m) {
   termModo = m; mem.scrivi("termModo", m);
   termDisegna();
   const modi = (termInfo && termInfo.modi) || {};
-  if (termInfo && termInfo.installato && !(modi[m] && modi[m].acceso)) termAccendi($("term-accendi"), m);
-  else termFocus();
+  if (modi[m] && modi[m].acceso) termFocus();      // spento: resta spento finché non premi «Accendi» (con conferma)
 }
-// Aprire il pannello accende da solo il terminale scelto: è solo di questo Mac.
+// Aprire il pannello NON accende il terminale (prodotto pubblico, 2026-10-10): si accende solo da «Accendi».
 async function termApri() {
   const s = await termLeggi();
   const modi = (s && s.modi) || {};
-  if (s && s.installato && !(modi[termModo] && modi[termModo].acceso)) termAccendi($("term-accendi"));
-  else termFocus();
+  // 2026-10-10 (prodotto pubblico): aprire la pagina non accende niente. Il terminale parte solo da «Accendi», con conferma.
+  if (modi[termModo] && modi[termModo].acceso) termFocus();
 }
 // scrive un comando nel terminale come se lo battesse l'utente (stessa origine: si può)
 function termScrivi(testo) {
@@ -5819,6 +5903,7 @@ aggiornaTestaChat();
 mostraVista();
 orologio();
 setInterval(orologio, 1000);
+caricaSpazi();       // 2026-10-10: nomi dal profilo, stato vuoto, lavagna; il catalogo da solo non bastava
 catalogo().then(() => { disegnaGruppi(); aggiornaTestaChat(); disegnaMessaggi(); caricaModifiche(); return caricaPannello(); })
   .catch((e) => toast(e.message, true));
 caricaMotore().catch((e) => toast(e.message, true));
@@ -5850,7 +5935,8 @@ const FLUSSO = { stato: "sondaggio", es: null, versione: null, attesa: 2000, tim
   sa: [], sospese: new Set() };
 // Chiavi del flusso che non toccano /api/stato: da sole non fanno rileggere lo stato (2026-10-03). Una chiave
 // che non sta qui (anche nuova o sconosciuta) lo fa rileggere come prima.
-const CHIAVI_NON_STATO = new Set(["scadenze", "spazi", "modifiche", "pannello", "attivita", "frequenti", "approvazione", "fili", "chat_voce"]);
+const CHIAVI_NON_STATO = new Set(["scadenze", "spazi", "modifiche", "pannello", "attivita", "frequenti", "approvazione", "fili", "chat_voce",
+  "file_progetti", "diari"]);
 // Le chiavi arrivate con la scheda nascosta (2026-10-03): niente letture finché nessuno guarda; tornando
 // visibile si fanno una volta sola (aggiorna() riparte comunque dal giro di ogni()).
 function trattaChiavi(chiavi, senzaStato = false) {
@@ -5864,6 +5950,11 @@ function trattaChiavi(chiavi, senzaStato = false) {
     if ($("scheda-agente").open && schedaKey) caricaAttivita(schedaKey);
   }
   if (chiavi.includes("chat_voce")) aggiornaChatVoce();
+  // 2026-10-10: file caricati e diari cambiati (anche fuori dalla pagina): le schede aperte si rileggono da sole
+  if (chiavi.some((k) => k === "file_progetti" || k === "diari" || k === "spazi")) {
+    if ($("scheda-progetto").open && SP_ID) caricaFileProgetto();
+    if ($("scheda-agente").open && schedaKey) caricaDiario(schedaKey);
+  }
   if (!senzaStato && (!chiavi.length || chiavi.some((k) => !CHIAVI_NON_STATO.has(k)))) chiediAggiorna();
 }
 document.addEventListener("visibilitychange", () => {
@@ -6486,3 +6577,130 @@ async function aggiornaOra(forza = false) {
 $("btn-aggiorna-ora")?.addEventListener("click", () => aggiornaOra(false));
 controllaAggiornamento();
 setInterval(controllaAggiornamento, 10 * 60 * 1000);
+
+// ---- 2026-10-10: diario dell'agente e pagina del progetto (file caricati, nome, descrizione, archivio)
+// Una sola fonte: il diario è <cartella>/.claude/memoria/agenti/<nome>.md, i file stanno in <cartella>/File/.
+let DIARIO_LETTO = { k: "", testo: "" };
+async function caricaDiario(k) {
+  const [pid, nome] = String(k || "").split(":");
+  const box = $("sa-diario-sintesi");
+  if (!pid || !nome || pid === "casa" || !box) { if (box) box.replaceChildren(el("small", { class: "nota" }, "Gli agenti di casa non hanno un diario di progetto.")); return; }
+  try {
+    const d = await api(`/api/diario?progetto=${encodeURIComponent(pid)}&agente=${encodeURIComponent(nome)}`);
+    if (schedaKey !== k) return;
+    $("sa-diario-file").textContent = d.file.replace(/^.*\/\.claude\//, ".claude/");
+    const riga = (titolo, voci) => el("div", { class: "sa-diario-sez" }, el("b", {}, titolo),
+      voci.length ? el("ul", {}, ...voci.slice(-5).map(([q, x]) => el("li", {}, el("small", {}, q + " · "), x))) : el("small", { class: "nota" }, " niente ancora"));
+    const parti = [riga("FATTO", d.fatto), riga("DA FARE", d.da_fare), riga("ERRORI COMMESSI DA NON RIPETERE", d.errori)];
+    if ((d.errori_ripetuti || []).length) parti.push(el("p", { class: "avviso" }, "⚠ Errore ripetuto in due giorni diversi: " + d.errori_ripetuti.join("; ")));
+    box.replaceChildren(...parti);
+    const ta = $("sa-diario");
+    if (DIARIO_LETTO.k !== k || ta.value === DIARIO_LETTO.testo) ta.value = d.testo;   // non si perde quello che stai scrivendo
+    DIARIO_LETTO = { k, testo: d.testo };
+  } catch (e) { box.replaceChildren(el("small", { class: "nota" }, "Diario non letto: " + e.message)); }
+}
+$("sa-diario-salva")?.addEventListener("click", async () => {
+  const [pid, nome] = String(schedaKey || "").split(":");
+  try {
+    const r = await api("/api/diario", { progetto: pid, agente: nome, testo: $("sa-diario").value });
+    $("sa-diario-nota").textContent = r.messaggio; DIARIO_LETTO.testo = $("sa-diario").value; caricaDiario(schedaKey);
+  } catch (e) { toast("Diario non salvato: " + e.message, true); }
+});
+let SP_ID = "";
+function progettoCat(pid) {
+  for (const s of spaziCat || []) for (const p of s.progetti || []) if (p.id === pid) return { s, p };
+  return null;
+}
+async function apriSchedaProgetto(pid) {
+  const c = progettoCat(pid);
+  if (!c) { toast("Progetto non trovato", true); return; }
+  SP_ID = pid;
+  $("sp-titolo").textContent = c.p.nome; $("sp-cartella").textContent = c.p.cartella;
+  $("sp-nome").value = c.p.nome; $("sp-descr").value = c.p.descrizione || "";
+  $("sp-carica-nota").textContent = "";
+  $("scheda-progetto").showModal();
+  caricaFileProgetto();
+}
+async function caricaFileProgetto() {
+  if (!SP_ID) return;
+  try {
+    const d = await api("/api/progetto/file?progetto=" + encodeURIComponent(SP_ID));
+    $("sp-file-conta").textContent = d.file.length ? `${d.file.length} file` : "nessuno";
+    $("sp-file").replaceChildren(...(d.file.length ? d.file.map((x) => el("li", {}, el("b", {}, x.nome), el("small", {}, ` · ${x.data} · ${x.byte} byte`)))
+      : [el("li", { class: "nota" }, "Nessun file ancora. Caricali qui sopra o copiali in File/.")]));
+    $("sp-indice").textContent = d.indice || "";
+  } catch (e) { $("sp-file").replaceChildren(el("li", { class: "nota" }, "File non letti: " + e.message)); }
+}
+function base64Di(file) {
+  return new Promise((ok, ko) => {
+    const r = new FileReader();
+    r.onload = () => ok(String(r.result).split(",")[1] || "");
+    r.onerror = () => ko(r.error || new Error("lettura del file non riuscita"));
+    r.readAsDataURL(file);
+  });
+}
+$("sp-carica")?.addEventListener("change", async (ev) => {
+  const files = [...(ev.target.files || [])];
+  for (const f of files) {
+    if (f.size > 25 * 1024 * 1024) { toast(`${f.name}: più di 25 MB, copialo a mano in File/`, true); continue; }
+    $("sp-carica-nota").textContent = `carico ${f.name}…`;
+    try {
+      const r = await api("/api/progetto/carica", { progetto: SP_ID, nome: f.name, base64: await base64Di(f) }, 120000);
+      $("sp-carica-nota").textContent = r.messaggio;
+    } catch (e) { toast(`${f.name} non caricato: ${e.message}`, true); }
+  }
+  ev.target.value = "";
+  caricaFileProgetto();
+});
+$("sp-salva")?.addEventListener("click", async () => {
+  const c = progettoCat(SP_ID);
+  if (!c) return;
+  try {
+    if ($("sp-nome").value.trim() && $("sp-nome").value.trim() !== c.p.nome) await api("/api/progetto/modifica", { cosa: "rinomina", progetto: SP_ID, valore: $("sp-nome").value.trim() });
+    if ($("sp-descr").value.trim() !== (c.p.descrizione || "")) await api("/api/progetto/modifica", { cosa: "descrizione", progetto: SP_ID, valore: $("sp-descr").value.trim() });
+    toast("Progetto salvato (spazi.json, copia .bak accanto)"); caricaSpazi();
+  } catch (e) { toast("Non salvato: " + e.message, true); }
+});
+$("sp-archivia")?.addEventListener("click", async () => {
+  const c = progettoCat(SP_ID);
+  if (!c || !confirm(`Archivio «${c.p.nome}»? Esce dai progetti attivi; cartella, agenti e memoria restano. Si ripristina con crea_progetto.py --ripristina ${SP_ID}.`)) return;
+  try { await api("/api/progetto/modifica", { cosa: "archivia", progetto: SP_ID }); $("scheda-progetto").close(); toast("Progetto archiviato"); caricaSpazi(); }
+  catch (e) { toast("Non archiviato: " + e.message, true); }
+});
+
+// 2026-10-10: primo caricamento sicuro. Se dopo 3 s la pagina non ha ancora letto gli spazi (o una lettura è andata
+// persa), li richiede; poi ogni 15 s finché non arrivano.
+(function primoCaricamentoSpazi() {
+  setTimeout(function giro() { if (!SPAZI_API_OK) { caricaSpazi(); setTimeout(giro, 15000); } }, 3000);
+})();
+
+// 2026-10-10: il nome dell'assistente e del proprietario dal profilo anche nei testi fissi della pagina
+// («Nuova chat con Jarvis», titolo, pulsanti). Si cambia solo il testo visibile, mai codice, campi o percorsi.
+let NOMI_APPLICATI = "";
+// «Jarvis» come nome, non dentro un percorso o un nome di file (~/Jarvis, Jarvis-Memoria, jarvis_status.py)
+const PAROLA_JARVIS = /(?<![\/~\w.-])Jarvis(?![\/\w.-])/, PAROLA_JARVIS_G = /(?<![\/~\w.-])Jarvis(?![\/\w.-])/g;
+function applicaNomi() {
+  const cambiaNome = !/\bJarvis\b/.test(ASSISTENTE);      // «Jarvis 2» resta com'è: niente giri infiniti
+  if (!cambiaNome && !UTENTE) return;
+  if (!/\bJARVIS\b|Jarvis|L'utente/.test(document.body.textContent + document.title)) return;   // niente da cambiare
+  const firma = ASSISTENTE + "|" + UTENTE;
+  const salta = new Set(["SCRIPT", "STYLE", "CODE", "PRE", "TEXTAREA", "INPUT", "KBD"]);
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+    acceptNode: (n) => (n.parentElement && !salta.has(n.parentElement.tagName) && !n.parentElement.closest("code,pre,textarea,.msg-testo,.messaggi")
+      && ((cambiaNome && PAROLA_JARVIS.test(n.nodeValue)) || (UTENTE && /L'utente/.test(n.nodeValue))) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT) });
+  const nodi = [];
+  while (w.nextNode()) nodi.push(w.currentNode);
+  for (const n of nodi) n.nodeValue = (cambiaNome ? n.nodeValue.replace(PAROLA_JARVIS_G, ASSISTENTE) : n.nodeValue).replace(/L'utente/g, UTENTE || "L'utente");
+  if (cambiaNome) for (const e of document.querySelectorAll("[title*='Jarvis'],[placeholder*='Jarvis'],[aria-label*='Jarvis']"))
+    for (const a of ["title", "placeholder", "aria-label"]) if (e.getAttribute(a)) e.setAttribute(a, e.getAttribute(a).replace(PAROLA_JARVIS_G, ASSISTENTE));
+  const cuore = document.querySelector("#sfera .cuore b");          // la sfera della voce: il nome in maiuscolo
+  if (cambiaNome && cuore && cuore.textContent !== ASSISTENTE.toUpperCase()) cuore.textContent = ASSISTENTE.toUpperCase();
+  if (cambiaNome && PAROLA_JARVIS.test(document.title)) document.title = document.title.replace(PAROLA_JARVIS_G, ASSISTENTE);
+  NOMI_APPLICATI = firma;
+}
+// i testi disegnati dopo (chat, menu, schede) passano di qui una volta per fotogramma
+const OSSERVA_NOMI = new MutationObserver(() => { if (!applicaNomi.attesa) { applicaNomi.attesa = true; requestAnimationFrame(() => { applicaNomi.attesa = false; applicaNomi(); }); } });
+OSSERVA_NOMI.observe(document.body, { childList: true, subtree: true, characterData: true });
+if (document.querySelector("title")) OSSERVA_NOMI.observe(document.querySelector("title"), { childList: true, characterData: true, subtree: true });
+
+window.addEventListener("hashchange", () => { if (location.hash.startsWith("#lavagna")) requestAnimationFrame(() => requestAnimationFrame(centraSeFuoriVista)); });

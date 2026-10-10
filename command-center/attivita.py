@@ -39,7 +39,8 @@ from pathlib import Path
 WIN = sys.platform == "win32"
 # Windows (unione del ramo windows, 02/10/2026): OneDrive sta in ~/OneDrive e Jarvis nella cartella di questo file
 _OD = Path.home() / ("OneDrive" if WIN else "Library/CloudStorage/OneDrive")
-EXTRA = Path(os.environ.get("JARVIS_ATTIVITA_EXTRA") or (_OD / "CRM Azienda Uno/_CONDIVISO-AGENTI/registro"))
+# registro condiviso fra più macchine: solo se configurato (JARVIS_ATTIVITA_EXTRA), altrimenti spento
+EXTRA = Path(os.environ.get("JARVIS_ATTIVITA_EXTRA") or (Path.home() / ".jarvis" / "registro-condiviso-non-configurato"))
 DIR = Path(os.environ.get("JARVIS_ATTIVITA_DIR") or (
     Path(__file__).resolve().parents[1] / "backtalk" / "attivita" if WIN else Path.home() / "my-agent" / "backtalk" / "attivita"))
 # Il PC Windows scrive ANCHE nel registro condiviso EXTRA/attivita-<NOME-PC>.jsonl (efae908 del ramo windows):

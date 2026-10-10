@@ -10,7 +10,7 @@ Cartella `INCARICHI_DIR` (variabile d'ambiente, default `/var/lib/jarvis-incaric
     "stato": "nuovo|preso|fatto|fallito|annullato|scaduto", "preso_da", "preso_il",
     "risposta": null | {"testo" (max 8000), "esito": "ok|fallito", "da", "il", "token_stimati": int|null}}`
 - `battiti/<agente>.json`: `{"agente", "macchina", "il" (epoch), "nota"}`. Un agente è «vivo» se `il` è più recente di 5 minuti.
-Nomi di agente: `[a-z0-9-]{1,40}` (es. `ceo-ai`, `commercialista`, `jarvis-utente`, `jarvis-giuseppe`).
+Nomi di agente: `[a-z0-9-]{1,40}` (es. `<progetto>-ceo`, `revisore`, `jarvis-utente`).
 Un solo scrittore per file: chi manda scrive solo l'incarico nuovo; chi lavora cambia stato e risposta.
 
 ## API Python: `~/Jarvis/strumenti/incarichi.py` (solo libreria standard)
@@ -26,13 +26,10 @@ Output JSON su stdout (tranne `prova`). Codici di uscita: 0 ok, 1 errore di vali
 **Modo remoto:** se gira sul Mac (`sys.platform == "darwin"`) e `INCARICHI_DIR` non è impostata, ogni comando e ogni funzione della libreria esegue
 `ssh -o ConnectTimeout=8 vps-tuo python3 /root/jarvis/strumenti/incarichi.py <stessi argomenti>` e ne ritorna il JSON. Sulla VPS lavora in locale.
 
-## Il risveglio degli agenti sulla VPS (`~/Jarvis/strumenti/incarichi_runner.py`)
-Un timer systemd ogni 2 minuti: scrive il battito di ogni agente del CRM (`ceo-ai`, `analista-finanziario`, `analista-previsionale`, `cambusa`, `commercialista`,
-`commerciale`, `consulente-lavoro`, `cruscotto-bi`, `fiscalista-patrimonio`, `garante-dati`, `legale-societario`, `manutentore-dati`, `revisore-contabile`; i profili
-sono i file `.md` in `/mnt/onedrive/CRM Azienda Uno/.claude/agents/`, da leggere dal montaggio rclone) con macchina `vps`; `scadi()`; poi prende gli incarichi «nuovo»
-indirizzati a uno di quegli agenti (al massimo 2 per giro) e per ciascuno lancia `claude -p` con il testo del profilo come istruzione di sistema, in SOLA LETTURA
-(strumenti consentiti solo Read, Grep, Glob; Bash, Edit, Write vietati; `--max-turns` limitato; timeout 600 s; modello dal frontmatter del profilo,
-sonnet se manca), poi `rispondi(...)`. Se fallisce o va in timeout: `rispondi(esito="fallito")`. Mai segreti nella risposta. Un lavoro alla volta per agente.
+## Chi risponde
+Gli incarichi sono indirizzati agli agenti dei progetti (`<cartella>/.claude/agents/<nome>.md` di un progetto di
+`command-center/spazi.json`). Un esecutore sulla VPS che li prende e risponde in sola lettura non è incluso: si scrive
+per il proprio caso, usando `prendi()`, `rispondi()` e `battito()` di `strumenti/incarichi.py`.
 
 ## Cosa NON fa la Fase 1
-Non scrive nel CRM, non manda mail né messaggi, non apre porte, non tocca il PC di l'amministratore, non crea incarichi da sola (solo l'utente e Jarvis).
+Non scrive nel CRM, non manda mail né messaggi, non apre porte,  non crea incarichi da sola (solo l'utente e Jarvis).

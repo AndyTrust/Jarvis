@@ -39,9 +39,8 @@ MAX_FINESTRA_MIN = 240
 
 PREDEFINITE = [
     {"id": "vps", "nome": "VPS (ssh)", "stato": "chiedi", "corr": {"token": ["vps-tuo"]}},
-    {"id": "odoo", "nome": "Odoo e database dei CRM", "stato": "chiedi",
-     "corr": {"url": ["crm.esempio.it"], "token": ["crm1-odoo", "crm1-odoo-db", "azd-odoo", "azd-odoo-db",
-                                                         "progetto-b-odoo", "progetto-b-odoo-db"]}},
+    {"id": "database", "nome": "Database e gestionali dei progetti", "stato": "chiedi",
+     "corr": {"token": ["psql", "mysql", "docker exec"]}},
     {"id": "github", "nome": "GitHub (gh e git push)", "stato": "chiedi",
      "corr": {"programmi": ["gh"], "inizia": ["git push"]}},
     {"id": "gmail", "nome": "Posta Gmail", "stato": "chiedi", "corr": {"mcp": ["mcp__claude_ai_Gmail__"]}},

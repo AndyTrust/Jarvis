@@ -59,18 +59,40 @@ PAROLE_CHIAVE = {"do", "then", "else", "elif", "{", "!", "if", "while", "until"}
 _REGOLE = [(re.compile(s, re.I), p) for s, p in REGOLE]
 
 # cartelle che non si cancellano, non si spostano e non si svuotano senza l'utente (per nome, a qualunque profondità)
-PRINCIPALI = {"utente brain", "crm Azienda Uno", "azienda_due", ".locale-onedrive", ".ssh", ".segreti-archivio", ".git",
-              "segreti-dal-vault", "chiavi-app-android", "cc-ponte",
-              "jarvis", "my-agent", ".claude", "jarvis-cc", "memoria", "progetti", "onedrive", "cloudstorage",
-              "crm140-git", "Azienda Due", "utente personale", "Azienda Uno"}
+PRINCIPALI = {".ssh", ".git", ".jarvis", "jarvis", "my-agent", ".claude", "jarvis-memoria", "memoria", "progetti",
+              "onedrive", "cloudstorage", "icloud drive", "documents", "desktop"}
 TEMPORANEE = ("/tmp", "/private/tmp", "/var/folders", "/private/var/folders", "/dev/null")
 SHELL = {"bash", "sh", "zsh", "dash", "ksh", "fish"}
 INTERPRETI = {"python", "python3", "python2", "perl", "node", "ruby", "deno", "bun", "php"}
 # radici dei progetti (fisiche): non si cancellano con -r né loro né le cartelle subito sotto (revisione 3, F5)
 OD = os.path.join(HOME, "Library", "CloudStorage", "OneDrive")
-RADICI_PROGETTI = [(os.path.realpath(os.path.join(HOME, "Jarvis")), 1), (os.path.join(OD, "Jarvis Brain", "Progetti"), 2),
-                   (os.path.join(OD, "Jarvis Brain", "Memoria"), 2), (os.path.join(OD, "CRM Azienda Uno"), 1),
-                   (os.path.join(HOME, ".locale-onedrive"), 1)]
+
+
+def _radici_progetti():
+    """Jarvis, la memoria condivisa, la cartella dei progetti (~/.jarvis/percorsi.json) e la cartella di ogni progetto
+    di spazi.json: non si cancellano con -r né loro né le cartelle subito sotto. Letto a ogni comando: un progetto
+    nuovo è protetto da subito."""
+    import json as _json
+    try:
+        pc = _json.loads(open(os.path.join(HOME, ".jarvis", "percorsi.json"), encoding="utf-8").read())
+    except (OSError, ValueError):
+        pc = {}
+    esp = lambda v: os.path.realpath(os.path.expanduser(str(v)))
+    repo = esp(pc.get("repo") or os.path.join(HOME, "Jarvis"))
+    out = [(repo, 1), (esp(pc.get("memoria") or os.path.join(HOME, "Jarvis-Memoria")), 2),
+           (esp(pc.get("progetti") or os.path.join(HOME, "Progetti")), 1)]
+    try:
+        d = _json.loads(open(os.path.join(repo, "command-center", "spazi.json"), encoding="utf-8").read())
+        for s in d.get("spazi", []):
+            for pr in s.get("progetti", []):
+                if pr.get("cartella"):
+                    out.append((esp(pr["cartella"]), 1))
+    except (OSError, ValueError, AttributeError):
+        pass
+    return out
+
+
+RADICI_PROGETTI = _radici_progetti()
 RIGENERABILI = {"node_modules", "__pycache__", ".venv", "venv", "build", "dist", ".pytest_cache", ".cache", "tmp", "target",
                 ".next", ".mypy_cache", ".ruff_cache", "coverage", "out", "log", "logs"}
 NOMI_SEGRETI = re.compile(r"^(\.env.*|.*\.env|.*\.(pem|key|p12|pfx|jks|keystore|kdbx)|id_(rsa|ed25519|ecdsa|dsa).*|.*credential.*|"
@@ -226,7 +248,7 @@ def _protetto(p, parola, cwd, rm=False):
         return "su tutto o sulla cartella corrente"
     if not p.startswith("/"):
         # cartella corrente sconosciuta: si guarda solo il nome
-        return "su una cartella principale (vault, CRM, Azienda Due, Jarvis, chiavi)" if p.rstrip("/").lower() in PRINCIPALI else None
+        return "su una cartella principale (memoria, progetti, Jarvis, chiavi)" if p.rstrip("/").lower() in PRINCIPALI else None
     jolly = any(c in p for c in "*?[")
     base = p
     while any(c in base for c in "*?["):
@@ -273,7 +295,7 @@ def _protetto_uno(base, jolly):
                 return "su una cartella di progetto"
     nomi = [x.lower() for x in parti]
     if nomi and nomi[-1] in PRINCIPALI and not jolly:
-        return "su una cartella principale (vault, CRM, Azienda Due, Jarvis, chiavi)"
+        return "su una cartella principale (memoria, progetti, Jarvis, chiavi)"
     if jolly and nomi and nomi[-1] in PRINCIPALI:
         return "su tutto il contenuto di una cartella principale"
     return None
@@ -868,13 +890,13 @@ def prova():
                 "JARVIS_CONFERMATO=1 true && rm -rf ~", "find ~ -delete", "git push --mirror", "git push origin +main",
                 "git clean -d -f -x", "psql -c 'DROP/**/TABLE x'", "bash <<E\nrm -rf ~\nE", "bash -c 'rm -rf ~'",
                 "python3 -c \"import shutil; shutil.rmtree('/Users/tu/Jarvis')\"", "x=rm; $x -rf ~", "r''m -rf ~",
-                "docker rm -f crm1-odoo-db", "kill -9 -1", "launchctl bootout gui/501", "ssh vps-tuo 'rm -rf /opt'",
+                "docker rm -f app-db", "kill -9 -1", "launchctl bootout gui/501", "ssh vps-tuo 'rm -rf /opt'",
                 ": > ~/Jarvis/command-center/server.py", "mv ~/Jarvis /tmp/x", "shred -u ~/.env.jarvis", "dd if=/dev/zero of=~/x"]
     permessi = ["rm -rf /tmp/claude-501/prova", "rm file.txt", "git push origin main",
                 "git reset --soft HEAD~1", "ls -la ~", "psql -c 'DELETE FROM x WHERE id=1'",
                 "docker compose up -d", "JARVIS_CONFERMATO=1 git push --force", "echo reboot della voce",
                 "rm -rf ~/.locale-onedrive/log/vecchio",
-                "rm -rf /tmp/x; echo 'Jarvis Brain/Memoria' > f",
+                "rm -rf /tmp/x; echo 'Jarvis-Memoria/Spazio' > f",
                 "python3 - <<'E'\ntesto = 'git push --force e rm -rf ~'\nE\necho fatto",
                 # revisione 2: comandi normali che non devono bloccare
                 "env JARVIS_CONFERMATO=1 rm -rf ~/Jarvis", "git branch --list", "rm -rf node_modules",

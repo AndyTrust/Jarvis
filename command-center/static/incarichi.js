@@ -210,6 +210,7 @@
     try { r = await chiama("GET"); } catch (e) { r = null; }
     // 404/403 = dal sito o server vecchio: niente voce. 502 (VPS giù) la voce c'è lo stesso, con l'errore in pagina.
     if (!r || (r.stato !== 200 && r.stato !== 502)) return;
+    if (r.stato === 200 && r.d && r.d.attivo === false) return;     // 2026-10-10: senza VPS la pagina Incarichi non c'è
     if (r.stato === 200) S.dati = r.d; else S.errore = r.d.errore || "VPS non raggiungibile";
     creaVoceMenu();
     if (!creaVista()) return;

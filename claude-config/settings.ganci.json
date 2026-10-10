@@ -1,5 +1,5 @@
 {
-  "_nota": "Ganci di Jarvis per Claude Code. strumenti/installa_claude_config.py li unisce a ~/.claude/settings.json senza toccare i tuoi (copia di sicurezza prima) e sostituisce @@JARVIS@@ con la cartella di Jarvis e @@HOME@@ con la tua casa. Il gancio della lavagna (jarvis_status.py) sta QUI, tra i ganci globali, e non nelle impostazioni del progetto: la chat master parte da casa e le impostazioni del progetto non la vedrebbero. Dal 2026-10-10: stato_avanzamento.py su Stop, PreCompact e SessionEnd aggiorna <memoria>/<spazio>/Stato.md e <memoria>/Sessioni/ (timeout 30 s: SessionEnd ha un budget di 1,5 s se non lo si alza).",
+  "_nota": "Ganci di Jarvis per Claude Code. strumenti/installa_claude_config.py li unisce a ~/.claude/settings.json senza toccare i tuoi (copia di sicurezza prima) e sostituisce @@JARVIS@@ con la cartella di Jarvis e @@HOME@@ con la tua casa. Il gancio della lavagna (jarvis_status.py) sta QUI, tra i ganci globali, e non nelle impostazioni del progetto: la chat master parte da casa e le impostazioni del progetto non la vedrebbero. Dal 2026-10-10: stato_avanzamento.py su Stop, PreCompact e SessionEnd aggiorna <memoria>/<spazio>/Stato.md e <memoria>/Sessioni/ (timeout 30 s: SessionEnd ha un budget di 1,5 s se non lo si alza). Dal 2026-10-10 sera: conferma_salva.py su UserPromptSubmit fa partire il salvataggio quando l'utente scrive «ok», «perfetto», «va bene», «chiuso», «fatto», «salva»; stato_avanzamento.py scrive anche il diario del giorno.",
   "hooks": {
     "SessionStart": [
       {
@@ -26,6 +26,15 @@
           {
             "type": "command",
             "command": "python3 \"@@JARVIS@@/.claude/hooks/jarvis_status.py\" prompt"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"@@HOME@@/.claude/hooks/conferma_salva.py\"",
+            "timeout": 30
           }
         ]
       }

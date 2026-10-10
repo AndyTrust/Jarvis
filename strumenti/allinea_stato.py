@@ -3,7 +3,7 @@
 
 Come si allineano da soli (nessun lavoro a mano):
   codice, claude-config, istruzioni   Mac → GitHub (pubblica_auto) → VPS (jarvis-repo-sync, ogni ~10 min, poi sincro_claude.py --verso-casa)
-  agenti dei progetti (143 profili)   OneDrive: Mac ↔ copia locale della VPS (jarvis-vault-sync, bisync ogni 5 min)
+  agenti dei progetti                 le cartelle di spazi.json (se condivise con la VPS)
   app Android: sorgenti               GitHub → /opt/jarvis-android (jarvis-repo-sync, solo avanti veloce)
   app Android: APK sul telefono       build e firma solo sul Mac (pubblica.sh) → /opt/jarvis-agent/releases → il telefono si aggiorna da solo
 Questo strumento MISURA se è vero: scrive un'impronta della macchina e, dal Mac, la confronta con quella della VPS.
@@ -51,12 +51,14 @@ def git(*a, cwd=None):
 
 def agenti_progetti():
     d = {}
-    for base in ([OD / "Jarvis Brain" / "Progetti", OD / "CRM Azienda Uno"] if OD else []):
-        if not base.exists():
-            continue
-        for f in base.rglob("*.md"):
-            if f.parent.name == "agents" and f.parent.parent.name == ".claude" and "_archivio" not in str(f) and ".conflict" not in f.name:
-                d[str(f.relative_to(OD))] = md5(f)
+    sys.path.insert(0, str(QUI / "strumenti"))
+    import crea_progetto as _cp
+    for s in _cp.carica_spazi().get("spazi", []):          # le cartelle dei progetti di spazi.json
+        for pr in s.get("progetti", []):
+            ag = _cp._esp(pr["cartella"]) / ".claude" / "agents"
+            for f in sorted(ag.glob("*.md")) if ag.is_dir() else []:
+                if ".conflict" not in f.name:
+                    d[f"{pr['id']}/{f.name}"] = md5(f)
     return d, hashlib.md5(json.dumps(d, sort_keys=True).encode()).hexdigest()[:10]
 
 

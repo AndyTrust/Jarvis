@@ -7,7 +7,7 @@ Il codice di altri autori resta dei suoi autori, con la sua licenza. Licenze ver
 
 | Componente | Dove | Autore | Licenza | Compatibile con GPL-3.0 |
 |---|---|---|---|---|
-| Dots (personaggi della lavagna) e varianti derivate | `command-center/static/dots/`, `static-nuova/dots/` | Atai Barkai (OpenDots / CopilotKit) | MIT, testo in `LICENSE-OpenDots.txt` | sì |
+| Dots (personaggi della lavagna) e varianti derivate | `command-center/static/dots/` | Atai Barkai (OpenDots / CopilotKit) | MIT, testo in `LICENSE-OpenDots.txt` | sì |
 | Cinque skill da Superpowers 6.3.0 (`brainstorming`, `writing-plans`, `systematic-debugging`, `verification-before-completion`, `writing-skills`) | `claude-config/skills/` | Jesse Vincent | MIT, testo in `claude-config/skills/LICENSE-superpowers.txt` | sì |
 
 ## Installati sul tuo Mac dall'installatore (non inclusi qui)

@@ -274,9 +274,9 @@ def prova():
         attivita.registra("richiesta", "toolu_vecchio", "jarvis", "x", "prima del ponte")
         m = Manda(attivita, stato, finto, log)
         v("primo giro: lo storico non si manda", m.giro() == 0)
-        attivita.registra("richiesta", "toolu_1", "jarvis", "Azienda Due:marketing", "riunione")
-        attivita.registra("richiesta", "inc:in_1", "jarvis", "crm:ceo-ai", "coda", fonte="incarichi")
-        attivita.registra("partito", "toolu_1", "jarvis", "Azienda Due:marketing")
+        attivita.registra("richiesta", "toolu_1", "jarvis", "Gruppo B:marketing", "riunione")
+        attivita.registra("richiesta", "inc:in_1", "jarvis", "progetto-a:progetto-a-ceo", "coda", fonte="incarichi")
+        attivita.registra("partito", "toolu_1", "jarvis", "Gruppo B:marketing")
         v("tre righe nuove: due viaggiano (la coda incarichi no)", m.giro() == 2)
         dest = vps / f"my-agent/backtalk/attivita/remoti/mac-{date.today().isoformat()}.jsonl"
         v("arrivate sulla «VPS» in remoti/mac-<giorno>.jsonl",
@@ -284,7 +284,7 @@ def prova():
         m.chiudi()
         # dopo un «riavvio» si riparte dall'offset salvato
         m2 = Manda(attivita, stato, finto, log)
-        attivita.registra("risposta", "toolu_1", "Azienda Due:marketing", "jarvis", "fatto")
+        attivita.registra("risposta", "toolu_1", "Gruppo B:marketing", "jarvis", "fatto")
         v("dopo un riavvio: solo la riga nuova", m2.giro() == 1)
         v("…ed è arrivata", aspetta(lambda: len(dest.read_text().splitlines()) == 3))
         m2.chiudi()
@@ -300,7 +300,7 @@ def prova():
         with fv.open("a") as fh:
             fh.write(json.dumps({"v": 1, "ts": 2.0, "ev": "richiesta", "id": "l:sito", "da": "utente", "a": "jarvis",
                                  "fonte": "chat"}) + "\n")
-            fh.write(json.dumps({"v": 1, "ts": 3.0, "ev": "richiesta", "id": "inc:x", "da": "jarvis", "a": "crm:ceo-ai",
+            fh.write(json.dumps({"v": 1, "ts": 3.0, "ev": "richiesta", "id": "inc:x", "da": "jarvis", "a": "progetto-a:progetto-a-ceo",
                                  "fonte": "incarichi"}) + "\n")
         dv = attivita.cartella_remoti() / f"vps-{giorno}.jsonl"
         v("ricevi: la riga nuova del sito arriva, la vecchia e la coda no",

@@ -1376,3 +1376,18 @@ body.box-in-corso, body.box-in-corso * { cursor: grabbing !important; user-selec
 /* PARTE-TECNICA: nel template le voci tecniche sono nascoste. Per riaccenderle, togli questo blocco. */
 .menu a[data-vista="server"], .menu a[data-vista="telefono"], .menu a[data-vista="terminale"],
 .menu a[data-vista="vps"], .menu a[data-vista="tecnico"] { display: none !important; }
+
+/* stato vuoto (2026-10-10, Jarvis da zero): nessun progetto ancora */
+.stato-vuoto { color: var(--testo-tenue, #8a8f98); font-style: normal; line-height: 1.5; }
+.lav-vuoto { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); max-width: 520px;
+  text-align: center; padding: 18px 22px; border: 1px dashed currentColor; border-radius: 10px; z-index: 2; pointer-events: none; }
+.sa-diario-sintesi { display: grid; gap: 6px; margin: 4px 0 8px; }
+.sa-diario-sez ul { margin: 2px 0 0 16px; padding: 0; }
+.sa-diario-modifica textarea, #sa-diario { width: 100%; font-family: ui-monospace, monospace; font-size: 12px; }
+.sp-file { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 4px; }
+.sp-indice { white-space: pre-wrap; font-size: 12px; max-height: 260px; overflow: auto; }
+.lav-vuoto { pointer-events: auto; }
+.stato-vuoto-box { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; padding: 22px 16px; }
+.stato-vuoto-box.piccolo { padding: 10px 4px; gap: 8px; }
+.stato-vuoto-box .crea-primo { font-size: 15px; padding: 10px 18px; }
+.stato-vuoto-box.piccolo .crea-primo { font-size: 13px; padding: 6px 10px; }

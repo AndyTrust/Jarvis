@@ -46,7 +46,7 @@ q = crm / ".claude" / "memoria" / "agenti" / "analista-prova.md"
 log = crm / "_CONDIVISO-AGENTI" / "registro" / "PCPROVA.log"
 v("nome ricavato da --agente", r.get("chi") == "analista-prova")
 v("2 righe nel quaderno + 1 di diario", r.get("quaderno") == 3 and "sede_id" in q.read_text(encoding="utf-8"))
-v("errore nella sezione giusta", "## Errori da non ripetere\n- " in q.read_text(encoding="utf-8"))
+v("errore nella sezione giusta", "## Errori commessi da non ripetere\n- " in q.read_text(encoding="utf-8"))
 riga = log.read_text(encoding="utf-8").strip().splitlines()[-1]
 v("riga di registro nel formato condiviso", riga.split(" | ")[1:3] == ["PCPROVA", "analista-prova"] and " | FINE Controlla" in riga)
 v("esito = prima riga del resoconto senza marche", "Chiusure al 2026-10-04" in riga and "DA SALVARE" not in riga)
@@ -69,7 +69,7 @@ d.scrivi(ev4, crm, quaderno)
 testo_q = q.read_text(encoding="utf-8")
 import re as _re                                                      # noqa: E402
 v("riga di diario con ora assoluta (ISO con fuso) e macchina",
-  _re.search(r"## Diario\n(- .+\n)*- \d{4}-\d{2}-\d{2} · \d{4}-\d{2}-\d{2}T\d{2}:\d{2}[+-]\d{2}:\d{2} PCPROVA · ", testo_q) is not None)
+  _re.search(r"## Diario\n(- .+\n)*- \d{4}-\d{2}-\d{2}(?: \d{2}:\d{2})? · \d{4}-\d{2}-\d{2}T\d{2}:\d{2}[+-]\d{2}:\d{2} PCPROVA · ", testo_q) is not None)
 
 # 5. gancio vero: stdin JSON, JARVIS_CRM, uscita 0 anche con evento rotto
 amb = dict(os.environ, JARVIS_CRM=str(crm), JARVIS_REPO=str(QUI.parent))   # la cartella con strumenti/quaderno.py

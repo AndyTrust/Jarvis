@@ -20,8 +20,10 @@ Controlla se esiste `~/.jarvis/installato.json` (con `ls ~/.jarvis/installato.js
    1. Come vuoi essere chiamato? E come vuoi chiamare me? (predefinito: Jarvis)
    2. Lingua e tono (predefinito: italiano, semplice e diretto).
    3. Fuso orario (predefinito: quello del Mac, `date +%Z`).
-   4. Che lavoro fai e quali progetti o cartelle vuoi che segua? Ogni gruppo di cartelle diventa uno «spazio»
-      (per esempio Lavoro, Personale). Verifica con `ls` che le cartelle esistano.
+   4. Che lavoro fai, in una riga? Poi: vuoi partire da zero (i progetti nascono quando li nomini) o creare
+      subito il primo progetto? Se il primo, chiedi solo nome e, se c'è già, la cartella (verifica con `ls`).
+      Non chiedere altri progetti: nascono dopo, da soli, quando servono.
+      E quando nominerai un progetto nuovo: prima ti mostro il piano (predefinito) o lo creo subito?
    5. Dove tengo la memoria condivisa? (predefinito: `~/Jarvis-Memoria`; oppure un vault Obsidian esistente,
       una cartella in iCloud Drive o OneDrive).
    6. Quali altri programmi di AI usi? (Claude Code, Codex, Gemini CLI, Cursor, Grok, altri): li collego alla stessa memoria.
@@ -50,6 +52,26 @@ Una sola, condivisa fra Claude Code, Jarvis e gli altri harness. Il percorso è 
 Lo stato di ogni spazio è in `<memoria>/<spazio>/Stato.md` e lo aggiornano i ganci a fine sessione e prima della
 compattazione. Per salvare il giudizio (errori, fatto, da fare) usa la skill `aggiorna-memoria`.
 Dettagli: `docs/wiki/Memoria-condivisa.md`.
+
+## Progetti e agenti: Jarvis si programma da solo
+
+Jarvis parte **senza progetti, spazi, capogruppo né specialisti**. Nascono dalle richieste del proprietario.
+La fonte unica è `command-center/spazi.json` + le schede in `<cartella del progetto>/.claude/agents/` + le cartelle.
+Lavagna, menu agenti, pagine del Command Center e `Stato.md` si rileggono da lì da soli.
+
+- **Il proprietario nomina un progetto che non c'è** («apri il progetto X», «iniziamo …», «seguimi anche Y») o fa una
+  richiesta che non rientra in nessuno spazio: usa la skill `nuovo-progetto`. Controlla con
+  `python3 strumenti/crea_progetto.py --elenco`; se manca, proponi in poche righe cosa crei (uscita di `--prova`),
+  la prima volta in modalità piano, poi in automatico se in `~/.jarvis/risposte-avvio.json` c'è `"creazione": "automatica"`;
+  crea con `strumenti/crea_progetto.py` e verifica.
+- **Ogni progetto ha un capogruppo** (`<id>-ceo`). Gli specialisti li crea il capogruppo, uno alla volta, con
+  `strumenti/crea_agente.py` quando serve una competenza («mi serve qualcuno che faccia Y»). Nessun agente senza
+  missione chiara. haiku esegue, sonnet ricerca, scrive e verifica, opus solo programmazione.
+- **Ogni agente ha il suo diario** (`<cartella>/.claude/memoria/agenti/<nome>.md`: FATTO, DA FARE, ERRORI COMMESSI DA
+  NON RIPETERE): quando lanci un agente metti nel compito l'uscita di `python3 strumenti/quaderno.py leggi <nome>`;
+  quando torna, salva le sue righe con `quaderno.py raccogli <nome> --da <file>`.
+- I file del proprietario per un progetto stanno in `<cartella>/File/`; `Indice-file.md` si aggiorna da solo.
+- Comandi: `/nuovo-progetto <nome>`, `/nuovo-agente <progetto> <ruolo>`. Guida: `docs/wiki/Progetti-e-agenti.md`.
 
 ## Regole
 

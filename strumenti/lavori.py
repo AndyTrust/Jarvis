@@ -33,7 +33,7 @@ inoltrano i comandi via ssh, vedi REGISTRO_VPS più sotto):
 Comandi:
 
     lavori.py chi                          chi sta lavorando adesso, e su cosa
-    lavori.py chi --progetto "Azienda Uno"  solo quel progetto
+    lavori.py chi --progetto "<progetto>"   solo quel progetto
     lavori.py prendo "<progetto>" "<cosa>" [--agente X] [--file a,b,c]
                                            [--risorse tunnel-odoo,...] [--max-min 60]
     lavori.py chiavi                       quali risorse sono in mano a qualcuno
@@ -79,18 +79,15 @@ import processi  # noqa: E402  su Windows os.kill(pid, 0) termina il processo: s
 
 MEMORIA = pathlib.Path(os.path.expanduser('~/.ai-memory/global'))
 
-# 🔴 IL REGISTRO STA SULLA VPS, fonte unica (decisione dell'utente, 2026-10-05).
-# Prima stava in ~/.ai-memory/global/lavori/, cioè nel vault personale su
-# OneDrive: il PC Windows dell'amministrazione non ha il vault (e non deve
-# averlo), quindi non poteva prendere la chiave db-140 da solo. Adesso:
+# Il registro può stare sulla VPS, fonte unica per più macchine (se configurata); senza VPS è locale
+# in ~/.jarvis/registro-lavori. Con la VPS:
 #   - sulla VPS questo script lavora in locale, in /root/registro-lavori/
 #     (attivi/ e storico/, fuori da OneDrive: nessuna copia in conflitto);
 #   - sul Mac (e ovunque non sia la VPS) ogni comando si INOLTRA alla VPS via
 #     ssh, con l'identità di chi lo lancia (macchina, sessione, pid): la presa
 #     resta sua. Se la VPS non risponde è un errore, mai una presa locale che
 #     nessuno vedrebbe;
-#   - sul PC Windows lo fa amministrazione/lavori.ps1, con la chiave del PC
-#     (utente db1, azione «lavori» di crm1-amministrazione, solo chiavi CRM).
+#   - su un PC Windows lo fa lavori.ps1, con la chiave del PC.
 # I moduli che leggono il registro dal Mac (portiere, badge, cruscotto,
 # sentinella, lavagna) leggono una copia in sola lettura in ~/.cache/
 # jarvis-lavori/, rinfrescata dalla VPS a ogni lettura (al massimo ogni 10 s).
@@ -112,10 +109,8 @@ STORICO = LAVORI / 'storico'
 # con JARVIS_LAVORI (prove) anche l'indice va accanto, mai sopra quello vero
 INDICE = (LAVORI.parent / 'lavori-in-corso.md') if os.environ.get('JARVIS_LAVORI') else MEMORIA / 'lavori-in-corso.md'
 
-# Le chiavi del CRM Azienda Uno: le sole che il PC Windows può prendere
-# (regola dell'utente, 2026-10-05: accesso completo al CRM, niente progetti di
-# l'utente). Il controllo vero lo fa crm1-lavori sulla VPS; qui serve a dirlo.
-CHIAVI_CRM = {'db-140', 'vps-shell', 'portali-140', 'wordpress-my140', 'gtm-my140'}
+# Le chiavi che una macchina «ospite» (un PC che lavora su un solo progetto) può prendere: vuoto = nessun limite.
+CHIAVI_CRM = set()
 
 # Senza battito da più di così, la sessione è considerata morta: un terminale
 # chiuso col taglio non fa in tempo a scrivere «finito». 45 minuti perché il
@@ -131,176 +126,17 @@ SCADE_DOPO_MIN = 120
 # serve perché due agenti chiamino la stessa cosa allo stesso modo: `tunnel-odoo`
 # e `tunnel_odoo_prod` sembrano due risorse diverse e non lo sono.
 #
-# 🔴 I nomi `tunnel-odoo-140` e `tunnel-odoo-azd` della prima versione sono stati
-# tolti il 20/09/2026: descrivevano una strada che non esiste. La strada vera è
-# `odoo_sql.sh`, che fa `ssh root@203.0.113.10 'docker exec -i crm1-odoo-db psql'`
-# — nessun tunnel locale, nessuna porta 5432 sul Mac. Una spia che cerca un
-# tunnel inesistente non trova mai niente e dice che va tutto bene.
 RISORSE = {
-    # produzione
-    'db-140': 'scritture sul database di Azienda Uno (db1, via ssh sulla VPS)',
-    'db-azd': 'scritture sul database di Azienda Due (azd, via ssh sulla VPS)',
+    'db-produzione': 'scritture su un database di produzione',
     'vps-shell': 'una sessione ssh sulla VPS che modifica qualcosa',
-    'n8n-jarvis': 'i flussi di n8n-jarvis',
-    'n8n-azd': 'i flussi di n8n.esempio.it (contenitore n8n-h0rs-n8n-1)',
-    'waha': 'il contenitore WhatsApp',
-    # browser e portali: tre cose diverse, tre nomi diversi
+    'n8n': 'i flussi di n8n',
     'chrome-debug': 'il Chrome dell’utente con la porta di debug 9222',
-    'ponte-9223': "il ponte dell'agente Fast Quotes, porta 9223",
-    'portali-140': 'il profilo browser ~/.crm140_browser e le sessioni iPratico, '
-                   'Pienissimo, sportello.cloud, Dipendenti in Cloud',
-    'air-dynamic': 'il motore Fast Quotes di Avinode (conta le richieste per IP)',
-    # siti e misurazione: pubblicare vince sempre l'ultimo
-    'wordpress-azd': 'azienda2.esempio.it: plugin, pagine, cache',
-    'wordpress-my140': 'sito.esempio.it: plugin, WP Rocket, 301',
-    'gtm-azd': 'il container Tag Manager di Azienda Due',
-    'gtm-my140': 'il container Tag Manager di Sito Azienda Uno',
-    # questa macchina
+    'sito-pubblicazione': 'pubblicare su un sito (plugin, pagine, cache): vince sempre l’ultimo',
+    'tag-manager': 'un container di Tag Manager',
     'mac-schermo': 'schermo, mouse e tastiera del Mac (strumenti/mac.py)',
     'telefono-adb': 'il telefono Android dell’utente via ADB',
-    'mt4-terminale': 'MetaTrader 4 sotto Wine (si collega da solo all\'ultimo conto '
-                     'usato, anche Live)',
-    'vault-onedrive': 'scritture nei vault su OneDrive',
+    'memoria-condivisa': 'scritture nella memoria condivisa',
 }
-
-
-def _ora_italiana():
-    """L'ora italiana, su qualunque macchina: la VPS sta su UTC e le date scritte
-    nelle prese e nello storico le leggono persone in Italia (2026-10-05)."""
-    try:
-        from zoneinfo import ZoneInfo
-        return datetime.datetime.now(ZoneInfo('Europe/Rome')).replace(tzinfo=None)
-    except Exception:
-        return datetime.datetime.now()
-
-
-def ora():
-    """L'ora leggibile, locale: serve a chi legge l'indice."""
-    return _ora_italiana().strftime('%Y-%m-%d %H:%M')
-
-
-def adesso():
-    """Il tempo assoluto, in secondi. È QUESTO che si usa per i conti.
-
-    🔴 Il Mac sta su CEST e la VPS su UTC: due ore di differenza. Con le sole
-    date scritte in ora locale, una presa della VPS letta dal Mac sembra vecchia
-    di due ore e viene dichiarata morta subito — con la chiave portata via a chi
-    sta lavorando; e una presa del Mac letta dalla VPS sembra nel futuro, quindi
-    non scade mai. Visto dal vivo il 20/09/2026, al primo giro del portiere
-    sulla VPS."""
-    return int(time.time())
-
-
-def minuti_di(d, quale):
-    """Da quanti minuti. Preferisce il tempo assoluto; se la presa è vecchia e
-    non ce l'ha, ripiega sulla data scritta — che vale solo sulla macchina che
-    l'ha scritta, ed è il motivo per cui è stato aggiunto il tempo assoluto."""
-    ts = d.get('ts_battito' if quale == 'battito' else 'ts')
-    if ts:
-        return (adesso() - int(ts)) / 60
-    # Presa vecchia, scritta prima che ci fosse il tempo assoluto. Se è di
-    # un'altra macchina la sua data locale non vale niente (fusi diversi): si
-    # usa la data del file, che è assoluta. Sulla propria macchina la data
-    # scritta va bene.
-    f = d.get('_file')
-    if f is not None and d.get('macchina') != macchina():
-        try:
-            return (adesso() - f.stat().st_mtime) / 60
-        except OSError:
-            pass
-    return minuti_da(d.get(quale) or d.get('inizio'))
-
-
-def macchina():
-    return os.environ.get('JARVIS_MACCHINA') or socket.gethostname().split('.')[0]
-
-
-def slug(t):
-    t = (t or '').lower().replace("'", ' ')
-    t = re.sub(r'[^a-z0-9]+', '-', t).strip('-')
-    return t or 'senza-nome'
-
-
-def antenato_claude():
-    """Il PID del primo antenato che è un processo `claude`, o None.
-
-    Le sessioni lanciate dall'app Claude (i lavori schedulati, come il giro dati delle 7)
-    non hanno né CLAUDE_SESSION_ID né TERM_SESSION_ID né un recapito in /tmp/cc-socks:
-    senza questo la presa prendeva il PID della shell di un solo comando, il portiere la
-    vedeva morta dopo due minuti e rendeva le chiavi mentre il giro scriveva ancora nel
-    database (27/09/2026 07:09, e prima il 21 e il 22/09)."""
-    if processi.WIN:
-        return processi.antenato(os.getppid(), 'claude')
-    pid = os.getppid()
-    for _ in range(10):
-        try:
-            riga = subprocess.run(['ps', '-o', 'ppid=,comm=', '-p', str(pid)],
-                                  capture_output=True, text=True, timeout=5).stdout.strip()
-            su, comando = riga.split(None, 1)
-        except Exception:
-            return None
-        if os.path.basename(comando.strip()) == 'claude':
-            return pid
-        pid = int(su)
-        if pid <= 1:
-            return None
-    return None
-
-
-def sessione_id():
-    """L'identità di CHI scrive. Il pid del processo che ha lanciato lo script
-    non basta: ogni comando bash di Claude Code è un processo nuovo. Si usa il
-    pid del padre stabile se c'è (CLAUDE_SESSION_ID), altrimenti quello della
-    sessione del terminale, che dura quanto la finestra, altrimenti il processo
-    `claude` che sta sopra (sessioni lanciate dall'app, senza terminale)."""
-    return (os.environ.get('JARVIS_SESSIONE')          # inoltro dal Mac o dal PC Windows
-            or os.environ.get('CLAUDE_SESSION_ID')
-            or os.environ.get('TERM_SESSION_ID')
-            or str(antenato_claude() or os.getppid()))
-
-
-def pid_sessione():
-    """Il PID della sessione di Claude, non quello della shell.
-
-    Serve al portiere per sapere se dietro una chiave c'è ancora un processo
-    vivo. `os.getppid()` non va: dà la shell che Claude apre per ogni comando e
-    che muore un istante dopo, quindi ogni presa risulterebbe subito fantasma.
-    Si risale la catena dei padri finché non si trova un PID che ha il suo
-    recapito in /tmp/cc-socks — lì il nome del file È il PID della sessione.
-    Fuori dal Mac quella cartella non esiste: si torna al padre e amen."""
-    if os.environ.get('JARVIS_PID', '').isdigit():   # inoltro: il pid vale sulla macchina di chi chiama
-        return int(os.environ['JARVIS_PID'])
-    if processi.WIN:          # niente recapiti in /tmp/cc-socks: si risale al processo claude
-        return antenato_claude() or os.getppid()
-    socks = pathlib.Path('/tmp/cc-socks')
-    noti = {f.stem for f in socks.glob('*.sock')} if socks.exists() else set()
-    pid = os.getppid()
-    for _ in range(8):
-        if str(pid) in noti:
-            return pid
-        try:
-            su = subprocess.run(['ps', '-o', 'ppid=', '-p', str(pid)],
-                                capture_output=True, text=True, timeout=5).stdout.strip()
-            pid = int(su)
-        except Exception:
-            break
-        if pid <= 1:
-            break
-    return antenato_claude() or os.getppid()
-
-
-def chi_sono(scelto=None):
-    return scelto or os.environ.get('JARVIS_AGENTE') or 'Jarvis'
-
-
-def file_attivi():
-    # i file nascosti (._ del Mac, .tmp) non sono prese
-    return sorted(f for f in ATTIVI.glob('*.json') if not f.name.startswith('.')) if ATTIVI.exists() else []
-
-
-def leggi_json(f):
-    # utf-8-sig: un JSON scritto con BOM (PowerShell 5.1) si legge lo stesso.
-    return json.loads(f.read_text(encoding='utf-8-sig', errors='replace'))
 
 
 def mio_file(progetto, agente=None, risorse=None):
@@ -309,7 +145,7 @@ def mio_file(progetto, agente=None, risorse=None):
     Un sottoagente lanciato con lo strumento Agent gira DENTRO la sessione che
     l'ha lanciato: stesso `CLAUDE_SESSION_ID`, stessa macchina. Senza l'agente
     nel nome, `finito` del sottoagente chiudeva anche la presa del suo padre —
-    successo davvero il 20/09/2026 alle 13:12, il `vice-ceo-ai` ha chiuso la
+    successo davvero il 20/09/2026 alle 13:12, un sottoagente ha chiuso la
     presa di Jarvis mentre stava ancora lavorando."""
     return (ATTIVI / f'{slug(macchina())}__{slug(sessione_id())[:24]}'
                      f'__{slug(chi_sono(agente))[:20]}__{slug(progetto)}.json')
@@ -445,8 +281,8 @@ def righe_altri(attivi, progetto=None, escludi=None):
     return out
 
 
-SOLO_CRM = os.environ.get('JARVIS_SOLO_CRM') == '1'   # lo mette crm1-lavori: il PC Windows vede solo il CRM
-PAROLE_CRM = re.compile(r'140|\bcrm\b|db1|odoo', re.I)
+SOLO_CRM = os.environ.get('JARVIS_SOLO_CRM') == '1'   # una macchina ospite vede solo il suo progetto
+PAROLE_CRM = re.compile(os.environ.get('JARVIS_SOLO_PROGETTO') or r'(?!)', re.I)   # il nome del progetto della macchina ospite
 
 
 def del_crm(d):
@@ -477,11 +313,11 @@ def stampa(d):
 
 def altri_pc_al_lavoro(ore=3):
     """Le macchine senza vault (PC Windows, VPS) non scrivono in lavori/attivi: lasciano righe in
-    CRM Azienda Uno/_CONDIVISO-AGENTI/registro/<PC>.log (`AAAA-MM-GG HH:MM | PC | chi | INIZIO <cosa>` e `… | FINE <cosa> | esito`).
+    <registro condiviso>/<PC>.log (variabile JARVIS_REGISTRO_CONDIVISO) (`AAAA-MM-GG HH:MM | PC | chi | INIZIO <cosa>` e `… | FINE <cosa> | esito`).
     Un INIZIO senza FINE dello stesso «chi» nelle ultime ore vuol dire «sta lavorando» (2/10/2026, l'utente)."""
     import datetime as _dt, re as _re
     from pathlib import Path as _P
-    REGISTRO_CONDIVISO = _P.home() / "Library/CloudStorage/OneDrive/CRM Azienda Uno/_CONDIVISO-AGENTI/registro"
+    REGISTRO_CONDIVISO = _P(os.environ.get("JARVIS_REGISTRO_CONDIVISO") or (_P.home() / ".jarvis" / "registro-condiviso"))
     fuori = []
     if not REGISTRO_CONDIVISO.is_dir():
         return fuori
@@ -517,8 +353,8 @@ def cmd_chi(a):
     altri = righe_altri(attivi, a.progetto, escludi=None if a.tutti else mio_file(a.progetto or '') if a.progetto else None)
     vivi = [d for d in altri if not d.get('morta')]
     pc_altri = altri_pc_al_lavoro()
-    if pc_altri and (not a.progetto or any(k in (a.progetto or '').lower() for k in ('140', 'crm', 'db1', 'sito'))):
-        print('Dal registro condiviso del CRM (PC Windows / VPS):')
+    if pc_altri:
+        print('Dal registro condiviso (altre macchine):')
         for r in pc_altri:
             print('  🖥 ' + r)
         print('')
@@ -627,11 +463,9 @@ def tenuta_da_altri(risorsa, agente=None):
 
     🔴 Ma chi non dichiara niente eredita la sessione, e non è un dettaglio: uno
     script lanciato dentro un lavoro non riceve `JARVIS_AGENTE`. Col filtro
-    sull'agente sempre acceso, chi prendeva `portali-140` con
-    `--agente giro-dati` e poi lanciava `giro_odoo.py` si bloccava contro la
-    **propria** chiave. Trovato il 20/09/2026 mettendo la serratura negli script
-    di Azienda Uno: una serratura che chiude fuori il padrone non è una
-    serratura, è un guasto."""
+    sull'agente sempre acceso, chi prendeva una chiave con `--agente giro-dati`
+    e poi lanciava uno script si bloccava contro la **propria** chiave: una
+    serratura che chiude fuori il padrone non è una serratura, è un guasto."""
     sess, mac = sessione_id(), macchina()
     dichiarato = agente or os.environ.get('JARVIS_AGENTE')
     io = slug(dichiarato) if dichiarato else None
@@ -669,7 +503,7 @@ def cmd_libera(a):
 def cmd_verifica(a):
     """La serratura per gli script che aprono una risorsa condivisa.
 
-        python3 lavori.py verifica db-140 || exit 3
+        python3 lavori.py verifica db-produzione || exit 3
 
     Tre esiti, e nessuna scrittura — questo comando non crea cartelle, non
     tocca le prese e non rigenera l'indice, così uno script può chiamarlo
@@ -783,7 +617,7 @@ def cmd_finito(a):
         io = list(nomi.values())[0] if nomi else chi_sono(None)
     chiusi = 0
     rese = []
-    # Il PC Windows (crm1-lavori mette JARVIS_FINITO_LARGO=1): se nella sessione
+    # Il PC Windows (il registro sulla VPS mette JARVIS_FINITO_LARGO=1): se nella sessione
     # non c'è niente, stessa macchina e stesso agente bastano. Lì ogni comando
     # di PowerShell può nascere in una sessione diversa da quella di `prendo`.
     largo = os.environ.get('JARVIS_FINITO_LARGO') == '1' and not any(
@@ -950,7 +784,7 @@ def inoltra(argv):
 
 
 def da_remoto(carico):
-    """Sulla VPS: argomenti e identità arrivati da `inoltra` (Mac) o da crm1-lavori (Windows)."""
+    """Sulla VPS: argomenti e identità arrivati da `inoltra` (Mac) o da il registro sulla VPS (Windows)."""
     import base64
     d = json.loads(base64.b64decode(carico).decode())
     argv = d.get('argv') or []

@@ -1,6 +1,6 @@
 ---
 name: riunione-agenti
-description: "Da usare quando l'utente chiede la riunione giornaliera degli agenti di un gruppo (Azienda Uno, Azienda Due, Vita personale, Patrimonio), «fate il punto», «cosa dicono gli agenti», «il report della riunione», «a che punto sono le strategie», «chiudi la previsione», oppure quando una strategia di trading o di business va registrata, verificata o giudicata (continuare, correggere, abbandonare). Anche per aggiungere un gruppo nuovo alla riunione."
+description: "Da usare quando l'utente chiede la riunione giornaliera degli agenti di un gruppo (ogni progetto con il suo capogruppo è un gruppo), «fate il punto», «cosa dicono gli agenti», «il report della riunione», «a che punto sono le strategie», «chiudi la previsione», oppure quando una strategia di trading o di business va registrata, verificata o giudicata (continuare, correggere, abbandonare). Anche per aggiungere un gruppo nuovo alla riunione."
 ---
 
 # Riunione degli agenti
@@ -50,9 +50,8 @@ modello scritto nella prima riga del compito e il testo intero del compito.
 
 `riunione.py <gruppo> stato` dice a che punto è il giro di oggi. `riunione.py elenco` mostra i gruppi.
 
-Azienda Uno è diverso: la riunione la fa già la routine `com.jarvis.report-direzione` alle 8:00.
-`prepara` e `stato` la leggono soltanto; `chiudi` riduce il suo `riunione.json` alla pagina per
-L'utente. La routine non si tocca.
+Un gruppo in modo «esterno» (scritto a mano in `riunione_gruppi.json`) ha già una sua routine che scrive
+`riunione.json`: `prepara` e `stato` la leggono soltanto; `chiudi` la riduce alla pagina per l'utente.
 
 ## Il report per l'utente
 
@@ -91,12 +90,15 @@ media dei 12 mesi prima della prova.
 
 ## Il limite onesto
 
-Le strategie di Patrimonio hanno poche operazioni (20-140 l'anno) e previsioni quasi tutte senza
-intervallo o senza data. Con questi dati la copertura non si misura per mesi. Il report lo dice,
+Strategie con poche operazioni (qualche decina l'anno) e previsioni senza intervallo o senza data
+non danno una copertura misurabile per mesi. Con questi dati la copertura non si misura per mesi. Il report lo dice,
 invece di presentare un backtest come una prova.
 
 ## Aggiungere un gruppo
 
+Di solito non serve: ogni progetto creato con `crea_progetto.py` è già un gruppo (stesso id), con il capogruppo,
+gli specialisti della cartella, lo `Stato.md` e l'indice dei file come fonti. Nessun progetto = nessun gruppo.
+Per ritoccarlo (fonti, scadenze, metriche, revisore) o per un gruppo fuori dai progetti:
 Un blocco in `riunione_gruppi.json` con nome, spazio, capogruppo, revisore, membri con i temi,
 fonti (`percorso` con `max_giorni`, oppure `solo_agenti` per i database), scadenze, metriche
 (stesso numero in due file, con `cerca` e `tolleranza`), strategie e report. Un profilo che non

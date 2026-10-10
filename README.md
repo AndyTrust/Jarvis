@@ -1,8 +1,9 @@
 # Jarvis
 
 Un assistente personale costruito su Claude Code, per Mac. Ha un pannello di controllo nel browser (Command Center),
-una squadra di agenti, una memoria condivisa fra Claude Code e gli altri programmi di AI che usi, e si adatta a chi lo
-installa: ti chiede come vuoi essere chiamato, che lavoro fai e quali cartelle seguire. Gratuito, licenza GPL-3.0.
+una memoria condivisa fra Claude Code e gli altri programmi di AI che usi, e si adatta a chi lo installa: ti chiede come
+vuoi essere chiamato e parte vuoto. Progetti, capigruppo e specialisti nascono dalle tue richieste, uno alla volta.
+Gratuito, licenza GPL-3.0.
 
 ![Schema di Jarvis](docs/immagini/schema.png)
 
@@ -20,6 +21,14 @@ claude                                              # poi, se non parte da solo:
 Claude entra in modalità piano, ti fa le domande una alla volta, ti mostra cosa installerà e dove scriverà, e cambia il Mac
 solo dopo il tuo sì. Guida completa: [docs/wiki/Installazione.md](docs/wiki/Installazione.md).
 
+## Progetti e agenti
+
+Dopo l'installazione non c'è nessun progetto. Quando ne nomini uno («apri il progetto Sito», `/nuovo-progetto Sito`),
+Jarvis lo crea con `strumenti/crea_progetto.py`: voce in `command-center/spazi.json`, cartella con `File/` per i tuoi
+file, `Stato.md` nella memoria e un capogruppo. Il capogruppo crea gli specialisti che servono con
+`strumenti/crea_agente.py` (missione, modello, strumenti, limiti, diario). Lavagna e pannello si aggiornano da soli.
+Guida: [Progetti e agenti](docs/wiki/Progetti-e-agenti.md).
+
 ## Requisiti
 
 - macOS 13 o più nuovo, 4 GB di RAM o più (requisiti di Claude Code).
@@ -32,12 +41,13 @@ solo dopo il tuo sì. Guida completa: [docs/wiki/Installazione.md](docs/wiki/Ins
 | Dove | Cosa |
 |---|---|
 | `~/Jarvis` | questa cartella (codice, guide) e i tuoi file fuori da git: `profilo-jarvis.md`, `command-center/configurazione.json`, `spazi.json` |
-| `~/.jarvis/` | risposte di avvio, percorsi, stato dell'installazione e dei ganci |
-| `~/Jarvis-Memoria` (o la cartella che scegli) | la memoria condivisa: `Comune/`, uno spazio per cartella, `Diario/`, `Report/`, `Sessioni/`, `Claude/projects/` |
-| `~/.claude/` | ganci, agenti `esecutore` e `ricercatore-web`, skill `aggiorna-memoria` e altre cinque; ganci uniti in `settings.json` con copia |
+| `~/.jarvis/` | risposte di avvio, percorsi, stato dell'installazione e dei ganci, archivio delle chat vecchie |
+| `~/Jarvis-Memoria` (o la cartella che scegli) | la memoria condivisa: `Comune/`, `Diario/`, `Report/`, `Sessioni/`, `Claude/projects/`, e una cartella per spazio quando crei un progetto |
+| `~/.claude/` | ganci, agenti `esecutore` e `ricercatore-web`, skill `aggiorna-memoria`, `nuovo-progetto` e altre, comandi `/nuovo-progetto` e `/nuovo-agente`; ganci uniti in `settings.json` con copia |
 | `~/.codex/AGENTS.md`, `~/.gemini/GEMINI.md` | un blocco che rimanda alla memoria, solo se usi quei programmi |
 | `~/.locale-onedrive/jarvis-widget-venv`, `~/Jarvis/backtalk/.venv` | ambienti Python dell'orb e delle missioni |
 | Homebrew | solo i programmi dei gruppi che servono (vedi `Brewfile`) |
+| `~/Progetti/<nome>` (o la cartella che indichi) | un progetto, solo quando lo crei |
 | `~/Library/LaunchAgents/com.jarvis.*` | lavori automatici, solo se li chiedi |
 
 Ogni file che esiste già viene copiato in `<file>.bak-AAAAMMGG` prima di cambiarlo. Niente viene cancellato.

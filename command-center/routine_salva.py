@@ -339,7 +339,7 @@ Regole che non cambiano:
   il RISULTATO che l'utente ha chiesto (report, briefing, riepilogo) va con --tipo report --routine {nome} (finisce nella
   scheda Postino della chat); errori e avanzamenti tecnici con --tipo avviso (chat di Jarvis), mai nel Postino;
 - strumenti utili: /root/jarvis/strumenti/ (sul Mac ~/Jarvis/strumenti/), python3 /root/jarvis/strumenti/posta.py, i log in /var/log/jarvis-*.log,
-  ssh vps-tuo dal Mac; Odoo Azienda Uno = contenitore crm1-odoo-db (psql in sola lettura salvo che la regola chieda di scrivere);
+  ssh verso la VPS solo se configurata; i database in sola lettura salvo che la regola chieda di scrivere;
 - esce con 0 se tutto va, diverso da 0 se la regola non è rispettata o qualcosa fallisce (così il timer segnala l'errore);
 - stampa una riga chiara di esito.
 Routine: {nome} ({fonte}). Orario: {orario}.
@@ -614,9 +614,8 @@ def salva(dati, chi="pagina"):
         r = R.trova(dati.get("id"))
         fonte, nome = r["fonte"], r["nome"]
         g = (R._CACHE.get("grezzi") or {}).get(r["id"], {})
-        if not r["id"].split(":", 1)[1].startswith(("jarvis-", "crm1-", "progetto-b-", "cc-", "com.jarvis.", "com.Azienda Uno.",
-                                                     "com.azd.", "com.progetto-b.")) and fonte != "cron":
-            raise R.RoutineNonValida("questa unità non è nostra (jarvis-*, crm1-*, progetto-b-*, cc-*): non la tocco")
+        if not r["id"].split(":", 1)[1].startswith(("jarvis-", "cc-", "com.jarvis.")) and fonte != "cron":
+            raise R.RoutineNonValida("questa unità non è nostra (jarvis-*, cc-*, com.jarvis.*): non la tocco")
     mod = r.get("modifica") or {"orario": True, "comando": True, "descrizione": True, "attivo": True}
     prima = r.get("piano_testo") or r.get("orario") or ""
     # orario

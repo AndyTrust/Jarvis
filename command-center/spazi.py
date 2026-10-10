@@ -14,10 +14,10 @@ import sys
 from pathlib import Path
 
 QUI = Path(__file__).resolve().parent
-FILE = QUI / "spazi.json"
-# 2026-09-26: il template non ha spazi.json (è business dell'utente): si parte da spazi.esempio.json,
-# come configurazione.json. Senza nessuno dei due la pagina mostra zero spazi invece di un 500.
-ESEMPIO = QUI / "spazi.esempio.json"
+import os
+FILE = Path(os.environ.get("JARVIS_SPAZI") or QUI / "spazi.json")   # JARVIS_SPAZI: un altro spazi.json (prove)
+# 2026-10-10: Jarvis parte da zero. Senza spazi.json non ci sono progetti (niente esempio precaricato):
+# li crea strumenti/crea_progetto.py quando il proprietario ne nomina uno.
 HOME = Path.home()
 # su Windows OneDrive non sta sotto Library/CloudStorage ma in ~/OneDrive (ramo windows, 28/09/2026)
 OD = HOME / "OneDrive" if sys.platform == "win32" else HOME / "Library" / "CloudStorage" / "OneDrive"
@@ -361,7 +361,7 @@ def salva(dati):
 
 def carica():
     """Gli spazi con i percorsi espansi e, per ogni progetto, se la cartella c'è."""
-    f = FILE if FILE.exists() else ESEMPIO
+    f = FILE
     if not f.exists():
         return []
     dati = json.loads(f.read_text(encoding="utf-8"))

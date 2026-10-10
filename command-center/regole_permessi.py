@@ -152,10 +152,8 @@ NOMI_SEGRETI = re.compile(
     r"shadow|sudoers.*)$", re.I)
 # le cartelle SICURE: lettura automatica (fuori dai segreti sopra)
 SICURE = [
-    "~/Jarvis/**", "~/.locale-onedrive/Jarvis/**", "~/prodotto-uno/**", "~/my-agent/**",
-    "~/Library/CloudStorage/OneDrive/Jarvis Brain/Progetti/**",
-    "~/Library/CloudStorage/OneDrive/Jarvis Brain/Memoria/**",
-    "~/Library/CloudStorage/OneDrive/CRM Azienda Uno/**",
+    "~/Jarvis/**", "~/.locale-onedrive/Jarvis/**", "~/my-agent/**",
+    "~/Jarvis-Memoria/**", "~/Progetti/**",          # memoria e progetti predefiniti (~/.jarvis/percorsi.json)
     "~/.ai-memory/**", "~/.claude/CLAUDE.md", "~/.claude/agents/**", "~/.claude/skills/**", "~/.claude/hooks/**",
     "~/.claude/commands/**", "~/CLAUDE.md",
     "/tmp/**", "/private/tmp/**", "/private/var/folders/*/*/T/**", "/var/folders/*/*/T/**",
@@ -401,7 +399,7 @@ def classe_parola(t, cwd):
         pezzi.add(t.split("=", 1)[1])
     if ":" in t and not t.startswith(("http:", "https:")):
         pezzi.add(t.split(":", 1)[1])                    # git show HEAD:percorso, scp host:percorso
-    # un percorso semplice con gli spazi («…/Jarvis Brain/Progetti/Azienda Uno/x») è UN percorso: i frammenti tagliati sugli spazi
+    # un percorso semplice con gli spazi («…/Memoria condivisa/Progetti/Nome Progetto/x») è UN percorso: i frammenti tagliati sugli spazi
     # («/Progetti/azienda») non esistono e finivano «privati», cioè rischio alto per ogni comando sul vault (2026-10-04)
     intero = t.strip("'\"")
     if not (" " in intero and re.fullmatch(r"[~/][^;|&<>`$(){}*?\[\]\n]*", intero)):

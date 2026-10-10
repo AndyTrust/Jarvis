@@ -53,6 +53,9 @@ shutil.copytree(QUI, CC, ignore=lambda d, nomi: [n for n in nomi if n in STATO_V
     "missioni", "missioni_archivio", "cache-profili", "__pycache__", "pannello-storia", "lavori", ".DS_Store",
     "static-nuova", "registro-dev", "perf-dev", "fili-dev") or n.startswith("static-backup") or ".prima-" in n
     or n.startswith("pannello.json.bak")])
+# 2026-10-10: il server usa strumenti/crea_progetto.py, crea_agente.py e il gancio stato_avanzamento.py
+shutil.copytree(QUI.parent / "strumenti", CC.parent / "strumenti", ignore=shutil.ignore_patterns("__pycache__", "kokoro", "latenza"))
+shutil.copytree(QUI.parent / "claude-config" / "hooks", CC.parent / "claude-config" / "hooks")
 (CC / "spazi.json").write_text(json.dumps({"spazi": []}))
 (CC / "pannello.json").write_text(json.dumps({"versione": 1, "aspetto": {}, "gruppi": [], "lavagne": {}}))
 

@@ -3,9 +3,9 @@
 andata l'ultima volta, e i comandi per avviarli, leggerne il log, cambiarli o crearne di nuovi.
 
 Fonti (lette dal server, mai a mano):
-  vps   i timer systemd della VPS jarvis-*, crm1-*, progetto-b-*, cc-ponte-* (systemctl show + list-timers -o json)
+  vps   i timer systemd della VPS jarvis-*, cc-ponte-* (systemctl show + list-timers -o json)
   cron  il crontab di root della VPS (crontab -l), una routine per riga; «#ROUTINE-PAUSA » davanti = in pausa
-  mac   ~/Library/LaunchAgents/com.jarvis.*, com.Azienda Uno.*, com.azd.*, com.progetto-b.* (+ launchctl list)
+  mac   ~/Library/LaunchAgents/com.jarvis.* (+ launchctl list)
 La VPS sta su UTC: le ore si mostrano in Europe/Rome. Una sola chiamata ssh per tutta la VPS, in cache CACHE_S.
 
 Azioni:
@@ -55,8 +55,8 @@ PREP_MIN_S = 1.0          # il «Conferma» non può arrivare insieme al «Prepa
 PREP_MAX_S = 600          # un comando preparato vale 10 minuti
 SEGUI_MAX_S = 30 * 60     # oltre, l'esecuzione resta «in corso da molto»
 SEP = "@@CC-ROUTINE@@"
-TIMER_VPS = ("jarvis-*", "crm1-*", "progetto-b-*", "cc-ponte-*")
-PREFISSI_MAC = ("com.jarvis.", "com.Azienda Uno.", "com.azd.", "com.progetto-b.")
+TIMER_VPS = ("jarvis-*", "cc-ponte-*")
+PREFISSI_MAC = ("com.jarvis.",)
 NOME = re.compile(r"[a-z0-9-]{1,40}")
 ID = re.compile(r"(vps|cron|mac):[A-Za-z0-9._-]{1,80}")
 PERCORSO_LOG = re.compile(r"/[A-Za-z0-9._/-]{1,200}")
@@ -654,7 +654,7 @@ def classifica(r, conf=None):
         if (tipo == "controllo" and effetto != "lettura") or (tipo == "dati" and effetto != "scrive"):
             tipo = ""
         return esplicita.get("gruppo") or "sistema", tipo, effetto
-    # 2026-10-05: la cartella di casa («/Users/tu») non conta, se no tutto il Mac diventa «Azienda Uno»
+    # 2026-10-05: la cartella di casa («/Users/tu») non conta, se no tutto il Mac finisce in un gruppo solo
     testo = f"{r['id']} {r.get('descrizione', '')} {r.get('comando', '')}".replace(str(Path.home()), "~")
     for regola in conf.get("regole") or []:
         try:
@@ -739,7 +739,7 @@ def elenco(forza=False, extra_gruppi=()):
         for r in routine:
             r["gruppo"], r["tipo"], r["effetto"] = classifica(r, conf)
             voce = (conf.get("routine") or {}).get(r["id"]) or {}
-            if voce.get("avvio") is False:           # «non avviare» (es. progetto-b-ciclo: lo script uccide MT4)
+            if voce.get("avvio") is False:           # «non avviare» (es. un ciclo che chiude un programma aperto)
                 r["avviabile"], r["perche_no"] = False, voce.get("perche") or "segnata «non avviare» in routine-gruppi.json"
         try:
             import routine_salva

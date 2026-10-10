@@ -1,35 +1,5 @@
 {
-  "_nota": "Configurazione della riunione giornaliera degli agenti (strumenti/riunione.py). Un blocco per gruppo: capogruppo, specialisti con i temi, revisore, fonti, scadenze, metriche, dove stanno strategie e report. MEM = la tua memoria condivisa (~/.jarvis/percorsi.json). Questo è un esempio: sostituiscilo con i tuoi gruppi.",
+  "_nota": "Ritocchi alla riunione giornaliera (strumenti/riunione.py). I gruppi nascono da soli dai progetti di command-center/spazi.json (capogruppo, specialisti, Stato.md, indice dei file): qui si scrive solo per cambiare un gruppo (stesso id del progetto: fonti, scadenze, metriche, revisore) o per aggiungerne uno a mano. MEM = la memoria condivisa (~/.jarvis/percorsi.json). Jarvis parte senza gruppi.",
   "grazia_giorni": 30,
-  "gruppi": {
-    "esempio": {
-      "nome": "Esempio",
-      "spazio": "Lavoro",
-      "modo": "interno",
-      "capogruppo": {
-        "agente": "capogruppo-esempio",
-        "profilo": "~/Progetti/esempio/.claude/agents/capogruppo-esempio.md"
-      },
-      "membri": [
-        {
-          "agente": "ricercatore-web",
-          "profilo": "~/.claude/agents/ricercatore-web.md",
-          "temi": [
-            "novità del settore"
-          ]
-        }
-      ],
-      "fonti": [
-        {
-          "nome": "Stato dello spazio",
-          "percorso": "MEM/Lavoro/Stato.md",
-          "max_giorni": 14
-        }
-      ],
-      "scadenze": [],
-      "metriche": [],
-      "strategie": "MEM/Lavoro/Strategie",
-      "report": "MEM/Report"
-    }
-  }
+  "gruppi": {}
 }

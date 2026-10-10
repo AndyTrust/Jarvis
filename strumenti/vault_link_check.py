@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
 """Controlla i link del vault dopo il riordino: [[wikilink]], file:/// e obsidian://open (2026-10-02).
 
-    python3 vault_link_check.py [--ripara]   # --ripara riscrive i prefissi vecchi noti (Report, 01 Diario, …)
+    python3 vault_link_check.py [--ripara]   # --ripara riscrive i prefissi vecchi noti (elenco RIPARA)
 """
 import re, sys, collections
 from pathlib import Path
 from urllib.parse import unquote
 
-B = Path.home() / "Library/CloudStorage/OneDrive/Jarvis Brain"
-M = B / "Memoria"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import crea_progetto as _cp  # noqa: E402
+
+B = _cp.memoria()                         # la memoria condivisa (~/.jarvis/percorsi.json)
+M = B
 stems = collections.defaultdict(list)
-for p in B.rglob("*"):
-    if p.suffix in (".md", ".pdf", ".txt", ".png", ".jpg") and "_da_cancellare" not in p.parts and "Progetti" not in p.parts:
+for p in B.rglob("*") if B.is_dir() else []:
+    if p.suffix in (".md", ".pdf", ".txt", ".png", ".jpg") and "_da_cancellare" not in p.parts:
         stems[p.stem].append(p); stems[p.name].append(p)
-RIPARA = [("L'utente%20Brain/Report/Comune", "L'utente%20Brain/Memoria/00%20Comune/Report"), ("Jarvis Brain/Report/Comune", "Jarvis Brain/Memoria/00 Comune/Report"),
-          ("L'utente%20Brain/01%20Diario", "L'utente%20Brain/Memoria/00%20Comune/Diario"), ("Jarvis Brain/01 Diario", "Jarvis Brain/Memoria/00 Comune/Diario"),
-          ("L'utente%20Brain/02%20Sviluppi", "L'utente%20Brain/Memoria/l'utente%20Personale/Jarvis/Sviluppi"), ("Jarvis Brain/02 Sviluppi", "Jarvis Brain/Memoria/Vita personale/Jarvis/Sviluppi"),
-          ("L'utente%20Brain/00%20Inbox", "L'utente%20Brain/Memoria/00%20Comune/Inbox"), ("Jarvis Brain/00 Inbox", "Jarvis Brain/Memoria/00 Comune/Inbox")]
+RIPARA = []                               # prefissi vecchi da riscrivere dopo uno spostamento: (vecchio, nuovo)
 rotti = collections.Counter(); esempi = collections.defaultdict(list); riparati = 0
 ripara = "--ripara" in sys.argv
-for p in sorted(M.rglob("*.md")) + [B / "LEGGIMI.md"]:
+for p in sorted(M.rglob("*.md")) if M.is_dir() else []:
     if ".claude" in p.parts or "_archivio" in p.parts:
         continue
     t = p.read_text(encoding="utf-8", errors="ignore")
@@ -37,7 +37,7 @@ for p in sorted(M.rglob("*.md")) + [B / "LEGGIMI.md"]:
         q = Path(unquote(m.group(1)))
         if not q.exists():
             rotti["file://"] += 1; esempi["file://"].append((p.name, str(q)[-90:]))
-    for m in re.finditer(r"obsidian://open\?vault=l'utente%20Brain&file=([^)\s\"]+)", t):
+    for m in re.finditer(r"obsidian://open\?vault=[^&]+&file=([^)\s\"]+)", t):
         f = unquote(m.group(1))
         if not ((B / f).exists() or (B / (f + ".md")).exists()):
             rotti["obsidian://"] += 1; esempi["obsidian://"].append((p.name, f[-90:]))

@@ -1,19 +1,33 @@
 {
-  "_nota": "Modello delle risposte alle domande di avvio (/inizia). Il file vero è ~/.jarvis/risposte-avvio.json e lo scrive Claude Code. Nessun segreto qui: le chiavi vanno in ~/.env.jarvis.",
+  "_nota": "Modello delle risposte alle domande di avvio (/inizia). Il file vero è ~/.jarvis/risposte-avvio.json e lo scrive Claude Code. Nessun segreto qui: le chiavi vanno in ~/.env.jarvis. avvio: «zero» (nessun progetto, nascono quando li nomini) o «primo» (con primo_progetto: {\"nome\": \"...\", \"cartella\": \"~/...\" facoltativa}). creazione: «piano» (prima mostra cosa crea) o «automatica».",
   "come_chiamarti": "Mario",
   "nome_assistente": "Jarvis",
   "lingua": "italiano",
   "tono": "semplice e diretto, una battuta ogni tanto",
   "fuso_orario": "Europe/Rome",
-  "lavoro": "consulente, seguo due clienti e un sito",
-  "spazi": [
-    {"nome": "Lavoro", "cartelle": ["~/Progetti/sito-cliente"]},
-    {"nome": "Personale", "cartelle": ["~/Documents/Note"]}
-  ],
+  "lavoro": "consulente",
+  "avvio": "zero",
+  "primo_progetto": null,
+  "creazione": "piano",
   "memoria": "~/Jarvis-Memoria",
-  "harness": ["claude", "codex", "gemini", "cursor"],
-  "servizi": {"voce": false, "telefono": false, "vps": false, "posta": false, "telegram": false, "whatsapp": false,
-              "mani_sul_mac": true, "terminale": true},
+  "harness": [
+    "claude",
+    "codex",
+    "gemini",
+    "cursor"
+  ],
+  "servizi": {
+    "voce": false,
+    "telefono": false,
+    "vps": false,
+    "posta": false,
+    "telegram": false,
+    "whatsapp": false,
+    "mani_sul_mac": true,
+    "terminale": true
+  },
   "launchd": false,
-  "mai_toccare": ["~/Documents/Contabilità", "le mail già inviate"]
+  "mai_toccare": [
+    "~/Documents/Contabilità"
+  ]
 }

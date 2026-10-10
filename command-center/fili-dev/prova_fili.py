@@ -257,9 +257,7 @@ def prepara_copia():
     os.chmod(casa / ".local" / "bin" / "claude", 0o755)
     # la pagina nuova (static-nuova) con fili.js, sopra i file statici di oggi (icone, sw.js)
     shutil.copytree(CC / "static", copia / "static")
-    for f in (CC / "static-nuova").iterdir():
-        if f.is_file():
-            shutil.copy2(f, copia / "static" / f.name)
+    # (2026-10-10: static-nuova è stata integrata e tolta: static/ ha già fili.js)
     pagina = (copia / "static" / "index.html").read_text(encoding="utf-8")
     if "/static/fili.js" not in pagina:
         pagina = pagina.replace("</body>", '<script src="/static/fili.js" defer></script>\n</body>', 1)

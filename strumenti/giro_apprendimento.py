@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Il giro notturno dell'apprendimento (l'utente, 2026-10-04): porta i quaderni degli agenti nel vault.
 
-Per ogni spazio di spazi.json (più i progetti di Vita personale che non ci stanno):
+Per ogni spazio di spazi.json (nessuno spazio = niente da fare, senza errori):
   1. rigenera `Memoria/<spazio>/Quaderni degli agenti.md`: un indice di tutti i quaderni dello spazio con le ultime
      righe di ogni sezione e il link al file (così Obsidian e cerca_memoria.py li vedono);
   2. scrive `Memoria/<spazio>/Report/<data> Apprendimento.md` solo se c'è qualcosa di nuovo rispetto all'ultimo giro
@@ -22,10 +22,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import quaderno  # noqa: E402
 
 OD, JARVIS = quaderno.OD, quaderno.JARVIS
-STATO = Path.home() / ".locale-onedrive" / "giro-apprendimento.json"
+STATO = Path.home() / ".jarvis" / "giro-apprendimento.json"
 ORA = datetime.now()
 SECCO = "--secco" in sys.argv
-TITOLARE = OD / "Jarvis Brain/Memoria/Vita personale"
 
 
 def spazi():
@@ -42,13 +41,6 @@ def spazi():
         progetti = [quaderno._percorso(p["cartella"]) for p in s.get("progetti", [])]
         out.append((s.get("nome") or s["id"], cart_mem, rep, progetti))
         viste.update(progetti)
-    extra = [c for c in quaderno.EXTRA_CARTELLE if c not in viste]
-    for nome, cm, rep, pr in out:
-        if cm == TITOLARE:
-            pr.extend(extra)
-            break
-    else:
-        out.append(("Vita personale", TITOLARE, TITOLARE / "Report", extra))
     return out
 
 

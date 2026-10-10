@@ -263,7 +263,7 @@ def hook(evento):
         s["stato"], s["ultimo"], s["pid"] = "aperta", ora(), os.getppid()
         salva(reg, s)
         ultimo = (s.get("riassunti") or [None])[-1]
-        testo = (f"Questa sessione si chiama «{nome(s)}» (id {sid}). La sua nota è `Jarvis Brain/Sessioni/{s['file']}.md`. "
+        testo = (f"Questa sessione si chiama «{nome(s)}» (id {sid}). La sua nota è `{BRAIN}/Sessioni/{s['file']}.md`. "
                  f"Per riprenderla: `{ripresa(s)}`. Quando capisci l'argomento dalle prime richieste dell'utente, dagli un tema "
                  f"corto: `python3 ~/.claude/hooks/sessioni.py tema {sid} \"tema\"`. Se l'utente dice «riprendi <qualcosa>», "
                  "usa `python3 ~/.claude/hooks/sessioni.py trova \"<qualcosa>\"` e riparti dall'ultimo riassunto, senza rianalizzare.")
@@ -274,7 +274,7 @@ def hook(evento):
             r = (prec.get("riassunti") or [None])[-1]
             testo += (f"\n\nL'ULTIMA CHAT prima di questa è «{nome(prec)}» ({prec['stato']}, ultimo segno {prec.get('ultimo')}). "
                       "Se l'utente dice «riprendi l'ultima chat», «apri l'ultima chat» o simili, riparti da qui senza rianalizzare "
-                      f"(nota: `Jarvis Brain/Sessioni/{prec['file']}.md`; per riaprirla proprio: `{ripresa(prec)}`).")
+                      f"(nota: `{BRAIN}/Sessioni/{prec['file']}.md`; per riaprirla proprio: `{ripresa(prec)}`).")
             if r:
                 testo += f"\nIl suo ultimo riassunto ({r['quando']}):\n{r['testo']}"
         contesto(testo + profilo_jarvis())
@@ -293,7 +293,7 @@ def hook(evento):
                 s.setdefault("soglie", []).append(soglia)
                 if soglia < 90:
                     testo = (f"CONTESTO AL {s['ctx']}% (soglia {soglia}%). Regola dell'utente del 29/09/2026: adesso aggiorna il contesto della chat e avvia la skill "
-                             "`/aggiorna-memoria` (salva in memoria: note in Jarvis Brain/Memoria/<spazio>, Da fare, diario; poi la pulizia di ~/.claude con "
+                             f"`/aggiorna-memoria` (salva in memoria: Stato.md dello spazio in {BRAIN}, diario del giorno in {BRAIN}/Diario; poi la pulizia di ~/.claude con "
                              "`python3 ~/Jarvis/strumenti/pulisci_claude.py --applica`). Scrivi il riassunto con "
                              f"`python3 ~/.claude/hooks/sessioni.py riassunto {sid} \"FATTO: ... | DA FARE: ... | DA CONCLUDERE: ... | ERRORI: ...\"`. "
                              "Poi rispondi alla sua richiesta e CONTINUA a lavorare in questa stessa chat: il contesto si usa fino al 95%, dove c'è l'ultimo aggiornamento.")
@@ -343,7 +343,7 @@ def main():
             s.setdefault("riassunti", []).append({"quando": ora(), "chi": "Jarvis", "testo": sys.argv[3]})
         s["ultimo"] = ora()
         salva(reg, s)
-        print(f"{nome(s)} · nota: Jarvis Brain/Sessioni/{s['file']}.md")
+        print(f"{nome(s)} · nota: {BRAIN}/Sessioni/{s['file']}.md")
         return 0
     if c == "trova" and len(sys.argv) >= 3:
         s = trova_sessione(reg, " ".join(sys.argv[2:]))

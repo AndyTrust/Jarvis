@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Cartellino uguale per ogni nota di Memoria, come l'etichetta delle mail (l'utente, 2026-10-02).
 
-Campi: spazio · progetto · variante (solo Jarvis: mac, windows, test, business, comune) · tipo · stato · aggiornato.
+Campi: spazio · progetto · tipo · stato · aggiornato (spazi e progetti da command-center/spazi.json).
 Aggiunge solo i campi che mancano: i valori già scritti non si toccano.
 
     python3 vault_cartellini.py            # a secco: conta cosa aggiungerebbe
@@ -11,35 +11,28 @@ import re, sys, collections
 from datetime import datetime
 from pathlib import Path
 
-MEM = Path.home() / "Library/CloudStorage/OneDrive/Jarvis Brain/Memoria"
-SPAZI = {"00 Comune": "Comune", "Azienda Uno": "Azienda Uno", "CRM Azienda Uno": "Azienda Uno", "Sito Azienda Uno": "Azienda Uno",
-         "Azienda Due": "Azienda Due", "Vita personale": "Vita personale", "Patrimonio": "Patrimonio",
-         "Agenti di Jarvis": "Vita personale", "Memoria": "Comune"}
-PROGETTI = {"Jarvis": "Jarvis", "App Android": "App Android", "prodotto-uno": "prodotto-uno", "Progetto B": "Progetto B",
-            "CRM": "CRM Azienda Uno", "Sito": "Sito Azienda Uno", "AZD": "Azienda Due", "AZD": "Azienda Due",
-            "Social": "Social", "Hobby": "Hobby", "Demo": "Demo", "Metatrader": "Metatrader", "L'utente Business": "L'utente Business",
-            "Strategie": "Strategie"}
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import crea_progetto as _cp  # noqa: E402
+
+MEM = _cp.memoria()                       # la memoria condivisa (~/.jarvis/percorsi.json)
+
+
+def _da_spazi():
+    """{cartella dello spazio nella memoria: nome dello spazio}, {nome progetto: nome progetto} da spazi.json."""
+    spazi, progetti = {"Comune": "Comune"}, {}
+    for s in _cp.carica_spazi().get("spazi", []):
+        cart = s.get("cartella_nome") or (Path(s["memoria"]).parent.name if s.get("memoria") else s["nome"])
+        spazi[cart] = s["nome"]
+        for pr in s.get("progetti", []):
+            progetti[pr["nome"]] = pr["nome"]
+    return spazi, progetti
+
+
+SPAZI, PROGETTI = _da_spazi()
 TIPO_CARTELLA = {"Fatti": "fatto", "Decisioni": "decisione", "Errori da non ripetere": "errore", "Wiki": "wiki",
                  "Report": "report", "Diario": "diario", "Sviluppi": "sviluppo", "Agenti": "agente", "Inbox": "inbox",
                  "Business": "guida", "Regole di lavoro": "regola", "Strategie": "strategia"}
 SALTA = (".claude", "_archivio", "Diario")
-VAR = [("windows", r"windows|powershell|\.ps1|\bwin32\b|pc windows"), ("test", r"privato-test|jarvis-privato-test|repo[- ]privato[- ]test|template di prova|copia di prova"),
-       ("business", r"jarvis business|licenza|patreon|sponsors|operatore|vendita a moduli|assistenza a ore|prodotto"),
-       ("mac", r"\bmac\b|launchd|command[- ]center|voce|lavagna|backtalk|barehands|mani libere|passbolt|portiere|sentinella|hook")]
-
-
-def variante(testo, nome):
-    t = (nome + " " + testo[:6000]).lower()
-    punti = {v: len(re.findall(rx, t)) for v, rx in VAR}
-    if punti["windows"] >= 3 and punti["windows"] >= punti["mac"] // 3:
-        return "windows"
-    if punti["test"] >= 2:
-        return "test"
-    if punti["business"] >= 3 and punti["business"] >= punti["mac"] // 2:
-        return "business"
-    return "mac" if punti["mac"] >= 2 else "comune"
-
-
 def parti(testo):
     m = re.match(r"---\n(.*?)\n---\n?", testo, re.S)
     return (m.group(1), testo[m.end():]) if m else (None, testo)
@@ -51,8 +44,8 @@ def calcola(p):
         return None
     spazio = SPAZI.get(rel[0])
     if not spazio:
-        # spazio nuovo creato dalla lavagna (Memoria/<nome>/<progetto>/…): vale il nome della cartella
-        if rel[0] in ("Memoria",) or not (MEM / rel[0] / f"{rel[0]}.md").exists():
+        # cartella con la sua porta (<nome>/<nome>.md) ma non ancora in spazi.json: vale il nome della cartella
+        if not (MEM / rel[0] / f"{rel[0]}.md").exists():
             return None
         spazio = rel[0]
     progetto = None
@@ -61,17 +54,16 @@ def calcola(p):
             progetto = PROGETTI[r]; break
     if not progetto and rel[0] not in SPAZI and len(rel) >= 3:
         progetto = rel[1]
-    if not progetto and rel[0] == "CRM Azienda Uno":
-        progetto = "CRM Azienda Uno"
-    if not progetto and rel[0] == "Sito Azienda Uno":
-        progetto = "Sito Azienda Uno"
-    if not progetto and rel[0] == "00 Comune":
+    if not progetto and rel[0] == "Comune":
         progetto = "Comune"
     tipo = next((TIPO_CARTELLA[r] for r in rel[1:-1][::-1] if r in TIPO_CARTELLA), None)
     return spazio, progetto, tipo
 
 
 def main(applica):
+    if not MEM.is_dir():
+        print("memoria non ancora creata: niente da fare")
+        return
     aggiunti = collections.Counter(); toccati = 0; per_var = collections.Counter()
     for p in sorted(MEM.rglob("*.md")):
         c = calcola(p)
@@ -84,10 +76,6 @@ def main(applica):
         nuovi = {}
         if "spazio" not in campi: nuovi["spazio"] = spazio
         if "progetto" not in campi and progetto: nuovi["progetto"] = progetto
-        prog = campi.get("progetto", progetto)
-        if prog and prog.strip("\"' ") == "Jarvis" and "variante" not in campi:
-            nuovi["variante"] = variante(testo, p.stem)
-            per_var[nuovi["variante"]] += 1
         if "tipo" not in campi: nuovi["tipo"] = tipo or "nota"
         if "stato" not in campi: nuovi["stato"] = "vivo"
         if "aggiornato" not in campi:
@@ -101,7 +89,6 @@ def main(applica):
             nuovo = f"---\n{fm}\n{righe}\n---\n{corpo}" if fm is not None else f"---\n{righe}\n---\n\n{testo}"
             p.write_text(nuovo, encoding="utf-8")
     print(("scritti" if applica else "da scrivere"), toccati, "file; campi aggiunti:", dict(aggiunti))
-    print("variante Jarvis:", dict(per_var))
 
 
 if __name__ == "__main__":

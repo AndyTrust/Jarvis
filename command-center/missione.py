@@ -134,7 +134,7 @@ def chiave(nome):
 
 
 def mittente(descrizione):
-    """«[ceo-my140] …» nella description: l'orchestratore lancia per conto di quel capogruppo (catena)."""
+    """«[<capogruppo>] …» nella description: l'orchestratore lancia per conto di quel capogruppo (catena)."""
     m = re.match(r"\[([\w.-]+)\]", str(descrizione or "").strip())
     return chiave(m.group(1)) if m else chiave("orchestratore")
 
@@ -456,7 +456,7 @@ def istruzioni(elenco):
     esperti = "\n".join(f"- {n} [{m}]{' CAPOGRUPPO' if c else ''} ({pr}): {d}" for pr, n, m, c, d in elenco) \
         or "- nessun esperto: il lavoro lo fai tu"
     abilita = [str(f) for p in CONF["progetti"] for f in sorted(Path(p["cartella"]).glob(".claude/skills/*/SKILL.md"))]
-    if abilita:     # es. Azienda Due: le skill azd-* sono specialisti anche loro
+    if abilita:     # le skill del progetto sono specialisti anche loro
         esperti += ("\nSkill del progetto (specialisti scritti come skill: leggi il SKILL.md e passalo a un "
                     "esperto general-purpose con il compito):\n" + "\n".join(f"- {f}" for f in abilita))
     modo = ("LETTURA: nessuno modifica niente. Le scritture vengono negate senza chiedere; l'unico file che "

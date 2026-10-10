@@ -43,7 +43,9 @@ Jarvis è una cartella di programmi che lavora intorno a Claude Code, sul tuo Ma
 2. Claude Code legge `CLAUDE.md`, il profilo e la porta d'ingresso della memoria.
 3. Divide il lavoro, se serve lancia agenti, verifica con comandi.
 4. A ogni fine risposta (al massimo ogni 10 minuti), prima della compattazione e a fine sessione, il gancio
-   `stato_avanzamento.py` aggiorna lo `Stato.md` dello spazio e il registro delle sessioni.
+   `stato_avanzamento.py` aggiorna lo `Stato.md` dello spazio, il diario del giorno e il registro delle sessioni
+   (anche a ogni commit, push, `/aggiorna` e quando scrivi «ok» o «fatto»: vedi [Memoria condivisa](Memoria-condivisa)).
+   Se la richiesta parla di un progetto che non esiste, prima lo crea (skill `nuovo-progetto`, vedi [Progetti e agenti](Progetti-e-agenti)).
 5. Quando chiudi un lavoro, la skill `aggiorna-memoria` salva il giudizio: errori da non ripetere, fatto, da fare.
 
 ## Cosa non esce dal Mac

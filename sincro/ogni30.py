@@ -12,7 +12,7 @@ arrivava in fondo, il vault restava indietro per ore.
 Cosa fa, ogni 15 minuti:
 
   1. legge lo stato vero di ogni progetto con `sincro/controlla.py --json`
-     (dal 24/09/2026 la memoria è quella unica in «Jarvis Brain/Memoria/»);
+     (la memoria è quella condivisa di ~/.jarvis/percorsi.json);
   2. tiene una copia di sicurezza di ogni vecchio MEMORIA.md che è cambiato;
   3. scrive `sincro/ultimo.json`: quando è passato, cosa ha fatto, e quali
      progetti restano indietro. È questo il file che legge il Command Center.
@@ -23,7 +23,7 @@ per riscriverle. Con la memoria unica quelle pagine non si confrontano più, e
 il passo è tolto: le chiavi «vault_*» di ultimo.json restano, ferme a «no».
 
 Cosa NON fa, e non deve fare: `brain --salva`.
-🔴 In memoria del CRM Azienda Uno c'è già l'errore: MEMORIA.md scritta dal Mac e
+🔴 Errore già successo: MEMORIA.md scritta dal Mac e
 dal PC Windows nello stesso quarto d'ora, via OneDrive, fa sparire un
 salvataggio. Un salvataggio automatico ogni 15 minuti ripeterebbe quell'errore
 a ciclo continuo. E `--salva` col solo `--stato` ha già cancellato Fatto, Da
@@ -249,7 +249,7 @@ def giro():
     # le pagine «A che punto siamo» non si rigenerano più (memoria unica, 24/09/2026)
     serve, rifatto = [], False
     nota = ('non si rigenera più: la memoria sta nella cartella del progetto (.claude/memoria)' if sys.platform == 'win32'
-            else 'non si rigenera più: la memoria sta in Jarvis Brain/Memoria/')
+            else 'non si rigenera più: la memoria sta nella memoria condivisa (Stato.md di ogni spazio)')
 
     copie = copia_memoria(progetti)
     lavori = rigenera_lavori()

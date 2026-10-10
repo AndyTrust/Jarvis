@@ -484,7 +484,6 @@ class Orb:
         base = f"http://127.0.0.1:{self.porta}"
         m.add_command(label="Apri Command Center", command=lambda: apri_app(base + "/#home"))
         m.add_command(label="Lavagna agenti", command=lambda: apri_app(base + "/#lavagna"))
-        m.add_command(label="Cruscotto Azienda Uno", command=lambda: apri_app("https://crm.esempio.it/cruscotto"))
         m.add_separator()
         att = leggi_motore()
         for mid, nome in (("claude", "Claude Code"), ("gemini", "Gemini"), ("cursor", "Cursor"), ("codex", "Codex")):

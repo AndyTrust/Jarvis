@@ -13,7 +13,7 @@ Prima di scrivere qualcosa di nuovo, si cerca se esiste già:
 
 ```
 python3 ~/Jarvis/strumenti/cerca_memoria.py "parole"
-python3 ~/Jarvis/strumenti/cerca_memoria.py "token n8n" --spazio "Azienda Due" -n 5
+python3 ~/Jarvis/strumenti/cerca_memoria.py "token n8n" --spazio "<spazio>" -n 5
 python3 ~/Jarvis/strumenti/cerca_memoria.py "saldo unicredit" --tipo errore
 python3 ~/Jarvis/strumenti/cerca_memoria.py --rifai        # rifà l'indice da zero
 ```

@@ -8,4 +8,6 @@ In breve, se non puoi aprirlo:
   poi lo `Stato.md` dello spazio in cui lavori. Scrivi lì lo stato dei progetti, mai segreti.
 - Se `~/.jarvis/installato.json` non esiste, Jarvis non è configurato: la procedura «Prima apertura» di `CLAUDE.md`
   va fatta in Claude Code (comando `/inizia`).
+- Jarvis parte senza progetti: un progetto nuovo nasce con `python3 strumenti/crea_progetto.py "<nome>"` (fonte unica
+  `command-center/spazi.json`), uno specialista con `strumenti/crea_agente.py`. Guida: `docs/wiki/Progetti-e-agenti.md`.
 - Prove prima delle affermazioni; conferma prima di cancellare, pubblicare o mandare messaggi; data e ora dal sistema.

@@ -14,7 +14,10 @@ Cosa scrive (solo parte meccanica, il giudizio resta alla skill aggiorna-memoria
   - a SessionEnd collega le memorie di Claude Code dei progetti nuovi (collega_memoria.py --solo-progetti).
 Stop scatta a ogni risposta: scrive al massimo una volta ogni 10 minuti per sessione.
 Esce sempre 0 e non stampa niente: un gancio non deve mai fermare Claude. Gli errori vanno in ~/.jarvis/ganci.log.
-La memoria e gli spazi vengono da ~/.jarvis/percorsi.json. Una cartella fuori dagli spazi lascia solo la riga in Sessioni/.
+La memoria viene da ~/.jarvis/percorsi.json, i progetti da command-center/spazi.json (fonte unica). Una cartella fuori dagli spazi lascia solo la riga in Sessioni/.
+
+Scrive anche il diario del giorno, <memoria>/Diario/AAAA-MM-GG.md (FATTO / DA FARE / ERRORI con l'ora), solo se c'è
+qualcosa di nuovo. A comando (ganci git, /aggiorna, conferme): stato_avanzamento.py --giro --evento <nome> --cwd <cartella>.
 
 Prova a mano:  echo '{"hook_event_name":"SessionEnd","cwd":"'$PWD'","session_id":"prova"}' | python3 stato_avanzamento.py
 """
@@ -63,17 +66,42 @@ def esp(v):
     return Path(os.path.expanduser(str(v)))
 
 
-def trova_spazio(cwd, percorsi):
-    c = Path(cwd).resolve()
+def spazi_json(percorsi):
+    """Gli spazi di command-center/spazi.json (la fonte unica dei progetti, scritta da crea_progetto.py e dal
+    Command Center), nella forma [{"nome", "cartella_memoria", "progetti": [(nome, cartella)]}]. In più, per chi
+    ha installato una versione vecchia, gli «spazi» di percorsi.json."""
+    out = []
+    f = os.environ.get("JARVIS_SPAZI") or (esp(percorsi.get("repo") or HOME / "Jarvis") / "command-center" / "spazi.json")
+    d = leggi_json(f)
+    for s in (d.get("spazi") if isinstance(d, dict) else d) or []:
+        if not isinstance(s, dict) or not s.get("nome"):
+            continue
+        mem_nome = s.get("cartella_nome") or (esp(s["memoria"]).parent.name if s.get("memoria") else s["nome"])
+        out.append({"nome": s["nome"], "cartella_memoria": mem_nome,
+                    "progetti": [(p.get("nome") or esp(p["cartella"]).name, esp(p["cartella"]))
+                                 for p in s.get("progetti") or [] if p.get("cartella")]})
     for s in percorsi.get("spazi") or []:
-        for d in s.get("cartelle") or []:
+        if isinstance(s, dict) and s.get("nome") and not any(x["nome"] == s["nome"] for x in out):
+            out.append({"nome": s["nome"], "cartella_memoria": s["nome"],
+                        "progetti": [(esp(c).name, esp(c)) for c in s.get("cartelle") or []]})
+    return out
+
+
+def trova_spazio(cwd, percorsi):
+    """(spazio, nome del progetto, cartella del progetto) per la cartella di lavoro, o (None, None, None)."""
+    try:
+        c = Path(cwd).resolve()
+    except OSError:
+        return None, None, None
+    for s in spazi_json(percorsi):
+        for nome, d in s["progetti"]:
             try:
-                d = esp(d).resolve()
+                d = d.resolve()
             except OSError:
                 continue
             if c == d or d in c.parents:
-                return s.get("nome"), d
-    return None, None
+                return s, nome, d
+    return None, None, None
 
 
 def sezione(testo, titolo):
@@ -100,6 +128,70 @@ def memoria_progetto(cartella):
         except OSError:
             pass
     return {"fatto": sezione(t, "Fatto"), "da_fare": sezione(t, "Da fare"), "errori": sezione(t, "Errori")}
+
+
+def giro(evento, cwd):
+    """Il giro a comando (ganci git post-commit e pre-push, /aggiorna, conferme dell'utente): Stato.md dello spazio,
+    diario del giorno, riga in Sessioni/. Senza installazione o fuori dai progetti non fa niente. Muto."""
+    percorsi = leggi_json(J / "percorsi.json")
+    if not percorsi.get("memoria"):
+        return
+    s, progetto, cartella = trova_spazio(cwd, percorsi)
+    if s:
+        aggiorna_spazio(percorsi, s, evento, progetto, None, diario=True)
+
+
+def _righe_diario(testo, titoli):
+    """{chiave: [(data-ora, testo)]} dalle sezioni del diario (formato di strumenti/quaderno.py)."""
+    out, corrente = {k: [] for k in set(titoli.values())}, None
+    for r in testo.splitlines():
+        if r.startswith("## "):
+            corrente = titoli.get(r[3:].strip())
+            continue
+        m = re.match(r"^- (\d{4}-\d{2}-\d{2}(?: \d{2}:\d{2})?) · (.+)$", r)
+        if m and corrente:
+            out[corrente].append((m.group(1), m.group(2).strip()))
+    return out
+
+
+def azioni(cartella, quante=6):
+    """Le ultime azioni registrate sul progetto (.claude/memoria/azioni.jsonl, scritto da crea_progetto.registra_azione)."""
+    out = []
+    try:
+        with open(cartella / ".claude" / "memoria" / "azioni.jsonl", encoding="utf-8") as h:
+            for riga in h.readlines()[-quante:]:
+                try:
+                    out.append(json.loads(riga))
+                except ValueError:
+                    pass
+    except OSError:
+        pass
+    return out
+
+
+TITOLI_DIARIO = {"Fatto": "fatto", "Da fare": "da_fare", "Errori commessi da non ripetere": "errore",
+                 "Errori da non ripetere": "errore"}
+
+
+def diari(cartella):
+    """I diari degli agenti del progetto: [(agente, {fatto, da_fare, errore}, [errori ripetuti])].
+    Un errore è ripetuto se la stessa frase compare in due giorni diversi."""
+    out = []
+    d = cartella / ".claude" / "memoria" / "agenti"
+    attivi = {f.stem for f in (cartella / ".claude" / "agents").glob("*.md")}
+    for f in sorted(d.glob("*.md")) if d.is_dir() else []:
+        if f.stem not in attivi:
+            continue
+        try:
+            sez = _righe_diario(f.read_text(encoding="utf-8"), TITOLI_DIARIO)
+        except OSError:
+            continue
+        per = {}
+        for data, testo in sez["errore"]:
+            per.setdefault(re.sub(r"\W+", " ", testo.lower()).strip()[:120], set()).add(data[:10])
+        ripetuti = [k for k, giorni in per.items() if len(giorni) >= 2]
+        out.append((f.stem, sez, ripetuti))
+    return out
 
 
 def file_toccati(transcript, cartella):
@@ -152,11 +244,29 @@ def blocco_progetto(nome, info):
         righe.append(f"**Ultimo commit:** {info['commit']}")
     if info.get("modifiche"):
         righe.append(f"**Modifiche non salvate in git:** {info['modifiche']} file")
+    if info.get("azioni"):
+        righe.append("**Ultime azioni:**")
+        righe += [f"- {a.get('ora', '')} · {a.get('testo', '')}" for a in info["azioni"]]
+        righe.append("")
+    if info.get("diari"):
+        righe.append("**Diari degli agenti** (le ultime righe di FATTO / DA FARE / ERRORI):")
+        for agente, sez, _ in info["diari"]:
+            pezzi = []
+            for titolo, k in (("fatto", "fatto"), ("da fare", "da_fare"), ("errori", "errore")):
+                if sez.get(k):
+                    pezzi.append(f"{titolo}: " + "; ".join(f"{t} ({d})" for d, t in sez[k][-3:]))
+            righe.append(f"- `{agente}` · " + (" · ".join(pezzi) if pezzi else "diario ancora vuoto"))
+        rip = [(a, r) for a, _, rr in info["diari"] for r in rr]
+        if rip:
+            righe.append("")
+            righe.append("**⚠ ERRORI RIPETUTI (da segnalare al proprietario):** "
+                         + "; ".join(f"`{a}`: {r}" for a, r in rip))
     righe.append("")
     return "\n".join(righe)
 
 
 def aggiorna_stato(mem, spazio, progetti):
+    """Riscrive la parte automatica di <memoria>/<spazio>/Stato.md. Torna True se è cambiata."""
     f = mem / spazio / "Stato.md"
     f.parent.mkdir(parents=True, exist_ok=True)
     t = f.read_text(encoding="utf-8") if f.is_file() else f"# Stato · {spazio}\n\n{INIZIO}\n{FINE}\n\n## Note\n"
@@ -164,11 +274,81 @@ def aggiorna_stato(mem, spazio, progetti):
         t = t.rstrip() + f"\n\n{INIZIO}\n{FINE}\n"
     corpo = "\n".join(blocco_progetto(n, i) for n, i in sorted(progetti.items()))
     nuovo = re.sub(re.escape(INIZIO) + r".*?" + re.escape(FINE), lambda m: f"{INIZIO}\n{corpo}\n{FINE}", t, flags=re.S)
+    if nuovo == t:
+        return False
     nuovo = re.sub(r"(?m)^aggiornato: .*$", f"aggiornato: {adesso()}", nuovo, count=1)
-    if nuovo != t:
-        tmp = f.with_suffix(".tmp")
-        tmp.write_text(nuovo, encoding="utf-8")
-        tmp.replace(f)
+    tmp = f.with_suffix(".tmp")
+    tmp.write_text(nuovo, encoding="utf-8")
+    tmp.replace(f)
+    return True
+
+
+def _norma(x):
+    return re.sub(r"\W+", " ", str(x).lower()).strip()
+
+
+def scrivi_diario(mem, s, nome, info, evento):
+    """Il diario del giorno, <memoria>/Diario/AAAA-MM-GG.md: un blocco «HH:MM · spazio / progetto · evento» con
+    FATTO, DA FARE ed ERRORI DA NON RIPETERE, solo con le voci che oggi non sono ancora scritte (idempotente e muto
+    se non c'è niente di nuovo). Voci dalla memoria del progetto e dai diari degli agenti. Torna True se ha scritto."""
+    f = mem / "Diario" / f"{time.strftime('%Y-%m-%d')}.md"
+    try:
+        vecchio = f.read_text(encoding="utf-8") if f.is_file() else ""
+    except OSError:
+        vecchio = ""
+    gia = {_norma(r[2:]) for r in vecchio.splitlines() if r.startswith("- ")}
+    voci = {"fatto": list(info.get("fatto") or []), "da_fare": list(info.get("da_fare") or []),
+            "errori": list(info.get("errori") or [])}
+    for agente, sez, _ in info.get("diari") or []:
+        for k_d, k in (("fatto", "fatto"), ("da_fare", "da_fare"), ("errore", "errori")):
+            voci[k] += [f"{agente}: {testo}" for _, testo in (sez.get(k_d) or [])[-5:]]
+    nuove = {k: [v for v in vs if _norma(v) and _norma(v) not in gia] for k, vs in voci.items()}
+    for k in nuove:                                    # niente doppioni dentro lo stesso blocco
+        visti, uniche = set(), []
+        for v in nuove[k]:
+            if _norma(v) not in visti:
+                visti.add(_norma(v))
+                uniche.append(v)
+        nuove[k] = uniche
+    if not any(nuove.values()):
+        return False
+    righe = [f"## {time.strftime('%H:%M')} · {s['nome']} / {nome} · {evento}", ""]
+    for titolo, k in (("FATTO", "fatto"), ("DA FARE", "da_fare"), ("ERRORI DA NON RIPETERE", "errori")):
+        if nuove[k]:
+            righe += [f"**{titolo}**"] + [f"- {v}" for v in nuove[k]] + [""]
+    f.parent.mkdir(parents=True, exist_ok=True)
+    testa = "" if vecchio else f"# Diario · {time.strftime('%Y-%m-%d')}\n\nLo scrivono da soli i ganci (fine risposta, compattazione, fine sessione, commit, conferme).\n\n"
+    with open(f, "a", encoding="utf-8") as h:
+        h.write(testa + "\n".join(righe) + "\n")
+    return True
+
+
+def aggiorna_spazio(percorsi, s, evento, progetto_attivo=None, toccati=None, diario=False):
+    """Ricalcola lo Stato.md di uno spazio: per ogni progetto FATTO/DA FARE/ERRORI dalla sua memoria, i diari degli
+    agenti e gli errori ripetuti. Il progetto della sessione (progetto_attivo) prende anche evento, ora, file toccati
+    e git; gli altri tengono quelli dell'ultima volta (~/.jarvis/stato-progetti.json). Lo chiama anche il Command
+    Center quando cambiano spazi.json, le schede, i diari o i file caricati."""
+    mem = esp(percorsi["memoria"])
+    tutti = leggi_json(J / "stato-progetti.json")
+    cache = tutti.setdefault(s["nome"], {})
+    progetti = {}
+    for nome, cart in s["progetti"]:
+        info = memoria_progetto(cart)
+        vecchio = cache.get(nome, {})
+        if nome == progetto_attivo:
+            vecchio = {"ora": adesso(), "evento": evento, "toccati": toccati or vecchio.get("toccati", []),
+                       "commit": git(cart, "log", "-1", "--format=%h %ad %s", "--date=format:%Y-%m-%d %H:%M"),
+                       "modifiche": len([r for r in git(cart, "status", "--porcelain").splitlines() if r.strip()])}
+            cache[nome] = vecchio
+        info.update({"ora": vecchio.get("ora") or "nessuna sessione ancora", "evento": vecchio.get("evento") or "creato",
+                     "toccati": vecchio.get("toccati", []), "commit": vecchio.get("commit", ""),
+                     "modifiche": vecchio.get("modifiche", 0), "diari": diari(cart), "azioni": azioni(cart)})
+        progetti[nome] = info
+        if diario and nome == progetto_attivo:
+            scrivi_diario(mem, s, nome, info, evento)
+    if progetto_attivo:
+        scrivi_json(J / "stato-progetti.json", tutti)
+    return aggiorna_stato(mem, s["cartella_memoria"], progetti)
 
 
 def main():
@@ -193,26 +373,19 @@ def main():
     stato_ganci = dict(sorted(stato_ganci.items(), key=lambda kv: kv[1])[-200:])
     scrivi_json(J / "stato-ganci.json", stato_ganci)
 
-    spazio, cartella = trova_spazio(cwd, percorsi)
+    s, progetto, cartella = trova_spazio(cwd, percorsi)
     toccati = file_toccati(ev.get("transcript_path"), cartella or Path(cwd))
-    progetto = cartella.name if cartella else Path(cwd).name
-    if spazio:
-        tutti = leggi_json(J / "stato-progetti.json")
-        info = memoria_progetto(cartella)
-        info.update({"ora": adesso(), "evento": evento + (f"/{ev.get('trigger') or ev.get('reason')}" if ev.get("trigger") or ev.get("reason") else ""),
-                     "toccati": toccati or tutti.get(spazio, {}).get(progetto, {}).get("toccati", []),
-                     "commit": git(cartella, "log", "-1", "--format=%h %ad %s", "--date=format:%Y-%m-%d %H:%M"),
-                     "modifiche": len([r for r in git(cartella, "status", "--porcelain").splitlines() if r.strip()])})
-        tutti.setdefault(spazio, {})[progetto] = info
-        scrivi_json(J / "stato-progetti.json", tutti)
-        aggiorna_stato(mem, spazio, tutti[spazio])
+    progetto = progetto or Path(cwd).name
+    if s:
+        ev_testo = evento + (f"/{ev.get('trigger') or ev.get('reason')}" if ev.get("trigger") or ev.get("reason") else "")
+        aggiorna_spazio(percorsi, s, ev_testo, progetto, toccati, diario=True)
     ses = mem / "Sessioni" / f"{time.strftime('%Y-%m')}.md"
     ses.parent.mkdir(parents=True, exist_ok=True)
     nuovo_file = not ses.exists()
     with open(ses, "a", encoding="utf-8") as f:
         if nuovo_file:
             f.write(f"# Sessioni · {time.strftime('%Y-%m')}\n\n")
-        f.write(f"- {adesso()} · {evento} · {spazio or 'fuori dagli spazi'}/{progetto} · `{sid[:8]}`"
+        f.write(f"- {adesso()} · {evento} · {s['nome'] if s else 'fuori dagli spazi'}/{progetto} · `{sid[:8]}`"
                 + (f" · {len(toccati)} file toccati" if toccati else "") + "\n")
     if evento == "SessionEnd":
         cm = esp(percorsi.get("repo") or HOME / "Jarvis") / "strumenti" / "collega_memoria.py"
@@ -222,7 +395,12 @@ def main():
 
 if __name__ == "__main__":
     try:
-        main()
+        if "--giro" in sys.argv:            # a comando: --giro --evento <nome> --cwd <cartella>
+            a = sys.argv
+            giro(a[a.index("--evento") + 1] if "--evento" in a else "a comando",
+                 a[a.index("--cwd") + 1] if "--cwd" in a else os.getcwd())
+        else:
+            main()
     except Exception as e:  # un gancio non ferma mai Claude
         log(f"stato_avanzamento: {type(e).__name__}: {e}")
     sys.exit(0)

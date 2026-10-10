@@ -18,9 +18,10 @@ Passi:
   2. programmi dal Brewfile, solo i gruppi che servono (base, voce, mani, terminale, telefono);
   3. ambienti Python: orb sul Mac e missioni (claude-agent-sdk); con la voce scarica backtalk dalla fonte originale;
   4. profilo-jarvis.md dal modello, con il tuo nome, quello dell'assistente, lingua, tono e fuso orario;
-  5. configurazione del Command Center: configurazione.json dall'esempio, spazi.json dai tuoi spazi;
+  5. configurazione del Command Center: configurazione.json dall'esempio, spazi.json vuoto (si parte da zero);
   6. ~/.claude: ganci (anche quelli che aggiornano lo stato dei progetti), agenti e skill aggiorna-memoria;
   7. memoria condivisa e collegamenti (collega_memoria.py);
+  7b. il primo progetto, solo se l'hai chiesto (crea_progetto.py);
   8. lavori automatici di launchd, solo se li hai chiesti;
   9. scrive ~/.jarvis/installato.json: da lì in poi CLAUDE.md non rifà le domande di avvio.
 """
@@ -94,6 +95,12 @@ def controlla(r):
         errori.append("manca «come_chiamarti» (come vuoi essere chiamato)")
     if not isinstance(r.get("spazi", []), list):
         errori.append("«spazi» deve essere un elenco")
+    if r.get("avvio", "zero") not in ("zero", "primo"):
+        errori.append("«avvio» vale «zero» o «primo»")
+    if r.get("avvio") == "primo" and not str((r.get("primo_progetto") or {}).get("nome", "")).strip():
+        errori.append("con «avvio»: «primo» serve «primo_progetto»: {\"nome\": \"...\"}")
+    if r.get("creazione", "piano") not in ("piano", "automatica"):
+        errori.append("«creazione» vale «piano» o «automatica»")
     testo = json.dumps(r, ensure_ascii=False)
     if SEGRETI.search(testo):
         errori.append("nelle risposte c'è qualcosa che sembra una chiave o un token: toglilo, le chiavi vanno in ~/.env.jarvis")
@@ -106,7 +113,8 @@ def controlla(r):
             print("   ERRORE: " + e)
         sys.exit(2)
     dice(f"ti chiamerò «{r['come_chiamarti']}», l'assistente si chiama «{r.get('nome_assistente') or 'Jarvis'}», "
-         f"{len(r.get('spazi') or [])} spazi, memoria in {r.get('memoria') or '~/Jarvis-Memoria'}")
+         + ("primo progetto: «" + r["primo_progetto"]["nome"] + "»" if r.get("avvio") == "primo" else "si parte da zero (nessun progetto)")
+         + f", memoria in {r.get('memoria') or '~/Jarvis-Memoria'}")
     passi.append("risposte")
 
 
@@ -218,24 +226,12 @@ def configurazione(r):
         d["cartella_agente"] = str(QUI)
         d["vault"] = r.get("memoria") or "~/Jarvis-Memoria"
         con_backup(conf, json.dumps(d, ensure_ascii=False, indent=2) + "\n")
-    spazi = []
-    for s in r.get("spazi") or []:
-        sid = re.sub(r"[^a-z0-9]+", "-", s["nome"].lower()).strip("-") or "spazio"
-        spazi.append({"id": sid, "nome": s["nome"], "memoria": f"{r.get('memoria') or '~/Jarvis-Memoria'}/{s['nome']}",
-                      "report": f"{r.get('memoria') or '~/Jarvis-Memoria'}/Report",
-                      "progetti": [{"id": re.sub(r"[^a-z0-9]+", "-", Path(c).name.lower()).strip("-"), "nome": Path(c).name,
-                                    "cartella": c, "capogruppo": None, "sezioni_memoria": []} for c in s.get("cartelle", [])]})
+    # Jarvis parte da zero: spazi.json nasce vuoto; i progetti li crea crea_progetto.py (passo 7b e dopo, a richiesta)
     f = cc / "spazi.json"
-    attuale = {}
     if f.is_file():
-        try:
-            attuale = json.loads(f.read_text(encoding="utf-8"))
-        except ValueError:
-            attuale = {}
-    ids = {s.get("id") for s in attuale.get("spazi", [])}
-    uniti = attuale.get("spazi", []) + [s for s in spazi if s["id"] not in ids]   # i tuoi spazi restano, si aggiungono i nuovi
-    con_backup(f, json.dumps({"_nota": "Scritto da installa_guidata.py dalle risposte di avvio; puoi modificarlo a mano.",
-                              "spazi": uniti}, ensure_ascii=False, indent=2) + "\n")
+        dice("spazi.json c'è già: lo lascio (i tuoi progetti restano)")
+    else:
+        con_backup(f, json.dumps({"spazi": []}, ensure_ascii=False, indent=2) + "\n")
     passi.append("configurazione")
 
 
@@ -243,6 +239,8 @@ def configurazione(r):
 def claude_config():
     titolo("6. Claude Code: ganci, agenti, skill aggiorna-memoria")
     esegui([sys.executable, QUI / "strumenti" / "installa_claude_config.py", "--home", HOME] + (["--prova"] if PROVA else []), sicuro=True)
+    if (QUI / ".git").exists():          # a ogni commit e push del repo di Jarvis lo stato si salva da solo
+        esegui([sys.executable, QUI / "strumenti" / "ganci_git.py", QUI] + (["--prova"] if PROVA else []), sicuro=True)
     passi.append("claude")
 
 
@@ -250,6 +248,30 @@ def memoria(file_risposte):
     titolo("7. Memoria condivisa e collegamenti")
     esegui([sys.executable, QUI / "strumenti" / "collega_memoria.py", "--risposte", file_risposte] + ([] if PROVA else ["--applica"]), sicuro=True)
     passi.append("memoria")
+
+
+def primi_progetti(r):
+    """7b. Il primo progetto, se scelto alle domande di avvio (e, per chi ha risposte vecchie, le cartelle di «spazi»)."""
+    titolo("7b. Progetti")
+    da_creare = []
+    if r.get("avvio") == "primo":
+        p = r.get("primo_progetto") or {}
+        da_creare.append((p["nome"], p.get("spazio"), p.get("cartella")))
+    for s in r.get("spazi") or []:                      # risposte della versione precedente
+        for c in s.get("cartelle", []) if isinstance(s, dict) else []:
+            da_creare.append((Path(os.path.expanduser(c)).name, s.get("nome"), c))
+    if not da_creare:
+        dice("si parte da zero: nessun progetto. Nascono quando li nomini (skill nuovo-progetto, /nuovo-progetto).")
+        return
+    for nome, spazio, cartella in da_creare:
+        cmd = [sys.executable, QUI / "strumenti" / "crea_progetto.py", nome]
+        cmd += ["--spazio", spazio] if spazio else []
+        cmd += ["--cartella", os.path.expanduser(cartella)] if cartella else []
+        if PROVA:
+            dice("$ " + " ".join(map(str, cmd)) + "   (dopo la memoria: in prova si mostra soltanto)")
+        else:
+            esegui(cmd)
+    passi.append("progetti")
 
 
 def launchd(r):
@@ -293,6 +315,7 @@ def main():
     configurazione(r)
     claude_config()
     memoria(f)
+    primi_progetti(r)
     launchd(r)
     if PROVA:
         print("\nProva finita: niente è stato scritto. Rilancia senza --prova per installare.")

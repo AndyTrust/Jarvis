@@ -20,7 +20,8 @@ Il Command Center (pannello, lavagna, missioni) è Python puro e parte con il so
    modalità piano e chiede, una cosa alla volta:
    - come vuoi essere chiamato e come vuoi chiamare l'assistente (di solito Jarvis);
    - lingua, tono, fuso orario;
-   - che lavoro fai e quali cartelle seguire (ogni gruppo diventa uno «spazio»);
+   - che lavoro fai, in una riga, e se partire da zero o creare subito il primo progetto (gli altri nascono dopo,
+     quando li nomini: vedi [Progetti e agenti](Progetti-e-agenti)); se il piano va mostrato ogni volta o no;
    - dove tenere la memoria condivisa (`~/Jarvis-Memoria`, oppure un vault Obsidian, iCloud Drive, OneDrive);
    - quali altri programmi di AI usi (Codex, Gemini CLI, Cursor, Grok...), per collegarli alla stessa memoria;
    - se vuoi voce, telefono, VPS facoltativa, posta, Telegram o WhatsApp, lavori automatici;
@@ -39,9 +40,10 @@ Il Command Center (pannello, lavagna, missioni) è Python puro e parte con il so
 | 2 | programmi dal `Brewfile`, solo i gruppi che servono: base (python, git, gh, jq, rsync, node), voce (uv, espeak-ng, ffmpeg), mani (cliclick), terminale (tmux, ttyd), telefono (adb, scrcpy) | Homebrew |
 | 3 | ambienti Python: orb (`requirements/mac-widget.txt`), missioni (`requirements/missioni.txt`); con la voce scarica backtalk dalla fonte originale | `~/.locale-onedrive/jarvis-widget-venv`, `backtalk/.venv` |
 | 4 | il profilo dell'assistente con il tuo nome | `profilo-jarvis.md` (fuori da git) |
-| 5 | configurazione del pannello e i tuoi spazi | `command-center/configurazione.json`, `spazi.json` (fuori da git) |
-| 6 | ganci, agenti, skill `aggiorna-memoria` | `~/.claude/hooks`, `agents`, `skills`, `settings.json` (unito, con copia) |
+| 5 | configurazione del pannello; `spazi.json` vuoto (si parte da zero) | `command-center/configurazione.json`, `spazi.json` (fuori da git) |
+| 6 | ganci (anche il salvataggio sulle conferme), agenti, skill `aggiorna-memoria` e `nuovo-progetto`, comandi `/nuovo-progetto` e `/nuovo-agente`, ganci git del repo | `~/.claude/hooks`, `agents`, `skills`, `commands`, `settings.json` (unito, con copia), `.git/hooks` |
 | 7 | memoria condivisa e collegamenti | `<memoria>/`, `~/.claude/projects/*/memory`, `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.gemini/GEMINI.md`, `~/.jarvis/percorsi.json` |
+| 7b | il primo progetto, solo se l'hai chiesto (`crea_progetto.py`) | `spazi.json`, `<memoria>/<spazio>/`, cartella del progetto |
 | 8 | lavori automatici, solo se chiesti | `~/Library/LaunchAgents/com.jarvis.*.plist` |
 | 9 | segna l'installazione come fatta | `~/.jarvis/installato.json` |
 

@@ -4,6 +4,6 @@
 <key>Label</key><string>com.jarvis.giro-apprendimento</string>
 <key>ProgramArguments</key><array><string>/opt/homebrew/bin/python3</string><string>@@JARVIS@@/strumenti/giro_apprendimento.py</string></array>
 <key>StartCalendarInterval</key><dict><key>Hour</key><integer>6</integer><key>Minute</key><integer>40</integer></dict>
-<key>StandardOutPath</key><string>@@HOME@@/.locale-onedrive/log/giro-apprendimento.log</string>
-<key>StandardErrorPath</key><string>@@HOME@@/.locale-onedrive/log/giro-apprendimento.log</string>
+<key>StandardOutPath</key><string>@@HOME@@/.jarvis/log/giro-apprendimento.log</string>
+<key>StandardErrorPath</key><string>@@HOME@@/.jarvis/log/giro-apprendimento.log</string>
 </dict></plist>

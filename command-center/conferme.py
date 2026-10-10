@@ -247,11 +247,14 @@ def radici(cwd, altre=()):
     vault = base / "vault"
     if vault.is_dir():
         candidati += list(vault.iterdir())
-    # Dal 23/09/2026 la memoria unica sta in «Jarvis Brain» su OneDrive e il collegamento
-    # `vault/` non c'è più (visto il 26/09/2026): senza questa riga ogni nota di memoria
+    # La memoria condivisa (~/.jarvis/percorsi.json, chiave «memoria»): senza questa riga ogni nota di memoria
     # scritta da una missione in modo «lavoro» chiedeva conferma come «fuori dal progetto».
-    if sys.platform != "win32":     # su Windows Jarvis Brain è dell'utente: fuori dal progetto, chiede conferma
-        candidati.append(Path.home() / "Library/CloudStorage/OneDrive/Jarvis Brain")
+    try:
+        import json as _json
+        _m = _json.loads((Path.home() / ".jarvis" / "percorsi.json").read_text(encoding="utf-8")).get("memoria")
+        candidati.append(Path(_m).expanduser() if _m else Path.home() / "Jarvis-Memoria")
+    except (OSError, ValueError):
+        candidati.append(Path.home() / "Jarvis-Memoria")
     fuori = []
     for c in candidati:
         try:
@@ -291,7 +294,7 @@ def motivo(tool, inp, radici_ok, catena=False):
     if REMOTO.search(senza_dati) and (SQL_SCRITTURA.search(senza_dati) or SCRITTURA_REMOTA.search(senza_dati)):
         return "scrive sulla VPS"
     for _, destinazione in REDIREZIONE.findall(_senza_virgolette(senza_dati)):
-        destinazione = re.sub(r"\\(.)", r"\1", destinazione)        # «L'utente\ Brain» -> «Jarvis Brain»
+        destinazione = re.sub(r"\\(.)", r"\1", destinazione)        # «Memoria\ condivisa» -> «Memoria condivisa»
         if destinazione != "/dev/null" and not _dentro(destinazione, radici_ok):
             return "fuori dal progetto"
     return None

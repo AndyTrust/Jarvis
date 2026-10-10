@@ -3,8 +3,8 @@
 """Dove sta la memoria condivisa e quali sono gli spazi: una sola fonte, ~/.jarvis/percorsi.json.
 
 Il file lo scrive strumenti/collega_memoria.py all'installazione. Forma:
-  {"memoria": "~/Jarvis-Memoria", "repo": "~/Jarvis",
-   "spazi": [{"nome": "Lavoro", "cartelle": ["~/Progetti/sito"]}, ...]}
+  {"memoria": "~/Jarvis-Memoria", "repo": "~/Jarvis", "progetti": "~/Progetti"}
+I progetti stanno in <repo>/command-center/spazi.json (fonte unica, scritta da strumenti/crea_progetto.py).
 Ordine per la memoria: variabile JARVIS_MEMORIA (o JARVIS_VAULT), poi percorsi.json, poi ~/Jarvis-Memoria.
 
     python3 percorsi.py      stampa cosa ha trovato
@@ -41,9 +41,20 @@ def repo():
 
 
 def spazi():
-    """[(nome dello spazio, [cartelle])]."""
+    """[(nome dello spazio, [cartelle])]: dalla fonte unica dei progetti, <repo>/command-center/spazi.json
+    (la scrivono crea_progetto.py e il Command Center); poi, per le installazioni vecchie, gli «spazi» di percorsi.json."""
     out = []
+    f = os.environ.get("JARVIS_SPAZI") or (repo() / "command-center" / "spazi.json")
+    try:
+        d = json.loads(Path(f).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        d = {}
+    for s in (d.get("spazi") if isinstance(d, dict) else d) or []:
+        if isinstance(s, dict) and s.get("nome"):
+            out.append((s["nome"], [_p(p["cartella"]) for p in s.get("progetti", []) if p.get("cartella")]))
     for s in _leggi().get("spazi", []) or []:
+        if isinstance(s, dict) and any(n == s.get("nome") for n, _ in out):
+            continue
         if isinstance(s, dict) and s.get("nome"):
             out.append((s["nome"], [_p(c) for c in s.get("cartelle", []) if c]))
     return out

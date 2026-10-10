@@ -6,9 +6,9 @@ Guida d'uso completa, per chi apre il pannello per la prima volta e per chi lo u
 
 ## Cos'è
 
-Il Command Center è il pannello di controllo di Jarvis. Gira sul tuo Mac, non su internet. Mostra lo stato di tutti i pezzi — la voce, il telefono, il telefono Android dell'utente, la VPS, la memoria — accende e spegne gli interruttori, lancia le verifiche, apre le missioni e tiene la chat con Jarvis.
+Il Command Center è il pannello di controllo di Jarvis. Gira sul tuo Mac, non su internet. Mostra lo stato di tutti i pezzi — la voce, il telefono,  la VPS, la memoria — accende e spegne gli interruttori, lancia le verifiche, apre le missioni e tiene la chat con Jarvis.
 
-Il codice sta in `~/Jarvis/command-center/`: `server.py` è il server, `static/index.html` e `static/app.js` sono la pagina, `missione.py` lancia le missioni, `spazi.json` elenca gli spazi e i progetti.
+Il codice sta in `~/Jarvis/command-center/`: `server.py` è il server, `static/index.html` e `static/app.js` sono la pagina, `missione.py` lancia le missioni, `spazi.json` elenca gli spazi e i progetti (all'installazione è vuoto: li crea `strumenti/crea_progetto.py`).
 
 ## Per chi è
 
@@ -28,6 +28,7 @@ Il pannello gira solo su `127.0.0.1`: da fuori dal Mac non si vede. È protetto 
 ## Le pagine della guida
 
 - [Installazione](Installazione) — da zero al pannello acceso, con Claude Code o con Docker
+- [Progetti e agenti](Progetti-e-agenti) — Jarvis parte vuoto e crea progetti e agenti dalle tue richieste
 - [Come funziona](Come-funziona) · [Memoria condivisa](Memoria-condivisa) · [Agenti](Agenti) · [Telefono](Telefono) · [VPS facoltativa](VPS)
 - [Aggiornare](Aggiornare-Jarvis) · [Disinstallare](Disinstallare) · [Problemi](Problemi)
 - [Primi passi](Primi-passi) — dieci minuti per orientarsi

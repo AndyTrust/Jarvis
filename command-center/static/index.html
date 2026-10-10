@@ -394,8 +394,8 @@ a.pc-btn-link { padding: 3px 9px; font-size: 12px; border: 1px solid var(--linea
               <div class="riga-int" data-int="mani"><span>Jarvis Lavagna</span><small>lavagna da comandare con le mani (usa la webcam)</small><button class="switch"></button></div>
               <div class="riga-int" data-int="telefono"><span>Telefono → PC</span><small>parli a Jarvis dall'app Claude sul telefono</small><button class="switch"></button></div>
               <div class="riga-int" data-int="schermo_telefono"><span>Schermo del telefono</span><small>vedi e comandi il telefono Android dal PC</small><button class="switch"></button></div>
-              <div class="riga-int telegram" data-int="telegram_mac" data-tg="mac"><span>Telegram Mac</span><small class="tg-stato"><span class="pallino grigio"></span> lettura in corso</small><button class="riaggancia" title="Riaggancia subito">↻</button><button class="switch"></button></div>
-              <div class="riga-int telegram" data-int="telegram_vps" data-tg="vps"><span>Telegram VPS</span><small class="tg-stato"><span class="pallino grigio"></span> lettura in corso</small><button class="riaggancia" title="Riaggancia subito">↻</button><button class="switch"></button></div>
+              <div class="riga-int telegram nascosto" data-int="telegram_mac" data-tg="mac"><span>Telegram Mac</span><small class="tg-stato"><span class="pallino grigio"></span> lettura in corso</small><button class="riaggancia" title="Riaggancia subito">↻</button><button class="switch"></button></div>
+              <div class="riga-int telegram nascosto" data-int="telegram_vps" data-tg="vps"><span>Telegram VPS</span><small class="tg-stato"><span class="pallino grigio"></span> lettura in corso</small><button class="riaggancia" title="Riaggancia subito">↻</button><button class="switch"></button></div>
           </section>
         </section>
 
@@ -409,9 +409,6 @@ a.pc-btn-link { padding: 3px 9px; font-size: 12px; border: 1px solid var(--linea
 
         <section class="pannello largo">
           <h2>Comandi rapidi</h2>
-          <div class="elenco-pulsanti">
-            <button data-azione-diretta="portfolio_carica_giornata" title="Legge l'ultima Daily Confirmation dal broker e la carica in Odoo">Portfolio: carica Daily Confirmation<small>legge l'email e aggiorna Odoo</small></button>
-          </div>
           <div id="comandi" class="elenco-pulsanti"></div>
           <h3>Comandi Claude Code</h3>
           <div id="comandi-claude" class="elenco-pulsanti"></div>
@@ -504,7 +501,7 @@ a.pc-btn-link { padding: 3px 9px; font-size: 12px; border: 1px solid var(--linea
     <!-- ------------------------------------------------ SQUADRA (era «Catena · Lavori»)
          Rifatta il 26/09/2026 (richiesta dell'utente): tutto quello che dice chi lavora sta qui.
          Ordine: chi lavora ora, le chiavi e le anomalie del portiere, i lavori col dettaglio,
-         la squadra per spazio, le verifiche del CRM, le sessioni aperte. Le scadenze stanno
+         la squadra per spazio, le verifiche, le sessioni aperte. Le scadenze stanno
          in Stato, gli «Agenti delle missioni» in Missioni. -->
     <section class="vista" data-vista="agenti">
       <section class="pannello claude-ora" id="box-claude-ora">
@@ -597,7 +594,7 @@ a.pc-btn-link { padding: 3px 9px; font-size: 12px; border: 1px solid var(--linea
       </section>
       <!-- spostate qui da Memoria il 26/09/2026: sono agenti che lavorano, come il resto della squadra -->
       <section class="pannello verifiche">
-        <h2>Verifiche e agenti del CRM</h2>
+        <h2>Verifiche e agenti</h2>
         <div id="verifiche" class="elenco-pulsanti"></div>
         <div class="agente-form">
           <select id="agente-scelto"></select>
@@ -814,6 +811,7 @@ a.pc-btn-link { padding: 3px 9px; font-size: 12px; border: 1px solid var(--linea
     <div class="lavagna" id="lavagna" tabindex="0">
       <div class="lav-demo-badge solo-demo" aria-live="polite">DIMOSTRAZIONE · niente viene inviato</div>
       <div class="lav-mod-badge nascosto" id="lav-mod-badge" aria-live="polite"></div>
+      <div class="lav-vuoto" id="lav-vuoto" hidden></div>
       <div class="lav-mondo" id="lav-mondo">
         <svg class="lav-fili" id="lav-fili"><defs>
           <marker id="freccia" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z"/></marker>
@@ -903,6 +901,26 @@ a.pc-btn-link { padding: 3px 9px; font-size: 12px; border: 1px solid var(--linea
 </div>
 
 <!-- scheda di un agente: si apre col clic su un agente (a sinistra o in lavagna) -->
+<!-- 2026-10-10: la pagina del progetto (cartella, file caricati, nome, descrizione, archivio) -->
+<dialog id="scheda-progetto" class="scheda-agente">
+  <form method="dialog" id="form-progetto">
+    <header><span class="avatar grande">📁</span>
+      <div><b id="sp-titolo">—</b><small id="sp-cartella">—</small></div>
+      <button type="button" class="icona chiudi-dialog" value="chiudi" title="Chiudi">✕</button></header>
+    <label class="sa-riga">Nome <input id="sp-nome" maxlength="60"></label>
+    <label class="sa-riga">A cosa serve <textarea id="sp-descr" rows="2" maxlength="400"></textarea></label>
+    <div class="azioni-riga"><button type="button" class="piccolo" id="sp-salva" data-solo-mac="/api/progetto/modifica">Salva nome e descrizione</button></div>
+    <h3>File del progetto <small id="sp-file-conta">—</small></h3>
+    <p class="nota">I file finiscono in <code>File/</code> della cartella. L'indice (<code>Indice-file.md</code>) si aggiorna da solo e il capogruppo lo legge. Puoi anche copiarli a mano nella cartella.</p>
+    <div class="azioni-riga"><input type="file" id="sp-carica" multiple data-solo-mac="/api/progetto/carica"><small id="sp-carica-nota"></small></div>
+    <ul id="sp-file" class="sp-file"></ul>
+    <details><summary>Indice-file.md</summary><pre id="sp-indice" class="sp-indice"></pre></details>
+    <div class="azioni-riga sa-azioni">
+      <button type="button" class="pericolo" id="sp-archivia" data-solo-mac="/api/progetto/modifica" title="Esce dai progetti attivi: cartella, agenti e memoria restano">Archivia il progetto</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="scheda-agente" class="scheda-agente">
   <form method="dialog" id="form-scheda">
     <header><span class="avatar grande" id="sa-avatar">?</span>
@@ -914,6 +932,14 @@ a.pc-btn-link { padding: 3px 9px; font-size: 12px; border: 1px solid var(--linea
       <label>Modello <select id="sa-vmodello"><option value="haiku">haiku</option><option value="sonnet">sonnet</option><option value="opus">opus</option></select></label>
       <label>Strumenti <input id="sa-vstrumenti" data-solo-mac="/api/agente-profilo=istruzioni" placeholder="Bash, Read, Grep, ..."></label>
     </div>
+    <label class="sa-riga">Limiti <input id="sa-vlimiti" data-solo-mac="/api/agente-profilo=istruzioni" maxlength="400" placeholder="cosa non fa (es. non pubblica, non scrive fuori dalla cartella)"></label>
+    <!-- 2026-10-10: il diario dell'agente (FATTO, DA FARE, ERRORI COMMESSI DA NON RIPETERE), modificabile -->
+    <h3>Diario <small id="sa-diario-file">—</small></h3>
+    <div id="sa-diario-sintesi" class="sa-diario-sintesi"><small class="nota">lettura…</small></div>
+    <details class="sa-diario-modifica"><summary>Modifica il diario</summary>
+      <textarea id="sa-diario" rows="10" data-solo-mac="/api/diario" spellcheck="false"></textarea>
+      <div class="azioni-riga"><button type="button" class="piccolo" id="sa-diario-salva" data-solo-mac="/api/diario">Salva il diario</button><small id="sa-diario-nota"></small></div>
+    </details>
     <!-- tono, umorismo, attivo e «comunica con» (contratto, punto 13, 26/09/2026 18:10): stanno nel profilo vero -->
     <label class="sa-riga">Tono <input id="sa-vtono" data-solo-mac="/api/agente-profilo=istruzioni" maxlength="120" placeholder="diretto, ironico ma misurato"></label>
     <div class="sa-campi sa-umorismo">
@@ -1046,13 +1072,13 @@ a.pc-btn-link { padding: 3px 9px; font-size: 12px; border: 1px solid var(--linea
       </select>
       <small class="nota" id="ng-cartella-nota"></small>
     </label>
-    <small class="nota">Il gruppo nasce sempre col suo CEO (ceo-nome-del-progetto): legge la cartella, crea la squadra sotto di sé e la tiene allineata al goal. Poi tu modifichi, aggiungi o togli dove vuoi.</small>
+    <small class="nota">Il progetto nasce sempre col suo capogruppo (&lt;progetto&gt;-ceo): conosce la cartella e i file caricati in File/, crea gli specialisti uno alla volta quando servono. Poi tu modifichi, aggiungi o togli dove vuoi.</small>
     <label class="sa-riga" hidden><span><input type="checkbox" id="ng-crea-capo" checked> Assegna il CEO del gruppo</span></label>
     <div id="ng-capo-campi">
-      <label class="sa-riga" hidden><span><input type="checkbox" id="ng-squadra" checked> Il CEO legge la cartella e crea i suoi sottoagenti (poi li modifichi, aggiungi o togli tu)</span></label>
+      <label class="sa-riga" hidden><span><input type="checkbox" id="ng-squadra"> Il CEO legge la cartella e crea i suoi sottoagenti (poi li modifichi, aggiungi o togli tu)</span></label>
       <div class="sa-campi">
         <label>Id <input id="ng-id" maxlength="40" placeholder="eventi-privati" pattern="[a-z0-9]+(-[a-z0-9]+)*"></label>
-        <label>Capogruppo <input id="ng-capo" maxlength="60" placeholder="ceo-eventi-privati" pattern="[a-z0-9]+(-[a-z0-9]+)*"></label>
+        <label>Capogruppo <input id="ng-capo" maxlength="60" placeholder="&lt;progetto&gt;-ceo" pattern="[a-z0-9]+(-[a-z0-9]+)*"></label>
       </div>
       <label class="sa-riga">Descrizione del capogruppo <textarea id="ng-descr" rows="3" maxlength="2000" placeholder="guida la squadra di …, verifica il lavoro degli specialisti"></textarea></label>
       <div class="sa-campi">

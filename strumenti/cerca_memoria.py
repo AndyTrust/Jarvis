@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Cerca nella memoria: le note Markdown dei due vault, con SQLite FTS5.
+"""Cerca nella memoria condivisa (le note Markdown), con SQLite FTS5.
 
 Al posto di Ruflo (decisione dell'utente del 2026-09-23): niente MCP, niente database
 a parte da tenere allineato a mano. L'indice sta sul Mac, fuori da OneDrive, e si
 rifà da solo prima di ogni ricerca guardando solo i file cambiati (data e misura).
 
     python3 strumenti/cerca_memoria.py "rottamazione scaduta"
-    python3 strumenti/cerca_memoria.py "token n8n" --spazio "Azienda Due" -n 5
+    python3 strumenti/cerca_memoria.py "token n8n" --spazio "<spazio>" -n 5
     python3 strumenti/cerca_memoria.py "saldo unicredit" --tipo errore
     python3 strumenti/cerca_memoria.py --rifai        # indice da zero
 
@@ -22,16 +22,14 @@ from pathlib import Path
 from urllib.parse import quote
 
 WIN = sys.platform == "win32"
-OD = Path.home() / "OneDrive" if WIN else Path.home() / "Library/CloudStorage/OneDrive"
-RADICI = {
-    "Azienda Uno CRM": OD / "CRM Azienda Uno/AZIENDA UNO OBSIDIAN/Azienda Uno CRM",
-}
-if not WIN:     # su Windows la memoria dell'utente (Jarvis Brain) non si cerca: memorie separate
-    RADICI["Jarvis Brain"] = OD / "Jarvis Brain"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import crea_progetto as _cp  # noqa: E402
+# una sola memoria: quella di ~/.jarvis/percorsi.json (predefinita ~/Jarvis-Memoria)
+RADICI = {"memoria": _cp.memoria()}
 # Cartelle che non sono note: allegati, copie, configurazione di Obsidian.
 SALTA = {".obsidian", ".trash", ".git", "node_modules", ".playwright-mcp", "Archivio",
          "Progetti"}  # il codice dei progetti (riordino del 24/09/2026): non è memoria
-INDICE = Path.home() / ".locale-onedrive/cerca-memoria.sqlite"
+INDICE = Path.home() / ".jarvis/cerca-memoria.sqlite"
 
 
 def apri():
@@ -126,7 +124,7 @@ def main():
     ap = argparse.ArgumentParser(description="Cerca nelle note dei vault (SQLite FTS5).")
     ap.add_argument("parole", nargs="*")
     ap.add_argument("-n", type=int, default=10, help="quanti risultati (10)")
-    ap.add_argument("--spazio", help="Azienda Uno, Azienda Due, Vita personale, Comune…")
+    ap.add_argument("--spazio", help="il nome di uno spazio (cartella della memoria), o Comune")
     ap.add_argument("--tipo", help="errore, decisione, fatto, regola, da-fare…")
     ap.add_argument("--o", action="store_true", help="basta una delle parole")
     ap.add_argument("--rifai", action="store_true", help="rifà l'indice da zero")

@@ -29,7 +29,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-NOME_CRM = os.environ.get("JARVIS_CRM_NOME", "CRM Azienda Uno")
+NOME_CRM = os.environ.get("JARVIS_CRM_NOME", "")      # cartella condivisa di un progetto (facoltativa)
 MARCHE = re.compile(r"^\s*[-*]?\s*\**(DA SALVARE|ERRORE DA SALVARE|DA VERIFICARE|FONTE|PROPOSTA)\**\s*:", re.M)
 LOG = Path(tempfile.gettempdir()) / "diario-agenti.log"
 FINESTRA_DOPPIONE = 15 * 60
@@ -53,7 +53,7 @@ def cartella_crm():
     basi = [os.environ.get(k) for k in ("OneDrive", "OneDriveConsumer", "OneDriveCommercial")]
     basi += [str(Path.home() / "OneDrive"), str(Path.home() / "Library" / "CloudStorage" / "OneDrive")]
     for b in basi:
-        if b and (Path(b) / NOME_CRM).is_dir():
+        if b and NOME_CRM and (Path(b) / NOME_CRM).is_dir():
             return Path(b) / NOME_CRM
     return None
 

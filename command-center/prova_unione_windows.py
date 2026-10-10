@@ -24,10 +24,10 @@ prog = tmp / "Progetto"
 spazi_json = tmp / "spazi.json"
 spazi_json.write_text(json.dumps({"spazi": [{"id": "prova", "nome": "Prova", "memoria": str(tmp / "m.md"),
     "report": str(tmp / "rep"), "progetti": [{"id": "prova", "nome": "Prova", "cartella": str(prog),
-    "capogruppo": "ceo-prova", "sezioni_memoria": []}]}]}))
+    "capogruppo": "prova-ceo", "sezioni_memoria": []}]}]}))
 (tmp / "m.md").write_text("# m")
 spazi.FILE = spazi_json
-spazi.OD = tmp / "OD"                      # niente Jarvis Brain vero: la memoria dei gruppi nuovi va qui
+spazi.OD = tmp / "OD"                      # niente memoria vera: la memoria dei gruppi nuovi va qui
 server.TOMBE_FILE = tmp / "agenti-tolti.json"
 server.MODIFICHE_FILE = tmp / "mod.jsonl"
 server.GRUPPI_ARCHIVIO = tmp / "arch.json"
@@ -45,8 +45,8 @@ def ok(nome, cond, dettaglio=""):
 
 
 ag = lambda **k: server.azione_agente({"progetto": "prova", **k})   # noqa: E731
-ag(cosa="crea", nome="ceo-prova", capogruppo="", description="capo")
-ag(cosa="crea", nome="dev-uno", capogruppo="ceo-prova", description="programma")
+ag(cosa="crea", nome="prova-ceo", capogruppo="", description="capo")
+ag(cosa="crea", nome="dev-uno", capogruppo="prova-ceo", description="programma")
 ag(cosa="togli", nome="dev-uno")
 arch = prog / ".claude/agents/_archivio/dev-uno.md"
 ok("1a togli: il profilo è in _archivio", arch.exists())
@@ -64,15 +64,15 @@ except ValueError:
 nuova = tmp / "Cartella del PC"
 nuova.mkdir()
 d = server.crea_gruppo({"spazio": "prova", "id": "pc", "nome": "Del PC", "cartella": str(nuova), "squadra_ceo": False})
-voce = next(p for s in spazi.carica() for p in s["progetti"] if p["id"] == "pc")
+voce = next(p for s in spazi.carica() for p in s["progetti"] if p["nome"] == "Del PC")   # id = slug del nome (crea_progetto.py)
 ok("2a crea_gruppo con «cartella»: la voce punta alla cartella scelta", Path(voce["cartella"]).resolve() == nuova.resolve(), voce)
-ok("2b il capogruppo nasce nella cartella scelta", (nuova / ".claude/agents/ceo-pc.md").exists())
+ok("2b il capogruppo nasce nella cartella scelta", (nuova / ".claude/agents/del-pc-ceo.md").exists())
 ok("2c nessuna sottocartella col nome del gruppo", not (nuova / "Del PC").exists())
 try:
     server.crea_gruppo({"spazio": "prova", "id": "pc2", "nome": "Doppio", "cartella": str(nuova), "squadra_ceo": False})
     ok("2d la stessa cartella non si collega due volte", False)
 except ValueError as e:
-    ok("2d la stessa cartella non si collega due volte", "già collegata" in str(e), e)
+    ok("2d la stessa cartella non si collega due volte", "è già del progetto" in str(e), e)
 try:
     server.crea_gruppo({"spazio": "prova", "id": "pc3", "nome": "Relativa", "cartella": "relativa/x", "squadra_ceo": False})
     ok("2e un percorso relativo si rifiuta", False)

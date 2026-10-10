@@ -1,6 +1,6 @@
 # Domande frequenti e problemi
 
-Le difficoltà più comuni con il Command Center, e come si risolvono. Le fonti sono le note in `Jarvis Brain/Memoria/Vita personale/Jarvis/Errori da non ripetere/`.
+Le difficoltà più comuni con il Command Center, e come si risolvono. Gli errori nuovi che trovi vanno nello `Stato.md` dello spazio (sezione ERRORI) e nella memoria con la skill `aggiorna-memoria`.
 
 ## «Token scaduto: il Command Center è ripartito»
 

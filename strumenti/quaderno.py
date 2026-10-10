@@ -12,8 +12,8 @@ diario_agenti.py a fine lavoro, oppure `quaderno.py diario <agente> "cosa → es
 
   python3 ~/Jarvis/strumenti/quaderno.py dove <agente>                       # il file del quaderno
   python3 ~/Jarvis/strumenti/quaderno.py leggi <agente> [--righe 8]          # digesto da mettere nel compito
-  python3 ~/Jarvis/strumenti/quaderno.py scrivi <agente> --imparato "…" --errore "…" --verifica "…" \\
-                                                        --fonte "…" --proposta "…"   (ripetibili)
+  python3 ~/Jarvis/strumenti/quaderno.py scrivi <agente> --fatto "…" --da_fare "…" --errore "…"   (il diario di fine lavoro)
+          altre sezioni: --imparato "…" --verifica "…" --fonte "…" --proposta "…"   (tutte ripetibili)
   python3 ~/Jarvis/strumenti/quaderno.py raccogli <agente> --da <file del resoconto>   # legge le righe
         «DA SALVARE: …», «ERRORE DA SALVARE: …», «DA VERIFICARE: …», «FONTE: …», «PROPOSTA: …»
   python3 ~/Jarvis/strumenti/quaderno.py diario <agente> "cosa → esito" [--macchina PC]   # una riga di diario, ora di adesso
@@ -43,23 +43,27 @@ def leggi_testo(p):
 
 
 HOME = Path.home()
-OD = HOME / "Library/CloudStorage/OneDrive"
-if not OD.exists():                      # VPS e PC: la copia del vault sta altrove
-    for c in (Path("/root/.locale-onedrive/OneDrive"), Path("/root/OneDrive"), HOME / "OneDrive"):
-        if c.exists():
-            OD = c
-            break
-JARVIS = HOME / "Jarvis" if (HOME / "Jarvis").exists() else HOME / "jarvis"
-SPAZI_JSON = JARVIS / "command-center" / "spazi.json"
-# Progetti con agenti che spazi.json non elenca da soli (04/10/2026)
-EXTRA_CARTELLE = [JARVIS / "Jarvis-App-Android", OD / "Jarvis Brain/Progetti/Vita personale/prodotto-uno-Ai-Business",
-                  OD / "Jarvis Brain/Progetti/Vita personale/Jarvis", OD / "Jarvis Brain/Progetti/Vita personale/portfolio"]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    import percorsi_vault as _pv
+    JARVIS = _pv.repo()
+    OD = _pv.onedrive()
+except Exception:  # noqa: BLE001
+    JARVIS = Path(__file__).resolve().parents[1]
+    OD = HOME / "OneDrive"
+import os as _os
+SPAZI_JSON = Path(_os.environ.get("JARVIS_SPAZI") or (Path(__file__).resolve().parents[1] / "command-center" / "spazi.json"))
 CASA = HOME / ".claude" / "agents"            # agenti di casa: il quaderno sta nella memoria di Jarvis
 MEMORIA_CASA = JARVIS / ".claude" / "memoria"
-SEZIONI = [("imparato", "Imparato"), ("errore", "Errori da non ripetere"), ("verifica", "Da verificare"),
-           ("fonte", "Fonti"), ("proposta", "Proposte al profilo"), ("diario", "Diario")]
+# Il diario di ogni agente: tre sezioni fisse in testa (FATTO, DA FARE, ERRORI COMMESSI DA NON RIPETERE), con data e ora;
+# poi le sezioni di apprendimento. Le consegna l'agente a fine lavoro.
+SEZIONI = [("fatto", "Fatto"), ("da_fare", "Da fare"), ("errore", "Errori commessi da non ripetere"),
+           ("imparato", "Imparato"), ("verifica", "Da verificare"), ("fonte", "Fonti"),
+           ("proposta", "Proposte al profilo"), ("diario", "Diario")]
+TITOLI_VECCHI = {"Errori da non ripetere": "errore"}
 MAX_RIGHE = 80
-MARCHE = {"DA SALVARE": "imparato", "IMPARATO": "imparato", "ERRORE DA SALVARE": "errore", "ERRORE": "errore",
+MARCHE = {"FATTO": "fatto", "DA FARE": "da_fare", "ERRORE COMMESSO": "errore", "ERRORI COMMESSI": "errore",
+          "DA SALVARE": "imparato", "IMPARATO": "imparato", "ERRORE DA SALVARE": "errore", "ERRORE": "errore",
           "DA VERIFICARE": "verifica", "FONTE": "fonte", "PROPOSTA": "proposta", "PROPOSTA AL PROFILO": "proposta"}
 
 
@@ -85,8 +89,6 @@ def cartelle_progetti():
             c = _percorso(p["cartella"])
             m = _percorso(p["memoria_propria"][0]) if p.get("memoria_propria") else c / ".claude" / "memoria"
             out.append((c, m))
-    for c in EXTRA_CARTELLE:
-        out.append((c, c / ".claude" / "memoria"))
     visti, unici = set(), []
     for c, m in out:
         if c not in visti and (c / ".claude" / "agents").is_dir():
@@ -130,12 +132,12 @@ def leggi_quaderno(f):
     if not f.exists():
         return sez
     corrente = None
-    titoli = {t: k for k, t in SEZIONI}
+    titoli = {**TITOLI_VECCHI, **{t: k for k, t in SEZIONI}}
     for riga in leggi_testo(f).splitlines():
         if riga.startswith("## "):
             corrente = titoli.get(riga[3:].strip())
             continue
-        m = re.match(r"^- (\d{4}-\d{2}-\d{2}) · (.+)$", riga)
+        m = re.match(r"^- (\d{4}-\d{2}-\d{2}(?: \d{2}:\d{2})?) · (.+)$", riga)
         if m and corrente:
             sez[corrente].append((m.group(1), m.group(2).strip()))
     return sez
@@ -158,15 +160,15 @@ def scrivi_quaderno(f, nome, sez):
 def aggiungi(f, nome, voci):
     """voci: [(chiave, testo)]. Ritorna quante righe nuove (le ripetizioni si saltano)."""
     sez = leggi_quaderno(f)
-    oggi = datetime.now().strftime("%Y-%m-%d")
+    oggi = datetime.now().strftime("%Y-%m-%d %H:%M")
     nuove = 0
     for k, testo in voci:
         testo = " ".join(str(testo).split())
         if not testo:
             continue
-        uguali = [d for d, t in sez[k] if _norma(t) == _norma(testo)]
+        uguali = [d[:10] for d, t in sez[k] if _norma(t) == _norma(testo)]
         # un errore già scritto in un giorno diverso si riscrive: la ripetizione è il dato che serve a errori-ripetuti
-        if uguali and (k != "errore" or oggi in uguali):
+        if uguali and (k != "errore" or oggi[:10] in uguali):
             continue
         sez[k].append((oggi, testo))
         nuove += 1
@@ -178,7 +180,8 @@ def aggiungi(f, nome, voci):
 def digesto(f, nome, righe=8):
     sez = leggi_quaderno(f)
     if not any(sez.values()):
-        return f"QUADERNO DI {nome}: ancora vuoto. A fine lavoro lo scrivi tu (vedi le regole)."
+        return (f"QUADERNO DI {nome}: ancora vuoto. Prima di chiudere scrivi FATTO, DA FARE ed ERRORI COMMESSI DA NON "
+                f"RIPETERE: quaderno.py scrivi {nome} --fatto \"…\" --da_fare \"…\" --errore \"…\"")
     out = [f"QUADERNO DI {nome} (le ultime {righe} righe per sezione; il file intero: {f})"]
     for k, t in SEZIONI:
         if sez[k]:
@@ -225,7 +228,7 @@ def errori_ripetuti(cartella=None):
             for d, t in sez["errore"]:
                 per.setdefault(_norma(t)[:120], []).append((d, t))
             for righe in per.values():
-                giorni = sorted({d for d, _ in righe})
+                giorni = sorted({d[:10] for d, _ in righe})
                 if len(giorni) >= 2:
                     out.append((f.stem, str(c), giorni, righe[-1][1]))
     return out
@@ -273,7 +276,7 @@ def main():
     elif a.cosa == "scrivi":
         voci = [(k, riga_diario(t) if k == "diario" else t) for k, _ in SEZIONI for t in getattr(a, k)]
         if not voci:
-            sys.exit("niente da scrivere: --imparato, --errore, --verifica, --fonte, --proposta o --diario")
+            sys.exit("niente da scrivere: --fatto, --da_fare, --errore, --imparato, --verifica, --fonte, --proposta o --diario")
         n = aggiungi(q, a.agente, voci)
         print(f"{n} righe nuove in {q}" if n else f"niente di nuovo (già nel quaderno): {q}")
     elif a.cosa == "diario":

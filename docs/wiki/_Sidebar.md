@@ -16,6 +16,7 @@
 - [Voce](Voce)
 
 **Come funziona sotto**
+- [Progetti e agenti](Progetti-e-agenti)
 - [Memoria condivisa](Memoria-condivisa)
 - [Agenti](Agenti)
 - [Telefono](Telefono)

@@ -89,6 +89,9 @@ def copia(nome):
         "missioni", "missioni_archivio", "cache-profili", "__pycache__", "pannello-storia", "lavori", ".DS_Store",
         "static-backup-20261003-1626", "static-backup-20261003-2021", "static-backup-20261004-0320", "perf-dev")
         or n.startswith("pannello.json.") or n.endswith(".orig")])
+    # 2026-10-10: il server usa strumenti/crea_progetto.py, crea_agente.py e il gancio stato_avanzamento.py
+    shutil.copytree(QUI.parent / "strumenti", TMP / nome / "strumenti", ignore=shutil.ignore_patterns("__pycache__", "kokoro", "latenza"))
+    shutil.copytree(QUI.parent / "claude-config" / "hooks", TMP / nome / "claude-config" / "hooks")
     (cc / "spazi.json").write_text(json.dumps({"spazi": []}))
     (cc / "pannello.json").write_text(json.dumps(BASE, ensure_ascii=False))
     casa = TMP / nome / "home"

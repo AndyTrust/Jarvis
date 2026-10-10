@@ -62,6 +62,9 @@ STATO_VERO = {"spazi.json", "pannello.json", "gruppi-archiviati.json", "agenti-t
 shutil.copytree(QUI, CC, ignore=lambda d, nomi: [n for n in nomi if n in STATO_VERO or n in (
     "missioni", "missioni_archivio", "cache-profili", "__pycache__", "pannello-storia", "lavori", ".DS_Store")
     or n.startswith("pannello.json.bak") or n.endswith(".orig")])
+# 2026-10-10: il server usa strumenti/crea_progetto.py, crea_agente.py e il gancio stato_avanzamento.py
+shutil.copytree(QUI.parent / "strumenti", TMP / "strumenti", ignore=shutil.ignore_patterns("__pycache__", "kokoro", "latenza"))
+shutil.copytree(QUI.parent / "claude-config" / "hooks", TMP / "claude-config" / "hooks")
 PROG = TMP / "progetti"
 for nome in ("Alfa", "Beta", "Gamma", "Delta", "Fuori"):
     (PROG / nome).mkdir(parents=True)
@@ -82,9 +85,9 @@ def spazio(sid, nome, progetti):
 
 
 (CC / "spazi.json").write_text(json.dumps({"spazi": [
-    spazio("prova-uno", "Prova Uno", [voce("alfa", "Alfa", "ceo-alfa"), voce("beta", "Beta", "ceo-beta")]),
-    spazio("prova-g", "Prova G", [voce("gamma", "Gamma", "ceo-gamma")]),
-    spazio("prova-d", "Prova D", [voce("delta", "Delta", "ceo-delta")]),
+    spazio("prova-uno", "Prova Uno", [voce("alfa", "Alfa", "alfa-ceo"), voce("beta", "Beta", "beta-ceo")]),
+    spazio("prova-g", "Prova G", [voce("gamma", "Gamma", "gamma-ceo")]),
+    spazio("prova-d", "Prova D", [voce("delta", "Delta", "delta-ceo")]),
 ]}, ensure_ascii=False, indent=2) + "\n")
 
 
@@ -93,22 +96,22 @@ def nodo(i, agente=None, testo=None, x=0, y=0):
 
 
 PANNELLO0 = {"versione": 1, "aspetto": {}, "gruppi": [
-    {"id": "spazio-prova-uno", "nome": "Prova Uno", "chiuso": False, "agenti": ["alfa:ceo-alfa", "alfa:dev-alfa", "beta:ceo-beta"]},
-    {"id": "spazio-prova-g", "nome": "Prova G", "chiuso": False, "agenti": ["gamma:ceo-gamma"]},
-    {"id": "spazio-prova-d", "nome": "Prova D", "chiuso": False, "agenti": ["delta:ceo-delta"]},
+    {"id": "spazio-prova-uno", "nome": "Prova Uno", "chiuso": False, "agenti": ["alfa:alfa-ceo", "alfa:dev-alfa", "beta:beta-ceo"]},
+    {"id": "spazio-prova-g", "nome": "Prova G", "chiuso": False, "agenti": ["gamma:gamma-ceo"]},
+    {"id": "spazio-prova-d", "nome": "Prova D", "chiuso": False, "agenti": ["delta:delta-ceo"]},
     {"id": "spazio-fantasma", "nome": "Fantasma vecchio", "chiuso": False, "agenti": []},
 ], "lavagne": {
-    "generale": {"nodi": [nodo("n1", "alfa:ceo-alfa"), nodo("n2", "alfa:dev-alfa"), nodo("n3", "beta:ceo-beta"),
+    "generale": {"nodi": [nodo("n1", "alfa:alfa-ceo"), nodo("n2", "alfa:dev-alfa"), nodo("n3", "beta:beta-ceo"),
                           nodo("n4", None, "📁 Prova Uno · Alfa"), nodo("n5", None, "📁 Prova Uno · Beta"),
-                          nodo("n6", None, "Prova Uno"), nodo("n7", "gamma:ceo-gamma"), nodo("n8", "delta:ceo-delta"), nodo("n9", None, "📁 Gamma"),
+                          nodo("n6", None, "Prova Uno"), nodo("n7", "gamma:gamma-ceo"), nodo("n8", "delta:delta-ceo"), nodo("n9", None, "📁 Gamma"),
                           nodo("n9", None, "L'utente")],
                  "fili": [{"da": "n1", "a": "n2"}, {"da": "n9", "a": "n1"}, {"da": "n9", "a": "n7"}],
                  "vista": {"x": 0, "y": 0, "zoom": 1}},
-    "spazio-prova-uno": {"nodi": [nodo("m1", "alfa:ceo-alfa"), nodo("m2", "beta:ceo-beta")], "fili": [{"da": "m1", "a": "m2"}],
+    "spazio-prova-uno": {"nodi": [nodo("m1", "alfa:alfa-ceo"), nodo("m2", "beta:beta-ceo")], "fili": [{"da": "m1", "a": "m2"}],
                          "vista": {"x": 0, "y": 0, "zoom": 1}},
     "spazio-fantasma": {"nodi": [nodo("f1", "vecchio:x")], "fili": [], "vista": {"x": 0, "y": 0, "zoom": 1}},
     "g-orfana": {"nodi": [nodo("o1", None, "nota sola")], "fili": [], "vista": {"x": 0, "y": 0, "zoom": 1}},
-    "demo-squadra": {"nodi": [nodo("d1", "alfa:ceo-alfa")], "fili": [], "vista": {"x": 0, "y": 0, "zoom": 1}},
+    "demo-squadra": {"nodi": [nodo("d1", "alfa:alfa-ceo")], "fili": [], "vista": {"x": 0, "y": 0, "zoom": 1}},
 }}
 (CC / "pannello.json").write_text(json.dumps(PANNELLO0, ensure_ascii=False, indent=1))
 (CC / "gruppi-archiviati.json").write_text("{}")
@@ -212,8 +215,8 @@ def archivio():
 
 try:
     # --- agenti di prova, creati come dalla pagina
-    for pid, nome, capo in (("alfa", "ceo-alfa", ""), ("alfa", "dev-alfa", "ceo-alfa"), ("beta", "ceo-beta", ""),
-                            ("gamma", "ceo-gamma", ""), ("delta", "ceo-delta", ""), ("delta", "dev-delta", "ceo-delta")):
+    for pid, nome, capo in (("alfa", "alfa-ceo", ""), ("alfa", "dev-alfa", "alfa-ceo"), ("beta", "beta-ceo", ""),
+                            ("gamma", "gamma-ceo", ""), ("delta", "delta-ceo", ""), ("delta", "dev-delta", "delta-ceo")):
         c, d = azione(cosa="crea", progetto=pid, nome=nome, capogruppo=capo, description=f"agente di prova {nome}")
         if c != 200:
             ok(f"crea {pid}:{nome}", False, d)
@@ -242,18 +245,18 @@ try:
        alfa.get("archiviati") == [] and any(a["nome"] == "dev-alfa" for a in alfa["agenti"]), alfa.get("archiviati"))
 
     # --- D16: eliminare/togliere il capogruppo svuota «capogruppo» in spazi.json; il ripristino lo rimette
-    c, d = azione(cosa="elimina", progetto="delta", nome="ceo-delta")
+    c, d = azione(cosa="elimina", progetto="delta", nome="delta-ceo")
     vd = next(p for s in spazi_json()["spazi"] for p in s["progetti"] if p["id"] == "delta")
-    ok("D16: elimina ceo-delta → «capogruppo» fuori da spazi.json", c == 200 and "capogruppo" not in vd and vd.get("capogruppo_tolto") == "ceo-delta", vd)
+    ok("D16: elimina delta-ceo → «capogruppo» fuori da spazi.json", c == 200 and "capogruppo" not in vd and vd.get("capogruppo_tolto") == "delta-ceo", vd)
     c, v = chiama("GET", "/api/lavagna/verifica")
     err = [x for x in v["problemi"] if x["livello"] == "errore" and "Delta" in x["dove"]]
     ok("D16: «Controlla lavagna» non dà più errore sul CEO di Delta (solo avviso)", not err, err)
-    c, d = azione(cosa="togli", progetto="gamma", nome="ceo-gamma")
+    c, d = azione(cosa="togli", progetto="gamma", nome="gamma-ceo")
     vg = next(p for s in spazi_json()["spazi"] for p in s["progetti"] if p["id"] == "gamma")
-    ok("D16: togli ceo-gamma → capogruppo tolto", "capogruppo" not in vg, vg)
-    c, d = azione(cosa="ripristina", progetto="gamma", nome="ceo-gamma")
+    ok("D16: togli gamma-ceo → capogruppo tolto", "capogruppo" not in vg, vg)
+    c, d = azione(cosa="ripristina", progetto="gamma", nome="gamma-ceo")
     vg = next(p for s in spazi_json()["spazi"] for p in s["progetti"] if p["id"] == "gamma")
-    ok("D16: ripristina ceo-gamma → torna capogruppo", vg.get("capogruppo") == "ceo-gamma" and "capogruppo_tolto" not in vg, vg)
+    ok("D16: ripristina gamma-ceo → torna capogruppo", vg.get("capogruppo") == "gamma-ceo" and "capogruppo_tolto" not in vg, vg)
 
     # --- D13: rinominare uno spazio scrive spazi.json, le etichette della lavagna e il gruppo del menu; le cartelle non si spostano
     t0 = time.time()
@@ -295,9 +298,9 @@ try:
     gen = P["lavagne"]["generale"]
     ok("P4: generale senza schede alfa:* né note «Prova Uno»/«📁 Prova Uno · Alfa»; l'utente e Gamma restano",
        not any(n["agente"].startswith("alfa:") or n["testo"] in ("Prova Uno", "📁 Prova Uno · Alfa") for n in gen["nodi"])
-       and any(n["testo"] == "L'utente" for n in gen["nodi"]) and any(n["agente"] == "gamma:ceo-gamma" for n in gen["nodi"]))
+       and any(n["testo"] == "L'utente" for n in gen["nodi"]) and any(n["agente"] == "gamma:gamma-ceo" for n in gen["nodi"]))
     ok("P4: nessun filo verso schede tolte", all(f["da"] in {n["id"] for n in gen["nodi"]} and f["a"] in {n["id"] for n in gen["nodi"]} for f in gen["fili"]))
-    ok("P4: la lavagna demo non si tocca", P["lavagne"]["demo-squadra"]["nodi"][0]["agente"] == "alfa:ceo-alfa")
+    ok("P4: la lavagna demo non si tocca", P["lavagne"]["demo-squadra"]["nodi"][0]["agente"] == "alfa:alfa-ceo")
     ok("P4: SSE «pannello» e «spazi» arrivati (alfa)", arriva("pannello", t0) and arriva("spazi", t0))
     ok("P4: la cartella del progetto Alfa è intatta", (PROG / "Alfa" / "README.md").exists())
 
@@ -331,7 +334,7 @@ try:
     # --- P6: elimina_gruppo
     c, p = azione(cosa="anteprima_elimina_gruppo", progetto="alfa")
     ok("P6: anteprima alfa elenca i profili archiviati e cosa resta",
-       c == 200 and "agents/ceo-alfa.md" in p.get("file", []) and str(PROG / "Alfa").replace(str(HOME), "~") in p.get("restano", [""])[0], p)
+       c == 200 and "agents/alfa-ceo.md" in p.get("file", []) and str(PROG / "Alfa").replace(str(HOME), "~") in p.get("restano", [""])[0], p)
     ar_alfa = Path(archivio()["alfa"]["archivio"])
     c, d = azione(cosa="elimina_gruppo", progetto="alfa", conferma="alfa sbagliato")
     ok("P6: nome sbagliato → 400, voce e archivio ancora lì", c == 400 and "alfa" in archivio() and ar_alfa.is_dir(), (c, d))
@@ -340,7 +343,7 @@ try:
     cestino = list((HOME / ".Trash").iterdir())
     ok("P6: nome giusto → 200, voce sparita", c == 200 and "alfa" not in archivio(), (c, d))
     ok("P6: archivio nel Cestino (HOME finta) con i profili, non più nella cartella",
-       not ar_alfa.exists() and any(x.name == f"Alfa {ar_alfa.name}" and (x / "agents" / "ceo-alfa.md").exists() for x in cestino),
+       not ar_alfa.exists() and any(x.name == f"Alfa {ar_alfa.name}" and (x / "agents" / "alfa-ceo.md").exists() for x in cestino),
        [x.name for x in cestino])
     ok("P6: cartella del progetto Alfa intatta", (PROG / "Alfa" / "README.md").read_text().startswith("# Alfa"))
     ok("P6: spazio_voce passato a beta (resta ripristinabile)", archivio().get("beta", {}).get("spazio_voce", {}).get("id") == "prova-uno")

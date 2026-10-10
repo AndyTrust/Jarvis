@@ -95,10 +95,10 @@ C = fili.classifica
 casi = [
     (("notifiche-jarvis", "Report del mattino · 05/10"), "report"),
     (("notifiche-jarvis", "Pranzo · 05/10", "servizio-pranzo-2026-10-05"), "report"),
-    (("notifiche-jarvis", "Azienda Uno · Report giornaliero del 2026-10-05 · garante MANCA QUALCOSA"), "report"),
-    (("notifiche-jarvis", "Riunione patrimonio · 05/10", "riunione-patrimonio-2026-10-05"), "report"),
+    (("notifiche-jarvis", "Progetto A · Report giornaliero del 2026-10-05 · garante MANCA QUALCOSA"), "report"),
+    (("notifiche-jarvis", "Riunione progetto · 05/10", "riunione-progetto-2026-10-05"), "report"),
     (("postino", "Posta del mattino · 4 nuove"), "report"),
-    (("postino", "Azienda Due — nuova mail su info"), "report"),
+    (("postino", "Progetto B2 — nuova mail su info"), "report"),
     (("notifiche-jarvis", "Errore: com.jarvis.pubblica-codice"), "avviso"),
     (("notifiche-jarvis", "Routine aggiornata: jarvis-verifica-routine"), "avviso"),
     (("notifiche-jarvis", "Routine creata: prova-routine"), "avviso"),

@@ -6,7 +6,7 @@ La coda (~/Jarvis/strumenti/incarichi.py, contratto in docs/incarichi-contratto.
 lavagna legge il registro delle attività (attivita.py). Qui un thread solo, ogni 8 s, legge
 incarichi.stato_pubblico() (sul Mac via ssh, con la connessione riusata) e scrive nel registro i CAMBI:
 
-    nuovo     → richiesta                    (da «jarvis-utente» → «jarvis», a «garante-dati» → «crm:garante-dati»)
+    nuovo     → richiesta                    (da «jarvis-utente» → «jarvis», a «revisore» → «<progetto>:revisore»)
     preso     → partito
     fatto     → risposta  con durata_s       (dalla presa, o dalla creazione, alla risposta)
     fallito   → errore
@@ -32,10 +32,27 @@ OGNI_S = 8
 NUOVI_S = 120             # al primo giro si raccontano solo gli incarichi nati negli ultimi 2 minuti
 LOG_OGNI_S = 300
 FONTE = "incarichi"
-# i 13 agenti del CRM che il runner della VPS sveglia (contratto): sulla lavagna sono «crm:<nome>»
-AGENTI_CRM = {"ceo-ai", "analista-finanziario", "analista-previsionale", "cambusa", "commercialista", "commerciale",
-              "consulente-lavoro", "cruscotto-bi", "fiscalista-patrimonio", "garante-dati", "legale-societario",
-              "manutentore-dati", "revisore-contabile"}
+# 2026-10-10 (Jarvis da zero): nessun elenco scritto qui. Un nome della coda è un agente di progetto se ha la sua
+# scheda in <cartella>/.claude/agents/ di un progetto di spazi.json: sulla lavagna è «<progetto>:<nome>».
+AGENTI_PROVA = None        # solo per prova(): {nome: progetto}
+
+
+def _agenti_progetti():
+    if AGENTI_PROVA is not None:
+        return AGENTI_PROVA
+    out = {}
+    try:
+        import spazi
+        for s in spazi.carica():
+            for p in s["progetti"]:
+                if p.get("esiste"):
+                    for a in spazi.profili(p["cartella"], p.get("capogruppo")):
+                        out.setdefault(a["nome"], p["id"])
+    except Exception:  # noqa: BLE001
+        pass
+    return out
+
+
 FINE = {"fatto": "risposta", "fallito": "errore", "annullato": "errore", "scaduto": "errore"}
 
 _THREAD = None
@@ -47,8 +64,9 @@ def chiave(nome):
     n = str(nome or "").strip().lower()
     if n in ("jarvis-utente", "jarvis"):
         return "jarvis"
-    if n in AGENTI_CRM:
-        return "crm:" + n
+    pid = _agenti_progetti().get(n)
+    if pid:
+        return f"{pid}:{n}"
     return n or "?"       # un nome che non è sulla lavagna: il server lo segna «?:nome» (richiesta senza destinatario)
 
 
@@ -195,6 +213,8 @@ def avvia():
 # ------------------------------------------------------------ prova
 
 def prova():
+    global AGENTI_PROVA
+    AGENTI_PROVA = {n: "progetto-a" for n in ("progetto-a-ceo", "commercialista", "garante-dati")}
     import json
     import shutil
     import tempfile
@@ -242,9 +262,9 @@ def prova():
         n = p.giro()
         r = righe()
         v("primo giro: lo storico non si rigioca, il nato da 30 s sì (1 evento)", n == 1 and len(r) == 1)
-        v("richiesta: id inc:, da jarvis, a crm:commercialista, fonte incarichi",
+        v("richiesta: id inc:, da jarvis, a progetto-a:commercialista, fonte incarichi",
           r and r[0]["ev"] == "richiesta" and r[0]["id"] == "inc:in_00000003" and r[0]["da"] == "jarvis"
-          and r[0]["a"] == "crm:commercialista" and r[0]["fonte"] == "incarichi")
+          and r[0]["a"] == "progetto-a:commercialista" and r[0]["fonte"] == "incarichi")
         v("secondo giro senza cambi: nessun evento", p.giro() == 0 and len(righe()) == 1)
         # avanzano: 3 preso, 2 fatto (vecchio ma cambiato dopo l'avvio: si racconta)
         ora[0] += 8
@@ -259,7 +279,7 @@ def prova():
         v("nessuna richiesta riscritta per lo storico", not any(x["ev"] == "richiesta" and x["id"] == "inc:in_00000002" for x in r))
         # uno nuovo che passa da nuovo a fatto fra due giri: richiesta, partito, risposta in ordine
         ora[0] += 8
-        coda["incarichi"].append(inc("in_00000004", "fatto", ora[0] - 6, a="ceo-ai", preso_da="ceo-ai", preso_il=ora[0] - 5,
+        coda["incarichi"].append(inc("in_00000004", "fatto", ora[0] - 6, a="progetto-a-ceo", preso_da="progetto-a-ceo", preso_il=ora[0] - 5,
                                      risposta={"testo": "sì", "esito": "ok", "il": ora[0] - 1}))
         coda["incarichi"].append(inc("in_00000005", "fallito", ora[0] - 6, preso_da="garante-dati", preso_il=ora[0] - 5,
                                      risposta={"testo": "timeout di 600 s", "esito": "fallito", "il": ora[0] - 1}))
@@ -308,8 +328,8 @@ def prova():
         nuove = righe()[prima:]
         v("dopo un riavvio: solo l'incarico nuovo, niente doppioni dei recenti",
           [(x["id"], x["ev"]) for x in nuove] == [("inc:in_00000009", "richiesta")])
-        v("le chiavi: jarvis-utente→jarvis, garante-dati→crm:garante-dati, altro invariato",
-          chiave("jarvis-utente") == "jarvis" and chiave("garante-dati") == "crm:garante-dati" and chiave("jarvis-giuseppe") == "jarvis-giuseppe")
+        v("le chiavi: jarvis-utente→jarvis, garante-dati→progetto-a:garante-dati, altro invariato",
+          chiave("jarvis-utente") == "jarvis" and chiave("garante-dati") == "progetto-a:garante-dati" and chiave("jarvis-giuseppe") == "jarvis-giuseppe")
         # avvia(): un thread solo
         global _THREAD
         _THREAD = None

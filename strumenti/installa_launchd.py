@@ -21,6 +21,8 @@ GENERICI = {
     "com.jarvis.sentinella15": "la sentinella: pulizia e rapporto ogni 15 minuti",
     "com.jarvis.sincronia30": "la sincronia della memoria ogni 30 minuti",
     "com.jarvis.stai-sveglio": "tiene sveglio il Mac finché è alimentato (caffeinate)",
+    "com.jarvis.pulizia-claude": "pulizia e unione di ~/.claude nella memoria condivisa, ogni giorno alle 6:20",
+    "com.jarvis.giro-apprendimento": "i diari degli agenti nella memoria, ogni giorno alle 6:40 (nessun gruppo = niente)",
 }
 # lavori personali: li aggiungi tu (un modello in launchd/ e una riga qui). Si accendono con --tutti.
 DI_TITOLARE = {}
@@ -46,6 +48,8 @@ def main():
     if sys.platform != "darwin" and not opzione("--home"):
         sys.exit("launchd esiste solo sul Mac")
     destinazione = HOME / "Library" / "LaunchAgents"
+    if not PROVA:
+        (HOME / ".jarvis" / "log").mkdir(parents=True, exist_ok=True)     # launchd non crea la cartella dei log
     scelti = dict(GENERICI, **(DI_TITOLARE if TUTTI else {}))
     for label, cosa in scelti.items():
         modello = MODELLI / f"{label}.plist"

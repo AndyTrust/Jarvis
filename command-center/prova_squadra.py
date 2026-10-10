@@ -14,7 +14,7 @@ prog = tmp / "Progetto"
 spazi_json = tmp / "spazi.json"
 spazi_json.write_text(json.dumps({"spazi": [{"id": "prova", "nome": "Prova", "memoria": str(tmp / "m.md"),
     "report": str(tmp / "rep"), "progetti": [{"id": "prova", "nome": "Prova", "cartella": str(prog),
-    "capogruppo": "ceo-prova", "sezioni_memoria": []}]}]}))
+    "capogruppo": "prova-ceo", "sezioni_memoria": []}]}]}))
 (tmp / "m.md").write_text("# m")
 spazi.FILE = spazi_json
 server.TOMBE_FILE = tmp / "agenti-tolti.json"
@@ -28,17 +28,17 @@ def ok(nome, cond):
     esiti.append(cond); print(("✅" if cond else "❌"), nome)
 
 ag = lambda **k: server.azione_agente({"progetto": "prova", **k})
-ag(cosa="crea", nome="ceo-prova", capogruppo="", description="capo")
-ag(cosa="crea", nome="dev-uno", capogruppo="ceo-prova", description="programma il codice", model="opus")
-ag(cosa="crea", nome="revisore-uno", capogruppo="ceo-prova", description="revisore")
-ok("creati 3 profili", len(spazi.profili(str(prog), "ceo-prova")) == 3)
+ag(cosa="crea", nome="prova-ceo", capogruppo="", description="capo")
+ag(cosa="crea", nome="dev-uno", capogruppo="prova-ceo", description="programma il codice", model="opus")
+ag(cosa="crea", nome="revisore-uno", capogruppo="prova-ceo", description="revisore")
+ok("creati 3 profili", len(spazi.profili(str(prog), "prova-ceo")) == 3)
 ag(cosa="elimina", nome="revisore-uno")
 ok("elimina: file sparito", not (prog / ".claude/agents/revisore-uno.md").exists())
 ok("elimina: tomba scritta", "revisore-uno" in server.leggi_tombe().get("prova", []))
 ag(cosa="togli", nome="dev-uno")
 ok("togli: tomba scritta", "dev-uno" in server.leggi_tombe().get("prova", []))
-ok("togli: non più fra i profili", {a["nome"] for a in spazi.profili(str(prog), "ceo-prova")} == {"ceo-prova"})
-ok("togli: il capo non lo nomina più", "dev-uno" not in spazi.profili(str(prog), "ceo-prova")[0]["comunica"])
+ok("togli: non più fra i profili", {a["nome"] for a in spazi.profili(str(prog), "prova-ceo")} == {"prova-ceo"})
+ok("togli: il capo non lo nomina più", "dev-uno" not in spazi.profili(str(prog), "prova-ceo")[0]["comunica"])
 # il CEO propone di nuovo un agente tolto: la squadra lo salta
 class R:  # claude finto
     returncode = 0
@@ -49,17 +49,17 @@ class R:  # claude finto
 server.subprocess.run = lambda *a, **k: R()
 server.SQUADRA_STATO["prova"] = {"stato": "in corso", "messaggio": "", "creati": []}
 server._squadra_in_sottofondo("prova")
-nomi = {a["nome"] for a in spazi.profili(str(prog), "ceo-prova")}
+nomi = {a["nome"] for a in spazi.profili(str(prog), "prova-ceo")}
 ok("squadra: l'agente tolto non rientra", "revisore-uno" not in nomi)
 ok("squadra: l'agente nuovo nasce", "seo-uno" in nomi)
 ok("squadra: nome non valido e agente senza prove scartati", len(nomi) == 2 and "inventato-senza-prove" not in nomi)
-modello = next(a["modello"] for a in spazi.profili(str(prog), "ceo-prova") if a["nome"] == "seo-uno")
+modello = next(a["modello"] for a in spazi.profili(str(prog), "prova-ceo") if a["nome"] == "seo-uno")
 ok("squadra: opus senza programmazione → sonnet", modello == "sonnet")
 ok("squadra: stato fatta", server.SQUADRA_STATO["prova"]["stato"] == "fatta")
-ag(cosa="crea", nome="revisore-uno", capogruppo="ceo-prova", description="lo rivoglio io")
+ag(cosa="crea", nome="revisore-uno", capogruppo="prova-ceo", description="lo rivoglio io")
 ok("crea a mano: tomba cancellata", "revisore-uno" not in server.leggi_tombe().get("prova", []))
-ag(cosa="crea", nome="ceo-nuovo", capogruppo="", description="capo nuovo", ceo=True)
-testo = (prog / ".claude/agents/ceo-nuovo.md").read_text()
-ok("CEO: sezione goal/squadra/modello/report nel profilo", all(x in testo for x in ("Da CEO del progetto", "Criterio di fatto", "agenti-tolti.json", "opus", "Stato <progetto>.md")))
-ok("CEO: il profilo resta leggibile dal Command Center", any(a["nome"] == "ceo-nuovo" for a in spazi.profili(str(prog), "ceo-prova")))
+ag(cosa="crea", nome="nuovo-ceo", capogruppo="", description="capo nuovo", ceo=True)
+testo = (prog / ".claude/agents/nuovo-ceo.md").read_text()
+ok("CEO: sezione goal/squadra/modello/report nel profilo", all(x in testo for x in ("Da capogruppo del progetto", "Criterio di fatto", "agenti-tolti.json", "opus", "Stato.md", "crea_agente.py")))
+ok("CEO: il profilo resta leggibile dal Command Center", any(a["nome"] == "nuovo-ceo" for a in spazi.profili(str(prog), "prova-ceo")))
 sys.exit(0 if all(esiti) else 1)

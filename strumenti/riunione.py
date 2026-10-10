@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """La riunione giornaliera degli agenti, uguale per ogni gruppo di Jarvis.
 
-Creato il 2026-09-30. Generalizza quello che Azienda Uno fa già con il report di direzione
-(routine/report-direzione.sh): numeri e controlli li fa lo script, il giudizio gli agenti,
+Creato il 2026-09-30. Una riunione uguale per ogni gruppo: numeri e controlli li fa lo script, il giudizio gli agenti,
 il report e il registro di nuovo lo script.
 
     dati ─► posizioni degli specialisti ─► controlli meccanici + revisore
          ─► verdetto del capogruppo (riunione.json) ─► un report per l'utente ─► registro strategie
 
 Lo script NON lancia agenti. `prepara` scrive i compiti già pronti; li lancia solo la chat
-master, nell'ordine scritto in LEGGIMI.md della cartella del giorno. La configurazione dei
-gruppi sta in strumenti/riunione_gruppi.json.
+master, nell'ordine scritto in LEGGIMI.md della cartella del giorno. I gruppi nascono da soli dai progetti
+di command-center/spazi.json (ogni progetto con capogruppo è un gruppo: capogruppo, specialisti, Stato.md, indice
+dei file); strumenti/riunione_gruppi.json serve solo a ritoccarli o ad aggiungere gruppi a mano. Nessun progetto =
+nessun gruppo, senza errori.
 
 Uso:
     python3 strumenti/riunione.py elenco
@@ -87,9 +88,55 @@ def adesso() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M")
 
 
+def gruppi_da_spazi() -> dict:
+    """Un gruppo per ogni progetto di spazi.json che ha il suo capogruppo (2026-10-10, Jarvis da zero)."""
+    sys.path.insert(0, str(QUI.parent / "command-center"))
+    try:
+        import crea_progetto as cp
+        import spazi as sp_mod
+    except Exception:  # noqa: BLE001
+        return {}
+    out = {}
+    for s in cp.carica_spazi().get("spazi", []):
+        cart_mem = s.get("cartella_nome") or (Path(cp._esp(s["memoria"])).parent.name if s.get("memoria") else s["nome"])
+        for pr in s.get("progetti", []):
+            c = cp._esp(pr["cartella"])
+            capo = pr.get("capogruppo")
+            fcapo = c / ".claude" / "agents" / f"{capo}.md" if capo else None
+            if not fcapo or not fcapo.is_file():
+                continue
+            membri = []
+            for f in sorted((c / ".claude" / "agents").glob("*.md")):
+                if f.stem == capo:
+                    continue
+                try:
+                    campi, _ = sp_mod.frontmatter(f.read_text(encoding="utf-8"))
+                except OSError:
+                    continue
+                if campi.get("description"):
+                    membri.append({"agente": f.stem, "profilo": str(f),
+                                   "temi": [campi["description"].split(". ")[0][:160]]})
+            out[pr["id"]] = {"nome": pr["nome"], "spazio": cart_mem, "modo": "interno",
+                             "capogruppo": {"agente": capo, "profilo": str(fcapo)}, "membri": membri,
+                             "fonti": [{"nome": "Stato dello spazio", "percorso": f"MEM/{cart_mem}/Stato.md", "max_giorni": 14},
+                                       {"nome": "Indice dei file", "percorso": str(c / "Indice-file.md"), "max_giorni": 365}],
+                             "scadenze": [], "metriche": [],
+                             "strategie": f"MEM/{cart_mem}/Strategie", "report": f"MEM/{cart_mem}/Report"}
+    return out
+
+
 def config() -> dict:
     f = Path(os.environ.get("RIUNIONE_CONFIG") or QUI / "riunione_gruppi.json")
-    return json.loads(f.read_text(encoding="utf-8"))
+    try:
+        d = json.loads(f.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        d = {}
+    d.setdefault("grazia_giorni", 30)
+    d["gruppi"] = d.get("gruppi") or {}
+    if not os.environ.get("RIUNIONE_CONFIG"):            # le prove usano solo il loro file
+        for gid, g in gruppi_da_spazi().items():
+            d["gruppi"].setdefault(gid, g)
+    return d
 
 
 def chiave(nome: str) -> str:
@@ -464,7 +511,7 @@ def controllo_profili(g: dict) -> list[dict]:
 
 
 def controllo_registro_esterno(g: dict, giorno: date) -> list[dict]:
-    """Azienda Uno: decisioni del registro di direzione aperte e oltre la data «entro»."""
+    """Gruppi in modo «esterno»: decisioni del loro registro aperte e oltre la data «entro»."""
     f = percorso(g["esterna"]["registro"])
     if not f.exists():
         return [{"tipo": "registro mancante", "file": str(f)}]
@@ -810,18 +857,18 @@ def testo_report(g: dict, gid: str, giorno: date, r: dict, cart: Path, extra: li
 
 
 def riunione_da_esterna(g: dict, giorno: date) -> tuple[dict, Path, list[str]]:
-    """Il riunione.json del report di direzione Azienda Uno, letto e ridotto allo schema comune."""
+    """Il riunione.json scritto dalla routine di un gruppo in modo «esterno», ridotto allo schema comune."""
     est = percorso(g["esterna"]["cartella"]) / giorno.isoformat()
     f = est / "riunione.json"
     if not f.exists():
         raise SystemExit(f"❌ la routine non ha ancora scritto {f}: niente da chiudere")
     x = json.loads(f.read_text(encoding="utf-8"))
     r = {
-        "gruppo": "Azienda Uno", "data": giorno.isoformat(), "temi": [], "strategie": [],
+        "gruppo": g["nome"], "data": giorno.isoformat(), "temi": [], "strategie": [],
         "importanti": [{"cosa": s, "cambia": None, "fonte": f"sintesi della riunione di direzione {x.get('data')}"}
                        for s in (x.get("sintesi") or [])],
         "approfondire": [{"cosa": f"{d.get('id')}: {d.get('domanda')}", "costo": f"una risposta del CEO ({d.get('formato', '')})",
-                          "chi": "CEO Azienda Uno"} for d in (x.get("domande_ceo") or [])],
+                          "chi": f"capogruppo di {g['nome']}"} for d in (x.get("domande_ceo") or [])],
         "decisioni": [{"domanda": f"{d.get('id')} {d.get('titolo')}",
                        "incarico": d.get("come_fare") or d.get("azione") or ""} for d in (x.get("decisioni_proposte") or [])],
         "non_verificato": [str(v) for v in (x.get("non_verificato") or [])],
@@ -956,6 +1003,8 @@ def cmd_strategie(gid: str, g: dict, giorno: date) -> int:
 
 
 def cmd_elenco() -> int:
+    if not config()["gruppi"]:
+        print("nessun gruppo ancora: ogni progetto creato con crea_progetto.py diventa un gruppo da solo")
     for gid, g in config()["gruppi"].items():
         capo = (g.get("capogruppo") or {}).get("agente")
         print(f"{gid:18} {g['nome']:18} modo {g.get('modo', 'interno'):8} capogruppo {capo} · "
