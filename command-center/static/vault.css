@@ -1,0 +1,230 @@
+/* Il Vault del Command Center (2026-10-10, Fase 1 MVP; layout approvato: proposta sezioni 7.1-7.6).
+   File a parte, si copia nei prodotti pubblici. Usa le variabili di app.css/temi.css (--fondo, --testo, --accento…)
+   così segue da solo i temi scuro, nero, chiaro, claude e auto. Fuori dal Command Center valgono i valori di riserva
+   qui sotto, chiari o scuri secondo il sistema. Tutto sta sotto .vt / .vista-vault: niente regole globali. */
+
+.vista-vault {
+  --vt-fondo: var(--fondo, #181818);
+  --vt-rialzo: var(--rialzo, #1f1f1f);
+  --vt-rialzo-2: var(--rialzo-2, #262626);
+  --vt-testo: var(--testo, #f0f0f0);
+  /* testi secondari: --testo-2 (72%) e non --tenue (48%), che sul fondo scuro dà 4,4:1 */
+  --vt-tenue: var(--testo-2, rgba(240, 240, 240, .72));
+  --vt-linea: var(--linea-2, rgba(240, 240, 240, .14));
+  --vt-hover: var(--hover, rgba(240, 240, 240, .06));
+  --vt-accento: var(--accento, #599ce7);
+  --vt-accento-fondo: var(--accento-fondo, rgba(89, 156, 231, .14));
+  /* pulsante primario: colori FISSI, non del tema (con --accento/--t-su-accento il contrasto scendeva a 2,3-2,5:1).
+     Bianco su #1a56b0 = 7,0:1 in ogni tema. */
+  --vt-primario: #1a56b0;
+  --vt-primario-hover: #154891;
+  --vt-su-primario: #fff;
+  --vt-verde: var(--verde, #3fa266);
+  --vt-giallo: var(--giallo, #e5b454);
+  --vt-rosso: var(--rosso, #e34671);
+  --vt-grigio: var(--grigio, #6e6e6e);
+  /* colori usati per il TESTO: mescolati con --testo, così restano leggibili sul fondo di ogni tema (chiaro o scuro) */
+  --vt-link: color-mix(in srgb, var(--vt-accento) 55%, var(--vt-testo));
+  --vt-rosso-testo: color-mix(in srgb, var(--vt-rosso) 60%, var(--vt-testo));
+  --vt-giallo-testo: color-mix(in srgb, var(--vt-giallo) 60%, var(--vt-testo));
+  --vt-r: var(--r-lg, 8px);
+  --vt-mono: var(--mono, ui-monospace, "SF Mono", Menlo, monospace);
+  background: var(--vt-fondo);
+  color: var(--vt-testo);
+  min-width: 0;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-tema]) .vista-vault.vt-da-solo {
+    --vt-fondo: #f6f6f4; --vt-rialzo: #fff; --vt-rialzo-2: #ededea; --vt-testo: #161616; --vt-tenue: rgba(22, 22, 22, .6);
+    --vt-linea: rgba(22, 22, 22, .14); --vt-hover: rgba(22, 22, 22, .05); --vt-accento: #2563c9;
+  }
+}
+.vt, .vt * { box-sizing: border-box; }
+.vt { width: 100%; max-width: 100%; overflow-x: hidden; font-size: 14px; line-height: 1.4; }
+/* :where() = specificità zero: le classi dei pulsanti (.vt-primario, .vt-link, .vt-pericolo) devono vincere sul colore */
+:where(.vt) :is(button, input, select, textarea) { font: inherit; color: inherit; }
+.vt-mono { font-family: var(--vt-mono); }
+.vt-tenue { color: var(--vt-tenue); }
+.vt-piccolo { font-size: 12px; }
+.vt-blocco { display: block; }
+.vt [hidden], .vista-vault [hidden] { display: none !important; }
+
+/* ---------------------------------------------------------------- pulsanti e campi */
+.vt-primario, .vt-secondario, .vt-ico, .vt-link, .vt-menu-voce, .vt-tag {
+  cursor: pointer; border-radius: var(--vt-r); min-height: 36px;
+}
+.vt-primario { background: var(--vt-primario); color: var(--vt-su-primario); border: 0; padding: 8px 16px; font-weight: 600; }
+.vt-primario:not(:disabled):hover { background: var(--vt-primario-hover); }
+.vt-primario:disabled, .vt-secondario:disabled { opacity: .5; cursor: not-allowed; }
+.vt-secondario { background: transparent; border: 1px solid var(--vt-linea); padding: 7px 12px; }
+.vt-secondario:hover, .vt-ico:hover, .vt-menu-voce:hover { background: var(--vt-hover); }
+.vt-ico { background: transparent; border: 1px solid transparent; min-width: 36px; padding: 4px 8px; display: inline-flex;
+  align-items: center; justify-content: center; text-decoration: none; }
+.vt-ico.vt-attiva { border-color: var(--vt-rosso); }
+.vt-mini { min-width: 28px; min-height: 28px; padding: 2px 6px; font-size: 13px; color: var(--vt-tenue); }
+.vt-link { background: none; border: 0; color: var(--vt-link); text-decoration: underline; padding: 4px 0; min-height: 0; }
+.vt-pericolo { color: var(--vt-rosso-testo); }
+.vt-input { width: 100%; min-width: 0; background: var(--vt-rialzo-2); border: 1px solid var(--vt-linea); border-radius: var(--vt-r);
+  padding: 8px 10px; min-height: 38px; }
+.vt-input:focus-visible, .vt button:focus-visible, .vt a:focus-visible { outline: 2px solid var(--vt-accento); outline-offset: 1px; }
+textarea.vt-input { resize: vertical; }
+.vt-riga-input { display: flex; gap: 6px; align-items: center; min-width: 0; }
+.vt-riga-input > .vt-input { flex: 1; }
+.vt-errore { color: var(--vt-rosso-testo); margin: 4px 0; }
+.vt-nota { background: var(--vt-accento-fondo); border-radius: var(--vt-r); padding: 8px 10px; margin: 8px 0; font-size: 13px; }
+.vt-spunta { display: flex; align-items: center; gap: 8px; }
+.vt-bottoni { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+
+/* ---------------------------------------------------------------- bloccato, creazione, codice (7.1) */
+.vt-centro { display: flex; justify-content: center; padding: 48px 16px; }
+.vt-scheda { width: 100%; max-width: 380px; background: var(--vt-rialzo); border: 1px solid var(--vt-linea); border-radius: 12px; padding: 20px; }
+.vt-scheda-titolo { margin: 0 0 12px; font-size: 18px; }
+.vt-stato-iniziale { margin: 0 0 10px; font-weight: 600; }
+.vt-modulo { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.vt-modulo label, .vt-etichetta { font-size: 12px; color: var(--vt-tenue); }
+.vt-codice { font-family: var(--vt-mono); font-size: 17px; letter-spacing: .04em; word-break: break-all; background: var(--vt-rialzo-2);
+  padding: 12px; border-radius: var(--vt-r); user-select: all; }
+
+/* ---------------------------------------------------------------- aperto (7.2) */
+.vt-testa { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--vt-linea); flex-wrap: wrap; }
+.vt-titolo { margin: 0; font-size: 18px; }
+.vt-cerca { flex: 1 1 220px; }
+.vt-timer { font-size: 13px; color: var(--vt-tenue); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.vt-corpo { display: grid; grid-template-columns: 220px minmax(0, 1fr) minmax(0, 1.25fr); min-height: 60vh; position: relative; }
+.vt-lato { border-right: 1px solid var(--vt-linea); padding: 8px; overflow-y: auto; }
+.vt-lato-titolo { display: flex; align-items: center; justify-content: space-between; font-size: 11px; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--vt-tenue); margin: 14px 8px 4px; }
+.vt-lato-elenco { list-style: none; margin: 0; padding: 0; }
+.vt-lato-elenco li { display: flex; align-items: center; }
+.vt-lato-voce { flex: 1; display: flex; justify-content: space-between; gap: 8px; background: none; border: 0; text-align: left;
+  padding: 6px 8px; border-radius: var(--vt-r); cursor: pointer; min-height: 32px; min-width: 0; }
+.vt-lato-voce span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vt-lato-voce:hover { background: var(--vt-hover); }
+.vt-lato-voce.vt-attiva { background: var(--vt-accento-fondo); }
+.vt-conta { font-weight: 400; color: var(--vt-tenue); font-size: 12px; }
+.vt-tag-elenco { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 8px; }
+.vt-tag { background: var(--vt-rialzo-2); border: 1px solid transparent; padding: 2px 8px; min-height: 26px; font-size: 12px; }
+.vt-tag.vt-attiva { border-color: var(--vt-accento); }
+.vt-lista { border-right: 1px solid var(--vt-linea); overflow-y: auto; min-width: 0; }
+.vt-lista-testa { padding: 10px 14px; font-size: 13px; font-weight: 600; border-bottom: 1px solid var(--vt-linea); }
+.vt-voce { display: flex; align-items: center; gap: 10px; width: 100%; background: none; border: 0; border-bottom: 1px solid var(--vt-linea);
+  padding: 10px 14px; text-align: left; cursor: pointer; min-width: 0; }
+.vt-voce:hover { background: var(--vt-hover); }
+.vt-voce.vt-attiva { background: var(--vt-accento-fondo); }
+.vt-voce-ico { width: 22px; text-align: center; color: var(--vt-tenue); flex: none; }
+.vt-voce-testo { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.vt-voce-titolo, .vt-voce-sotto { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vt-voce-sotto { font-size: 12px; color: var(--vt-tenue); }
+.vt-freccia { color: var(--vt-tenue); }
+.vt-vuoto { padding: 24px 16px; color: var(--vt-tenue); text-align: center; }
+.vt-pallino { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--vt-grigio); flex: none; }
+.vt-verde { background: var(--vt-verde); } .vt-giallo { background: var(--vt-giallo); } .vt-rosso { background: var(--vt-rosso); }
+
+/* ---------------------------------------------------------------- dettaglio (7.2, 7.4, 7.5) */
+.vt-det { padding: 12px 16px; overflow-y: auto; min-width: 0; }
+.vt-det-testa { display: flex; align-items: flex-start; gap: 4px; }
+.vt-det-titoli { flex: 1; min-width: 0; }
+.vt-det-titolo { margin: 4px 0 2px; font-size: 17px; overflow-wrap: anywhere; }
+.vt-det-titoli p { margin: 0; font-size: 12px; }
+.vt-stella { color: var(--vt-giallo-testo); }
+.vt-gruppo { border-top: 1px solid var(--vt-linea); padding: 8px 0; margin-top: 8px; min-width: 0; }
+.vt-campo { display: grid; grid-template-columns: 110px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 4px 0; min-height: 36px; }
+.vt-campo-valore { min-width: 0; overflow-wrap: anywhere; }
+.vt-azioni { display: inline-flex; gap: 2px; }
+.vt-sotto-titolo { margin: 4px 0; font-size: 13px; }
+.vt-uso { margin: 2px 0; font-size: 12px; color: var(--vt-tenue); }
+.vt-riga-versioni { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.vt-carta { --vt-carta: #3a4a6b; background: linear-gradient(135deg, var(--vt-carta), color-mix(in srgb, var(--vt-carta) 60%, #000));
+  color: #fff; border-radius: 12px; padding: 16px; margin: 6px 0 10px; max-width: 340px; aspect-ratio: 1.586; display: flex;
+  flex-direction: column; justify-content: space-between; }
+.vt-carta-riga { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
+.vt-carta-numero { font-size: 17px; letter-spacing: .08em; }
+
+/* ---------------------------------------------------------------- modale e moduli (7.3) */
+.vt-modale-velo { position: fixed; inset: 0; background: rgba(0, 0, 0, .55); z-index: 1000; display: flex; align-items: flex-start;
+  justify-content: center; padding: 6vh 16px; overflow-y: auto; }
+.vt-modale { width: 100%; max-width: 620px; background: var(--vt-rialzo); color: var(--vt-testo); border: 1px solid var(--vt-linea);
+  border-radius: 12px; padding: 14px 18px 18px; min-width: 0; }
+.vt-modale-testa { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+.vt-modale-testa h3 { margin: 0; font-size: 16px; overflow-wrap: anywhere; }
+.vt-modulo-riga { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.vt-gruppo-campi { display: flex; flex-direction: column; gap: 8px; }
+.vt-due { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.vt-tipi { border: 1px solid var(--vt-linea); border-radius: var(--vt-r); padding: 8px 10px; display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; }
+.vt-tipi legend { font-size: 12px; color: var(--vt-tenue); padding: 0 4px; }
+.vt-radio { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; }
+.vt-extra { display: flex; flex-direction: column; gap: 6px; }
+.vt-extra-riga { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto auto; gap: 6px; align-items: center; }
+.vt-menu { display: flex; flex-direction: column; gap: 4px; }
+.vt-menu-voce { text-align: left; background: none; border: 1px solid var(--vt-linea); padding: 10px 12px; }
+.vt-storico { list-style: none; margin: 0; padding: 0; max-height: 50vh; overflow-y: auto; }
+.vt-storico li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--vt-linea); font-size: 13px; overflow-wrap: anywhere; }
+.vt-amb { list-style: none; margin: 0; padding: 0; }
+.vt-amb-riga { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 70px minmax(0, 1fr) auto; gap: 8px; align-items: center;
+  padding: 4px 0; border-bottom: 1px solid var(--vt-linea); font-size: 13px; }
+.vt-amb-nome, .vt-amb-riga .vt-valore { overflow-wrap: anywhere; min-width: 0; }
+
+/* ---------------------------------------------------------------- avvisi */
+.vt-avvisi { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 6px; z-index: 1001; max-width: calc(100vw - 32px); }
+.vt-avviso { background: var(--vt-rialzo); border: 1px solid var(--vt-linea); border-left: 4px solid var(--vt-verde); border-radius: var(--vt-r);
+  padding: 8px 12px; box-shadow: 0 6px 18px rgba(0, 0, 0, .35); font-size: 13px; }
+.vt-avviso-rosso { border-left-color: var(--vt-rosso); }
+
+/* ---------------------------------------------------------------- telefono (7.6): una colonna, cassetto da sinistra */
+.vt-solo-stretto, .vt-stretto { display: none; }
+@media (max-width: 760px) {
+  .vt-solo-stretto, .vt-stretto { display: inline-flex; }
+  .vt-largo { display: none; }
+  .vt-testa { padding: 8px 16px; gap: 4px; }
+  .vt-titolo { flex: 1; }
+  .vt-nuova, .vt-blocca { min-width: 40px; padding: 6px 10px; }
+  .vt-cerca { order: 10; flex-basis: 100%; }
+  .vt-corpo { grid-template-columns: minmax(0, 1fr); }
+  .vt-lato { position: fixed; left: 0; top: 0; bottom: 0; width: min(280px, 85vw); background: var(--vt-rialzo); z-index: 990;
+    transform: translateX(-100%); transition: transform .2s; border-right: 1px solid var(--vt-linea); }
+  .vt-lato.vt-cassetto-aperto { transform: none; }
+  .vt-velo { position: fixed; inset: 0; background: rgba(0, 0, 0, .45); z-index: 980; }
+  .vt-corpo[data-pannello="lista"] .vt-det { display: none; }
+  .vt-corpo[data-pannello="dettaglio"] .vt-lista { display: none; }
+  .vt-lista { border-right: 0; }
+  .vt-campo { grid-template-columns: minmax(0, 1fr) auto; }
+  .vt-campo .vt-etichetta { grid-column: 1 / -1; }
+  .vt-modale-velo { padding: 0; }
+  .vt-modale { max-width: none; min-height: 100%; border-radius: 0; border: 0; }
+  .vt-amb-riga { grid-template-columns: minmax(0, 1fr) auto; }
+  .vt-amb-riga > :nth-child(3), .vt-amb-riga > :nth-child(4) { grid-column: 1 / 2; }
+  .vt-extra-riga { grid-template-columns: minmax(0, 1fr) auto; }
+}
+@media (prefers-reduced-motion: reduce) { .vt-lato { transition: none; } }
+
+/* dentro il Command Center: la vista non usa la griglia a schede di app.css (.vista.attiva) */
+.vista.vista-vault.attiva { display: block; padding: 0; animation: none; }
+
+/* accesso (2026-10-10): Google o email e password, 24 parole di recupero */
+.vt-google { display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
+.vt-google-bottone { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; }
+.vt-g { display: inline-flex; width: 22px; height: 22px; border-radius: 50%; align-items: center; justify-content: center;
+  background: #fff; color: #1a56b0; font-weight: 700; border: 1px solid var(--vt-linea); }
+.vt-oppure { display: flex; align-items: center; gap: 8px; color: var(--vt-tenue); font-size: 12px; margin: 12px 0 8px; }
+.vt-oppure::before, .vt-oppure::after { content: ""; flex: 1; border-top: 1px solid var(--vt-linea); }
+.vt-parole { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 12px; padding: 10px 12px 10px 32px;
+  background: var(--vt-rialzo-2); border-radius: var(--vt-r); font-family: var(--vt-mono); font-size: 14px; margin: 8px 0; }
+.vt-parole li { overflow-wrap: anywhere; }
+@media (max-width: 380px) { .vt-parole { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* piano di importazione */
+.vt-piano { list-style: none; margin: 0; padding: 0; max-height: 40vh; overflow-y: auto; }
+.vt-piano-riga { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--vt-linea); font-size: 13px; }
+
+/* voce unita: alias e avviso di riuso */
+.vt-nota-riuso { background: color-mix(in srgb, var(--vt-giallo) 18%, transparent); }
+.vt-alias { list-style: none; margin: 4px 0 0; padding: 0; }
+.vt-alias li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--vt-linea); overflow-wrap: anywhere; }
+
+/* rimando al Vault del server (modo VPS) e richieste di uso degli agenti */
+.vt-link-bottone { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; min-height: 44px; }
+.vt-uso-avviso { max-width: 440px; margin: 16px auto 0; }
+.vt-azioni-riga { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+.vt-azioni-riga > button { min-height: 44px; }
+.vt-uso p { overflow-wrap: anywhere; }
+@media (max-width: 380px) { .vt-azioni-riga > button { flex: 1 1 100%; } }

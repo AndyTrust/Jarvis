@@ -1,0 +1,22 @@
+{
+  "_nota": "Pagine di accesso dei fornitori di identità (Accedi con Google, Apple, Microsoft...). Il Vault scrive su queste pagine SOLO con una voce che ha esattamente questo dominio fra i suoi Domini o Link; una voce di un altro sito qui viene rifiutata. Le voci di servizio su queste pagine chiedono sempre il «Consenti» del proprietario. Fonte unica: la leggono vault_compila.mjs e vault_cc.py.",
+  "provider": {
+    "accounts.google.com": "Google",
+    "myaccount.google.com": "Google",
+    "appleid.apple.com": "Apple",
+    "idmsa.apple.com": "Apple",
+    "account.apple.com": "Apple",
+    "login.microsoftonline.com": "Microsoft",
+    "login.microsoft.com": "Microsoft",
+    "login.live.com": "Microsoft",
+    "account.live.com": "Microsoft",
+    "facebook.com": "Facebook",
+    "www.facebook.com": "Facebook",
+    "m.facebook.com": "Facebook",
+    "github.com": "GitHub",
+    "login.yahoo.com": "Yahoo",
+    "www.linkedin.com": "LinkedIn",
+    "api.x.com": "X",
+    "api.twitter.com": "X"
+  }
+}

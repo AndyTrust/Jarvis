@@ -7191,6 +7191,39 @@ def _azione(dati):
 # Contratto: CONTRATTO-approvazioni.md (sez. 1 e 3). L'archivio sta in approvazioni.py; qui il pannello
 # se ne accorge (sorveglia_approvazioni, ogni secondo), lo mostra, avvisa l'utente e scrive le decisioni.
 
+_VAULT_CARICA = threading.Lock()
+
+
+def _vault_rotta(gestore, metodo, corpo=None):
+    """/api/vault/* → command-center/vault_cc.py (il Vault: accessi, carte, PIN, variabili, cifrati; docs/wiki/Vault.md).
+    Il Vault si apre solo da questo computer: una richiesta da un'altra macchina, o arrivata da internet attraverso un
+    ponte («X-CC-Ponte: 1»), risponde 403. Eccezione: il modo VPS avanzato (JARVIS_VAULT_MODO=vps nel servizio, Linux).
+    Funziona su macOS (Portachiavi) e Windows (DPAPI); altrove solo nel modo VPS o con JARVIS_VAULT_PORTACHIAVI=file.
+    Nessun corpo e nessun valore finisce nei log: vault_cc.gestisci restituisce errori senza dati."""
+    locale = (gestore.client_address or ("",))[0] in ("127.0.0.1", "::1", "::ffff:127.0.0.1")
+    if not locale:
+        return 403, {"errore": "Il Vault si apre solo da questo computer."}
+    vps = os.environ.get("JARVIS_VAULT_MODO", "").strip().lower() == "vps"
+    if not vps and gestore.headers.get("X-CC-Ponte") == "1":
+        return 403, {"errore": "Il Vault si apre solo da questo computer, non da internet."}
+    if not vps and sys.platform not in ("darwin", "win32") and os.environ.get("JARVIS_VAULT_PORTACHIAVI") != "file":
+        return 403, {"errore": "Il Vault funziona su macOS e Windows (su Linux solo nel modo VPS: docs/wiki/Vault.md)."}
+    # caricato dal suo percorso, non con «import vault»: strumenti/vault.py ha un nome simile; sotto lucchetto e
+    # registrato in sys.modules solo a caricamento finito (due richieste insieme non lo vedono a metà).
+    _v = sys.modules.get("vault_cc")
+    if _v is None or not hasattr(_v, "gestisci"):
+        with _VAULT_CARICA:
+            _v = sys.modules.get("vault_cc")
+            if _v is None or not hasattr(_v, "gestisci"):
+                import importlib.util
+                spec = importlib.util.spec_from_file_location("vault_cc", QUI / "vault_cc.py")
+                _v = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(_v)
+                sys.modules["vault_cc"] = _v
+    q = parse_qs(urlsplit(gestore.path).query)
+    return _v.gestisci(metodo, gestore.path.split("?")[0], q, corpo or {}, gestore.headers)
+
+
 def _connessioni():
     """strumenti/connessioni.py (2026-10-04): una sola fonte, la usa anche l'hook connessioni_guardia.py."""
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "strumenti"))
@@ -7724,6 +7757,10 @@ class Gestore(BaseHTTPRequestHandler):
                 return self._invia(200, schermo_jpeg(w), "image/jpeg")
             except SchermoNonDisponibile as e:
                 return self._invia(503, {"errore": str(e)})
+        if percorso == "/api/vault/google/callback":
+            # il ritorno da Google (Vault) è una navigazione del browser, senza X-Token: lo protegge lo «state» casuale e
+            # monouso del flusso (vault_cc.AccessoGoogle); _vault_rotta resta solo da questo computer.
+            return self._invia(*_vault_rotta(self, "GET"))
         if percorso == "/api/flusso":
             # EventSource non manda intestazioni: solo qui il token vale anche in ?token=
             tok = self.headers.get("X-Token") or (parse_qs(urlsplit(self.path).query).get("token") or [""])[0]
@@ -7733,6 +7770,8 @@ class Gestore(BaseHTTPRequestHandler):
         if self.headers.get("X-Token") != TOKEN:
             # il token cambia a ogni avvio: la pagina che lo vede se ne accorge e si ricarica da sola
             return self._invia(403, {"errore": "token scaduto: il Command Center è ripartito", "token_scaduto": True})
+        if percorso.startswith("/api/vault/"):
+            return self._invia(*_vault_rotta(self, "GET"))
         if percorso == "/api/pannello":
             return self._invia(200, leggi_pannello())
         if percorso == "/api/aggiornamento":
@@ -8026,6 +8065,8 @@ class Gestore(BaseHTTPRequestHandler):
             if lunghezza > (40_000_000 if self.path == "/api/progetto/carica" else 400_000):
                 return self._invia(413, {"errore": "richiesta troppo grande"})
             corpo = json.loads(self.rfile.read(lunghezza) or b"{}")
+            if self.path.startswith("/api/vault/"):
+                return self._invia(*_vault_rotta(self, "POST", corpo))
             if self.path == "/api/pannello":
                 # 27/09/2026, contratto: {"versione": n} nel corpo = la versione letta dalla scheda;
                 # se sul disco ce n'è una più nuova → 409 {errore, conflitto: true, pannello: <attuale>}.

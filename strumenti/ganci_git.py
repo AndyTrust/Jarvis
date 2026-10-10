@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later  ·  Jarvis, vedi LICENSE e NOTICE.md
 """Ganci git post-commit e pre-push: a ogni commit e a ogni push lo stato del progetto si salva da solo.
+In più il gancio pre-commit del Vault: ferma il commit se nello stage c'è un file del Vault o dei segreti (vault.json,
+esportazioni, chiavi del dispositivo, vault-sezioni.json, CSV di password, .env.jarvis). Il controllo vero sta in
+command-center/vault_cc.py («barriera-git»): legge solo nomi e il campo «formato» dei JSON, mai valori. Questo è
+l'UNICO blocco che può fermare git (esce con errore solo se trova un file del Vault).
 
 Il blocco chiama stato_avanzamento.py --giro (Stato.md dello spazio + diario del giorno, muto se non c'è niente di
 nuovo) e non ferma mai git: esce sempre bene e sta subito dopo la prima riga, così un gancio già esistente resta
@@ -19,6 +23,23 @@ from pathlib import Path
 
 INIZIO, FINE = "# jarvis-stato:inizio (strumenti/ganci_git.py)", "# jarvis-stato:fine"
 GANCI = ("post-commit", "pre-push")
+INIZIO_V, FINE_V = "# jarvis-vault:inizio (strumenti/ganci_git.py)", "# jarvis-vault:fine"
+VAULT_CC = Path(__file__).resolve().parent.parent / "command-center" / "vault_cc.py"
+
+
+def blocco_vault():
+    return (f"{INIZIO_V}\n"
+            f'_v="{VAULT_CC.as_posix()}"\n'
+            f'_p="$(command -v python3 || command -v python)"\n'
+            f'if [ -f "$_v" ] && [ -n "$_p" ]; then "$_p" "$_v" barriera-git || exit 1; fi\n'
+            f"{FINE_V}\n")
+
+
+def marcatori(nome):
+    """(inizio, fine, testo del blocco) per quel gancio."""
+    if nome == "pre-commit":
+        return INIZIO_V, FINE_V, blocco_vault()
+    return INIZIO, FINE, blocco(nome)
 
 
 def blocco(evento):
@@ -47,27 +68,28 @@ def installa(repo, prova=False, togli=False):
     if not d:
         return [("-", "non è un repo git")]
     out = []
-    for nome in GANCI:
+    for nome in GANCI + ("pre-commit",):
         f = d / nome
+        ini, fin, blk = marcatori(nome)
         testo = f.read_text(encoding="utf-8", errors="ignore") if f.is_file() else ""
         if togli:
-            if INIZIO in testo:
-                a, b = testo.index(INIZIO), testo.index(FINE) + len(FINE) + 1
+            if ini in testo:
+                a, b = testo.index(ini), testo.index(fin) + len(fin) + 1
                 if not prova:
                     f.write_text(testo[:a] + testo[b:], encoding="utf-8")
                 out.append((nome, "tolto"))
             continue
-        if INIZIO in testo:
+        if ini in testo:
             out.append((nome, "già a posto"))
             continue
         if not testo:
-            nuovo, cosa = "#!/bin/sh\n" + blocco(nome), "installato"
+            nuovo, cosa = "#!/bin/sh\n" + blk, "installato"
         else:
             prima, _, resto = testo.partition("\n")
             if not prima.startswith("#!") or not any(s in prima for s in ("sh", "bash", "zsh")):
-                out.append((nome, "non è shell: lasciato (aggiungi a mano: " + blocco(nome).splitlines()[2][:60] + "…)"))
+                out.append((nome, "non è shell: lasciato (aggiungi a mano: " + blk.splitlines()[-2][:60] + "…)"))
                 continue
-            nuovo, cosa = prima + "\n" + blocco(nome) + resto, "aggiunto in testa al gancio esistente"
+            nuovo, cosa = prima + "\n" + blk + resto, "aggiunto in testa al gancio esistente"
         if not prova:
             d.mkdir(parents=True, exist_ok=True)
             if testo:

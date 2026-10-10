@@ -10,4 +10,5 @@
 8. Claude legge `CLAUDE.md`, entra in modalità piano e ti fa le domande di avvio, una alla volta: come ti chiami, la lingua, la memoria, e se partire da zero o creare subito il primo progetto. Se non parte da solo, scrivi `/inizia`.
 9. Prima di toccare il Mac ti mostra il piano (cosa installa, cosa scrive, dove fa le copie). Niente cambia finché non dici sì.
 10. Dopo: per un progetto nuovo basta dirlo («apri il progetto Sito») o scrivere `/nuovo-progetto Sito`; per un aiutante, `/nuovo-agente Sito copywriter`. Guida: `docs/wiki/Progetti-e-agenti.md`.
-11. Guida completa: `docs/wiki/Installazione.md`. Problemi: `docs/wiki/Problemi.md`.
+11. Password, carte e PIN: il **Vault** del pannello (voce «Vault», parte vuoto, lo crei con email e password). Guida: `docs/wiki/Vault.md`.
+12. Guida completa: `docs/wiki/Installazione.md`. Problemi: `docs/wiki/Problemi.md`.

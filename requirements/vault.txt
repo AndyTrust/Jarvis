@@ -1,0 +1,5 @@
+# Il Vault del Command Center (command-center/vault_cc.py): cifratura AES-256-GCM, HKDF, verifica dei token Google.
+# macOS: il Command Center gira con il python3 di sistema; la libreria sta in un ambiente a parte che il Vault trova da solo:
+#   python3 -m venv ~/.jarvis/vault-venv && ~/.jarvis/vault-venv/bin/pip install -r requirements/vault.txt
+# (lo fa installa.sh). Licenza di cryptography: Apache-2.0 o BSD-3-Clause, a scelta (compatibile con GPL-3.0).
+cryptography>=42

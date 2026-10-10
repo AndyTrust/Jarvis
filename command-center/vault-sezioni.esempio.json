@@ -1,0 +1,46 @@
+{
+  "_nota": "ESEMPIO generico delle sezioni del Vault. Per cambiarlo copialo in vault-sezioni.json (stessa cartella): quel file è tuo, resta fuori da git e l'aggiornamento non lo tocca. «sezioni_partenza»: le sezioni del Vault appena creato. «spazi»: per le chiavi di ~/.env.jarvis, la sezione dal prefisso del nome (es. LAVORO_ o LAVORO__). «servizi»: il servizio dalla prima parola contenuta nel nome. «chrome»: per l'importazione da Chrome, sezione e categoria dal dominio.",
+  "sezioni_partenza": ["Lavoro", "Personale", "Famiglia", "Casa", "Soldi", "Altro"],
+  "sezione_predefinita": "Altro",
+  "spazi": [
+    {"spazio": "Lavoro", "prefissi": ["LAVORO", "UFFICIO", "AZIENDA"]},
+    {"spazio": "Personale", "prefissi": ["PERSONALE", "MIO"]},
+    {"spazio": "Famiglia", "prefissi": ["FAMIGLIA"]},
+    {"spazio": "Casa", "prefissi": ["CASA"]},
+    {"spazio": "Soldi", "prefissi": ["BANCA", "SOLDI"]}
+  ],
+  "servizi": [
+    {"servizio": "Google", "parole": ["GOOGLE", "GMAIL", "GEMINI", "YOUTUBE"]},
+    {"servizio": "Posta", "parole": ["IMAP", "SMTP", "MAIL", "PEC"]},
+    {"servizio": "GitHub", "parole": ["GITHUB"]},
+    {"servizio": "Database", "parole": ["DB_", "POSTGRES", "MYSQL"]},
+    {"servizio": "Modelli AI", "parole": ["ANTHROPIC", "OPENAI", "OPENROUTER", "MISTRAL"]},
+    {"servizio": "Messaggi", "parole": ["TELEGRAM", "WHATSAPP", "SLACK", "DISCORD"]},
+    {"servizio": "Pagamenti", "parole": ["STRIPE", "PAYPAL"]}
+  ],
+  "preferiti": [],
+  "tag_prova": ["TEST", "PROVA", "SANDBOX", "DEMO"],
+  "tag_scaduto": ["_EXP", "EXPIR", "_OLD"],
+  "chrome": {
+    "_nota": "Una voce con il punto davanti («.it») vale come suffisso, una con un punto in mezzo («esempio.com») come dominio o sottodominio, una senza punto come parola contenuta. «ip_ammessi»: indirizzi IP tuoi che non sono righe di prova.",
+    "spazio_predefinito": "Personale",
+    "ip_ammessi": [],
+    "spazi": [
+      {"spazio": "Lavoro", "domini": ["slack.com", "atlassian", "notion.so", "office.com", "microsoftonline", "zoom.us"]},
+      {"spazio": "Soldi", "domini": ["bank", "banca", "paypal", "revolut", "satispay", "stripe", "nexi", "poste.it", "agenziaentrate.gov.it", "inps.it"]},
+      {"spazio": "Casa", "domini": ["enel.it", "eni.com", "a2a.it", "gruppohera.it", "irenlucegas.it", "tim.it", "vodafone.it", "windtre.it", "fastweb.it", "iliad.it"]},
+      {"spazio": "Famiglia", "domini": ["classeviva", "portaleargo.it", "scuola"]}
+    ],
+    "categorie": [
+      {"categoria": "Google", "domini": ["google.", "gmail.", "youtube.", "android.com"]},
+      {"categoria": "Posta e PEC", "domini": ["mail", "pec.", "legalmail", "outlook", "libero.it", "yahoo."]},
+      {"categoria": "Banche e pagamenti", "domini": ["bank", "banca", "paypal", "revolut", "satispay", "stripe", "nexi", "poste"]},
+      {"categoria": "Social", "domini": ["facebook", "instagram", "linkedin", "twitter", "x.com", "tiktok", "whatsapp", "telegram"]},
+      {"categoria": "Shopping", "domini": ["amazon", "ebay", "zalando", "aliexpress", "shop", "store"]},
+      {"categoria": "Hosting e domini", "domini": ["aruba", "godaddy", "cloudflare", "register.it", "vercel", "github", "netlify", "ovh"]},
+      {"categoria": "Utenze", "domini": ["enel.it", "eni.com", "a2a.it", "gruppohera.it", "irenlucegas.it", "tim.it", "vodafone.it", "windtre.it", "fastweb.it", "iliad.it"]},
+      {"categoria": "Pubblica amministrazione", "domini": ["agenziaentrate.gov.it", "inps.it", ".gov.it"]},
+      {"categoria": "Viaggi", "domini": ["booking", "airbnb", "ryanair", "easyjet", "trenitalia", "italo", "expedia", "skyscanner"]}
+    ]
+  }
+}

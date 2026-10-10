@@ -147,3 +147,21 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# ===== il Vault (cassaforte delle password, docs/wiki/Vault.md) =====
+# I dati stanno fuori da questa cartella (macOS ~/Library/Application Support/Jarvis/vault, Windows %APPDATA%\Jarvis\vault):
+# se per sbaglio finiscono qui, restano fuori da git. In più il gancio pre-commit (strumenti/ganci_git.py) li ferma.
+**/command-center/vault-sezioni.json
+.jarvis-vault*/
+vault.json
+vault-esportazione-*.json
+*.vault
+dispositivo-*.chiave
+dispositivo-*.dpapi
+servizio-*.chiave
+usi.jsonl
+env.jarvis.prova
+google-client.json
+*password*.csv
+*Password*.csv
+*PASSWORD*.csv

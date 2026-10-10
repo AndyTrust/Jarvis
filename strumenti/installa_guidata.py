@@ -172,6 +172,11 @@ def ambienti(r):
             dice(f"orb: ambiente già pronto ({w})")
         else:
             esegui([py, "-m", "venv", w]) and esegui([w / "bin" / "pip", "install", "-q", "-r", QUI / "requirements" / "mac-widget.txt"])
+        vv = HOME / ".jarvis" / "vault-venv"      # il Vault: «cryptography» in un ambiente a parte
+        if (vv / "bin" / "python3").exists():
+            dice(f"Vault: ambiente già pronto ({vv})")
+        else:
+            esegui([py, "-m", "venv", vv]) and esegui([vv / "bin" / "pip", "install", "-q", "-r", QUI / "requirements" / "vault.txt"])
     bt = QUI / "backtalk"
     voce = (r.get("servizi") or {}).get("voce")
     if voce and not (bt / "install.sh").exists():

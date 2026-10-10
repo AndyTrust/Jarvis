@@ -78,6 +78,11 @@ Lavagna, menu agenti, pagine del Command Center e `Stato.md` si rileggono da lì
 - Prove, non ipotesi: è fatto solo quello che hai controllato con un comando o un file.
 - Conferma prima dell'irreversibile: cancellare, pubblicare, scrivere in produzione, mandare messaggi.
 - Un segreto non entra mai in git né nella memoria: `.env`, chiavi e password restano sul Mac.
+- Il Vault (`command-center/vault_cc.py`, pagina #vault, guida `docs/wiki/Vault.md`) tiene password, carte e PIN del
+  proprietario, cifrati. Tu vedi solo nomi e stato: non leggi i suoi file, non chiedi valori in chat. Per scrivere un
+  accesso in un sito usi solo `python3 strumenti/vault.py usa "NOME"` (spento finché il proprietario non accende
+  «uso_agenti», e ogni uso chiede il suo «Consenti»). Le carte non si usano mai: un pagamento passa da un servizio di
+  pagamento con la conferma del proprietario.
 - Data e ora dal sistema (`date "+%Y-%m-%d %H:%M"`), mai scritte a mano.
 - Una domanda alla volta. Frasi corte, fatti verificabili.
 - Prima di scrivere interfacce mostra il layout in ASCII e aspetta l'ok.

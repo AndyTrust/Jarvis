@@ -38,6 +38,7 @@ if(/\bJarvisApp\//.test(navigator.userAgent))document.documentElement.classList.
 <!-- 2026-10-05 (l'utente): pagina «Routine» e comandi rapidi per gruppo sulla lavagna (routine.js, si aggancia da sola) -->
 <link rel="stylesheet" href="/static/routine.css">
 <!-- temi (2026-10-03, INTEGRA-TEMI.md): dopo tutti gli altri fogli, così vince -->
+<link rel="stylesheet" href="/static/vault.css">
 <link rel="stylesheet" href="/static/temi.css">
 <link rel="stylesheet" href="/static/dots.css">
 <link rel="stylesheet" href="/static/notifiche.css">
@@ -1135,6 +1136,10 @@ a.pc-btn-link { padding: 3px 9px; font-size: 12px; border: 1px solid var(--linea
 
 <div id="toast" class="toast" role="status"></div>
 <script src="/static/app.js"></script>
+<!-- il Vault (cassaforte delle password): voce di menu e pagina #vault, vedi docs/wiki/Vault.md -->
+<script src="/static/vault_chrome.js" defer></script>
+<script src="/static/vault_gruppi.js" defer></script>
+<script src="/static/vault.js" defer></script>
 <!-- 2026-10-03: barra di schede in basso e tastiera sul telefono; funzioni del ponte (attive solo se /_ponte/stato risponde 200) -->
 <script src="/static/mobile.js" defer></script>
 <script src="/static/dettato.js" defer></script>

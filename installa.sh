@@ -77,6 +77,11 @@ if [ "$MAC" = 1 ] && [ "$WIDGET" = 1 ]; then
   if [ -x "$W/bin/python3" ] && "$W/bin/python3" -c 'import PIL, numpy, AppKit' 2>/dev/null; then echo "   orb: ambiente già pronto ($W)"
   else fa mkdir -p "$CASA/.locale-onedrive" && fa "$PY" -m venv "$W" && fa "$W/bin/pip" install -q -r "$QUI/requirements/mac-widget.txt"; fi
 else echo "   orb: saltato (non è un Mac o --senza-widget)"; fi
+# il Vault (command-center/vault_cc.py) vuole «cryptography»: ambiente a parte, che il Vault trova da solo
+VV="$CASA/.jarvis/vault-venv"
+if [ -x "$VV/bin/python3" ] && "$VV/bin/python3" -c 'import cryptography' 2>/dev/null; then echo "   Vault: libreria di cifratura già pronta ($VV)"
+elif "$PY" -c 'import cryptography' 2>/dev/null; then echo "   Vault: cryptography già presente in $PY"
+else fa mkdir -p "$CASA/.jarvis" && fa "$PY" -m venv "$VV" && fa "$VV/bin/pip" install -q -r "$QUI/requirements/vault.txt" || AVVISI+=("Vault: la libreria di cifratura non si è installata (docs/wiki/Vault.md, «Se il Vault dice spento»)"); fi
 if [ "$VOCE" = 1 ]; then
   if [ -f "$QUI/backtalk/install.sh" ]; then
     echo "   voce e missioni: backtalk/install.sh (scarica i modelli di Whisper e Kokoro, ~1 GB, può chiedere conferme)"

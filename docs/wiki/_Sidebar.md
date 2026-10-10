@@ -29,6 +29,7 @@
 - [Disinstallare](Disinstallare)
 - [Domande frequenti e problemi](Domande-frequenti-e-problemi)
 - [Sicurezza](Sicurezza)
+- [Il Vault (password, carte, PIN)](Vault)
 - [Routine e lavori automatici](Routine-e-lavori-automatici)
 - [L'orb di Jarvis](Orb-e-widget)
 - [Come parlano gli agenti](Come-parlano-gli-agenti)

@@ -72,6 +72,9 @@ agenti, ambienti, cartella. La memoria resta tua finché non la cancelli.
 - La memoria sta dove scegli tu. Se scegli iCloud Drive o OneDrive, viaggia con quel servizio.
 - Le conversazioni passano da Claude Code e quindi da Anthropic, secondo i termini del tuo abbonamento.
 - Nessuna telemetria di Jarvis.
+- Le password dei siti, le carte e i PIN possono stare nel **Vault** del pannello: parte vuoto, è cifrato sul Mac
+  (chiave nel Portachiavi di macOS), si apre con email e password e si recupera con 24 parole. Guida:
+  [docs/wiki/Vault.md](docs/wiki/Vault.md).
 
 ## VPS (facoltativa)
 
@@ -82,7 +85,7 @@ Jarvis funziona tutto sul Mac. Se vuoi alcune cose accese anche a Mac spento, pu
 ## Guida
 
 [docs/wiki/Home.md](docs/wiki/Home.md): Installazione, Come funziona, Memoria condivisa, Agenti, Voce, Telefono, VPS,
-Aggiornare, Disinstallare, Problemi.
+Vault, Aggiornare, Disinstallare, Problemi.
 
 ## Licenza
 

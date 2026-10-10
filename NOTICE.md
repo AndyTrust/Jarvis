@@ -18,6 +18,7 @@ Il codice di altri autori resta dei suoi autori, con la sua licenza. Licenze ver
 | Pillow 12 | `pip`, `requirements/mac-widget.txt` | MIT-CMU (HPND) | sì |
 | numpy 2 | `pip` | BSD-3-Clause e altre permissive | sì |
 | PyObjC 12 (core, Cocoa, Quartz) | `pip` | MIT | sì |
+| cryptography 42+ (il Vault) | `pip`, `requirements/vault.txt`, in `~/.jarvis/vault-venv` | Apache-2.0 o BSD-3-Clause, a scelta | sì (con GPL-3.0 si sceglie Apache-2.0 o BSD) |
 | puppeteer 25 (facoltativo) | `npm install`, `package.json` | Apache-2.0 | sì (con GPL-3.0, non con GPL-2.0) |
 | backtalk (voce, facoltativo) | `git clone https://github.com/jaredrhod/backtalk` | AGPL-3.0 | combinabile (GPL-3.0 §13); resta AGPL-3.0 |
 | sherpa-onnx (parola di attivazione, filtro rumore) | `pip` nell'ambiente della voce | Apache-2.0 | sì |
